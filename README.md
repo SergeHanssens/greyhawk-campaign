@@ -80,7 +80,8 @@ Bewust géén framework — geen build step, geen `npm install`, geen lock files
 
 1. Nieuwe SQL query → run `sql/02_seed.sql`
 2. Nieuwe SQL query → run `sql/03_seed_extra.sql` (extra spreuken lvl 4-9, magic items, dragons, devils, demons, ondoden)
-3. Verwacht: *"Success"* na elke run ✓
+3. *(Voor bestaande databases)* run `sql/04_add_images.sql` om `image_url` kolommen toe te voegen aan de encyclopedie. Niet nodig bij verse install (`01_schema.sql` heeft het al).
+4. Verwacht: *"Success"* na elke run ✓
 
 Je hebt nu 7 rassen, 13 klassen, ~70 wapens, ~110 spreuken (alle levels), ~100 items + magic items, ~85 monsters.
 

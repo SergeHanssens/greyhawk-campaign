@@ -211,7 +211,8 @@ create table if not exists public.weapon_types (
   id          serial      primary key,
   name        text        not null unique,
   description text,
-  source      text        default 'Greyhawk'
+  source      text        default 'Greyhawk',
+  image_url   text
 );
 
 create table if not exists public.weapons (
@@ -223,7 +224,8 @@ create table if not exists public.weapons (
   type         text,
   description  text,
   source       text        default 'Greyhawk',
-  weapon_type  text        default 'Other'
+  weapon_type  text        default 'Other',
+  image_url   text
 );
 
 create table if not exists public.spells (
@@ -235,7 +237,8 @@ create table if not exists public.spells (
   duration    text,
   area        text,
   description text,
-  source      text        default 'Greyhawk'
+  source      text        default 'Greyhawk',
+  image_url   text
 );
 
 create table if not exists public.items (
@@ -245,7 +248,8 @@ create table if not exists public.items (
   weight      real,
   cost        text,
   description text,
-  source      text        default 'Greyhawk'
+  source      text        default 'Greyhawk',
+  image_url   text
 );
 
 create table if not exists public.skills (
@@ -254,7 +258,8 @@ create table if not exists public.skills (
   type        text,
   base_stat   text,
   description text,
-  source      text        default 'Greyhawk'
+  source      text        default 'Greyhawk',
+  image_url   text
 );
 
 create table if not exists public.races (
@@ -262,7 +267,8 @@ create table if not exists public.races (
   name        text        not null,
   description text,
   traits      jsonb,
-  source      text        default 'Greyhawk'
+  source      text        default 'Greyhawk',
+  image_url   text
 );
 
 create table if not exists public.classes (
@@ -271,7 +277,8 @@ create table if not exists public.classes (
   description  text,
   hit_die      text,
   primary_stat text,
-  source       text        default 'Greyhawk'
+  source       text        default 'Greyhawk',
+  image_url   text
 );
 
 create table if not exists public.monsters (
@@ -284,7 +291,8 @@ create table if not exists public.monsters (
   move        integer,
   alignment   text,
   description text,
-  source      text        default 'Greyhawk'
+  source      text        default 'Greyhawk',
+  image_url   text
 );
 
 -- ---------------------------------------------------------------------

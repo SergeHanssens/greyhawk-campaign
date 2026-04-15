@@ -878,27 +878,75 @@ function filterEnc(){
   renderEnc(data);
 }
 
+// Cache per ID for fast info-popup lookup with image
+let encRowCache={};
+
 function renderEnc(data){
   if(!data.length){document.getElementById('enc-content').innerHTML='<div style="padding:30px;text-align:center;color:var(--ink3);font-style:italic;">Geen resultaten gevonden.</div>';return;}
   const cols={weapons:['name','weapon_type','damage','speed_factor','type','description'],spells:['name','level','class','range','duration','description'],items:['name','category','cost','description'],races:['name','description'],classes:['name','hit_die','primary_stat','description'],skills:['name','type','base_stat','description'],monsters:['name','ac','hp_dice','thac0','damage','alignment','description']};
   const c=cols[encCurrentTable]||['name','description'];
   const isDM=CU?.is_dm;
+  encRowCache={};data.forEach(r=>{encRowCache[r.id]=r;});
   document.getElementById('enc-content').innerHTML=`<div style="overflow-x:auto;"><table class="db-table">
-    <thead><tr>${c.map(col=>`<th>${col}</th>`).join('')}${isDM?'<th>Actie</th>':''}</tr></thead>
+    <thead><tr><th style="width:50px;">Foto</th>${c.map(col=>`<th>${col}</th>`).join('')}${isDM?'<th>Actie</th>':''}</tr></thead>
     <tbody>${data.map(row=>`<tr>
-      ${c.map((col,i)=>i===0?`<td><strong>${row[col]||''}</strong> <span class="info-pill" onclick="showInfo('${(row.name||'').replace(/'/g,"\\'")}','${(row.description||'').replace(/'/g,"\\'").replace(/\n/g,' ').replace(/"/g,'&quot;').substring(0,500)}')">info</span></td>`:`<td>${row[col]!=null?row[col]:''}</td>`).join('')}
+      <td>${row.image_url?`<img src="${row.image_url}" alt="${row.name||''}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--card-border);cursor:pointer;" onclick="showInfoFromCache('${encCurrentTable}',${row.id})">`:'<div style="width:40px;height:40px;border-radius:4px;background:rgba(196,160,96,.15);display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:18px;">🖼</div>'}</td>
+      ${c.map((col,i)=>i===0?`<td><strong>${row[col]||''}</strong> <span class="info-pill" onclick="showInfoFromCache('${encCurrentTable}',${row.id})">info</span></td>`:`<td>${row[col]!=null?row[col]:''}</td>`).join('')}
       ${isDM?`<td><button class="btn btn-xs btn-ghost" onclick="openDBEdit('${encCurrentTable}',${row.id})">✏</button></td>`:''}
     </tr>`).join('')}
     </tbody></table></div>`;
 }
 
+function showInfoFromCache(table,id){
+  const r=encRowCache[id];if(!r)return;
+  document.getElementById('info-title').textContent=r.name||'';
+  const meta=Object.keys(r).filter(k=>!['id','name','description','image_url','source'].includes(k)&&r[k]!=null&&r[k]!=='').map(k=>`<strong>${k}:</strong> ${r[k]}`).join(' · ');
+  document.getElementById('info-body').innerHTML=`
+    ${r.image_url?`<div style="text-align:center;margin-bottom:12px;"><img src="${r.image_url}" alt="${r.name||''}" style="max-width:100%;max-height:300px;border-radius:6px;border:1px solid var(--card-border);"></div>`:''}
+    ${meta?`<div style="font-size:12px;color:var(--ink3);margin-bottom:10px;padding:6px 8px;background:rgba(196,160,96,.08);border-radius:3px;">${meta}</div>`:''}
+    <p style="white-space:pre-wrap;line-height:1.6;">${(r.description||'').replace(/</g,'&lt;')}</p>
+    ${r.source&&r.source!=='Greyhawk'?`<div style="font-size:11px;color:var(--ink3);font-style:italic;margin-top:10px;text-align:right;">bron: ${r.source}</div>`:''}`;
+  openM('info-modal');
+}
+
 function showInfo(name,desc){
+  // legacy fallback
   document.getElementById('info-title').textContent=name;
   document.getElementById('info-body').innerHTML=`<p>${desc}</p>`;
   openM('info-modal');
 }
 
 // DB EDIT (DM)
+function imageUrlFieldHtml(prefix,currentUrl){
+  const u=(currentUrl||'').replace(/"/g,'&quot;');
+  return `<div class="fg" style="grid-column:1/-1;">
+    <label>🖼 Afbeelding <small>(URL of upload)</small></label>
+    <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;">
+        <input type="text" id="${prefix}-image_url" value="${u}" placeholder="https://... of upload hieronder" style="width:100%;">
+        <div style="display:flex;gap:6px;margin-top:4px;align-items:center;">
+          <input type="file" id="${prefix}-image_file" accept="image/*" onchange="readImageToField(this,'${prefix}-image_url','${prefix}-image_preview')" style="font-size:11px;flex:1;">
+          <button type="button" class="btn btn-xs btn-ghost" onclick="document.getElementById('${prefix}-image_url').value='';document.getElementById('${prefix}-image_preview').innerHTML='';">✕ Wissen</button>
+        </div>
+      </div>
+      <div id="${prefix}-image_preview" style="width:80px;height:80px;border:1px dashed var(--card-border);border-radius:4px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        ${currentUrl?`<img src="${u}" style="max-width:100%;max-height:100%;object-fit:cover;">`:'<span style="font-size:24px;color:var(--ink3);">🖼</span>'}
+      </div>
+    </div>
+  </div>`;
+}
+
+function readImageToField(input,urlFieldId,previewId){
+  const f=input.files?.[0];if(!f)return;
+  if(f.size>2*1024*1024){toast('Afbeelding te groot (max 2MB)',false);input.value='';return;}
+  const r=new FileReader();
+  r.onload=e=>{
+    document.getElementById(urlFieldId).value=e.target.result;
+    document.getElementById(previewId).innerHTML=`<img src="${e.target.result}" style="max-width:100%;max-height:100%;object-fit:cover;">`;
+  };
+  r.readAsDataURL(f);
+}
+
 async function openDBEdit(table,id){
   dbEditTable=table;dbEditId=id;
   const{data}=await sb.from(table).select('*').eq('id',id).single();
@@ -907,7 +955,9 @@ async function openDBEdit(table,id){
   const f=fields[table]||['name','description'];
   document.getElementById('dbedit-title').textContent=`${data.name} bewerken`;
   document.getElementById('dbedit-err').textContent='';
-  document.getElementById('dbedit-form').innerHTML=`<div class="fg-row col2">${f.map(field=>`<div class="fg"><label>${field}</label><input type="text" id="dbe-${field}" value="${(data[field]||'').toString().replace(/"/g,'&quot;')}"></div>`).join('')}</div>`;
+  document.getElementById('dbedit-form').innerHTML=
+    `<div class="fg-row col2">${f.map(field=>`<div class="fg"><label>${field}</label><input type="text" id="dbe-${field}" value="${(data[field]||'').toString().replace(/"/g,'&quot;')}"></div>`).join('')}</div>`+
+    imageUrlFieldHtml('dbe',data.image_url);
   openM('dbedit-modal');
 }
 
@@ -915,6 +965,8 @@ async function submitDBEdit(){
   const fields={weapons:['name','weapon_type','damage','speed_factor','weight','type','description'],spells:['name','level','class','range','duration','area','description'],items:['name','category','weight','cost','description'],monsters:['name','ac','hp_dice','thac0','damage','move','alignment','description'],skills:['name','type','base_stat','description'],races:['name','description'],classes:['name','description','hit_die','primary_stat']};
   const f=fields[dbEditTable]||['name','description'];
   const upd={};f.forEach(field=>{const el=document.getElementById('dbe-'+field);if(el)upd[field]=el.value;});
+  const imgEl=document.getElementById('dbe-image_url');
+  if(imgEl)upd.image_url=imgEl.value||null;
   const{error}=await sb.from(dbEditTable).update(upd).eq('id',dbEditId);
   if(error){document.getElementById('dbedit-err').textContent='Fout: '+error.message;return;}
   closeM('dbedit-modal');toast('✓ Opgeslagen');loadEnc(dbEditTable);
@@ -930,17 +982,26 @@ function renderEncAddForm(table){
   const fields={weapons:['name','weapon_type','damage','speed_factor','type','description'],spells:['name','level','class','range','duration','area','description'],items:['name','category','cost','description'],monsters:['name','ac','hp_dice','thac0','damage','alignment','description'],skills:['name','type','base_stat','description'],races:['name','description'],classes:['name','description','hit_die','primary_stat']};
   const f=fields[table];
   if(!f){document.getElementById('enc-add-card').style.display='none';return;}
-  document.getElementById('enc-add-form').innerHTML=`<div class="fg-row col3">${f.map(field=>`<div class="fg"><label>${field}${field==='name'?` <span class="req">*</span>`:''}</label><input type="text" id="ea-${field}" placeholder="${field}"></div>`).join('')}</div><button class="btn btn-primary btn-sm" onclick="submitEncAdd('${table}')">Toevoegen aan Database</button>`;
+  document.getElementById('enc-add-form').innerHTML=
+    `<div class="fg-row col3">${f.map(field=>`<div class="fg"><label>${field}${field==='name'?` <span class="req">*</span>`:''}</label><input type="text" id="ea-${field}" placeholder="${field}"></div>`).join('')}</div>`+
+    imageUrlFieldHtml('ea',null)+
+    `<button class="btn btn-primary btn-sm" onclick="submitEncAdd('${table}')">Toevoegen aan Database</button>`;
 }
 
 async function submitEncAdd(table){
   const fields={weapons:['name','weapon_type','damage','speed_factor','type','description'],spells:['name','level','class','range','duration','area','description'],items:['name','category','cost','description'],monsters:['name','ac','hp_dice','thac0','damage','alignment','description'],skills:['name','type','base_stat','description'],races:['name','description'],classes:['name','description','hit_die','primary_stat']};
   const obj={source:'Homebrew'};
   (fields[table]||[]).forEach(f=>{const el=document.getElementById('ea-'+f);if(el)obj[f]=el.value;});
+  const imgEl=document.getElementById('ea-image_url');
+  if(imgEl&&imgEl.value)obj.image_url=imgEl.value;
   if(!obj.name?.trim()){toast('Naam is verplicht',false);return;}
   const{error}=await sb.from(table).insert(obj);
   if(error){toast('Fout: '+error.message,false);return;}
-  toast('✓ '+obj.name+' toegevoegd aan database');loadEnc(table);
+  toast('✓ '+obj.name+' toegevoegd aan database');
+  // reset form image preview
+  if(imgEl)imgEl.value='';
+  const prev=document.getElementById('ea-image_preview');if(prev)prev.innerHTML='<span style="font-size:24px;color:var(--ink3);">🖼</span>';
+  loadEnc(table);
 }
 
 // DM DASHBOARD
@@ -1212,15 +1273,15 @@ async function confirmScanResult(){
 // CSV IMPORT (encyclopedie - DM only)
 // =====================================================================
 const CSV_FIELDS={
-  weapons:['name','weapon_type','damage','speed_factor','weight','type','description'],
-  spells:['name','level','class','range','duration','area','description'],
-  items:['name','category','weight','cost','description'],
-  monsters:['name','ac','hp_dice','thac0','damage','move','alignment','description'],
-  skills:['name','type','base_stat','description'],
-  races:['name','description'],
-  classes:['name','description','hit_die','primary_stat']
+  weapons:['name','weapon_type','damage','speed_factor','weight','type','description','image_url'],
+  spells:['name','level','class','range','duration','area','description','image_url'],
+  items:['name','category','weight','cost','description','image_url'],
+  monsters:['name','ac','hp_dice','thac0','damage','move','alignment','description','image_url'],
+  skills:['name','type','base_stat','description','image_url'],
+  races:['name','description','image_url'],
+  classes:['name','description','hit_die','primary_stat','image_url']
 };
-const CSV_NUMERIC={spells:['level'],weapons:['speed_factor']};
+const CSV_NUMERIC={spells:['level'],weapons:['speed_factor'],items:['weight'],monsters:['ac','thac0','move']};
 
 function openCsvImport(){
   if(!CU?.is_dm){toast('Alleen voor DM',false);return;}

@@ -167,6 +167,18 @@ Nuttige tabellen:<br>
 </ul>
 <p><strong>📥 Importeren</strong> op de Encyclopedie-pagina ondersteunt CSV, JSON en Markdown-tabellen. Onbekende kolommen worden genegeerd, kolom <code>name</code> is verplicht.</p>
 
+<h3>Afbeeldingen toevoegen aan encyclopedie 🖼</h3>
+<p>Elke entry in de encyclopedie kan een afbeelding hebben — getoond als thumbnail in de tabel én groot in de info-popup wanneer een speler klikt.</p>
+<div class="step"><div class="n">1</div><div class="sc"><strong>Open een entry voor bewerken</strong> (✏ knop) of voeg een nieuwe toe</div></div>
+<div class="step"><div class="n">2</div><div class="sc"><strong>Onderaan: 🖼 Afbeelding</strong><p>Twee opties:</p>
+  <ul style="margin:4px 0 0 18px;font-size:13px;">
+    <li><strong>URL plakken</strong> — bv. een fan-wiki of zelf gehoste afbeelding</li>
+    <li><strong>Bestand uploaden</strong> — max 2MB, wordt als base64 in de DB opgeslagen</li>
+  </ul>
+</div></div>
+<div class="step"><div class="n">3</div><div class="sc"><strong>Opslaan</strong> — meteen zichtbaar voor alle spelers</div></div>
+<div class="warn"><strong>⚠️ Copyright:</strong> let op met officiële WotC art. Voor publiek gebruik: gebruik AI-gegenereerde art (Midjourney, DALL-E, Stable Diffusion) of free-stock fan-art met juiste licentie.</div>
+
 <h3>Encyclopedie zelf uitbreiden met AI</h3>
 <div class="dm-box">
 <strong>Tip:</strong> vraag aan ChatGPT, Claude of een andere AI: <em>"Geef me 50 extra AD&D 1e Greyhawk monsters in JSON-array met velden: name, ac (int), hp_dice, thac0 (int), damage, move (int), alignment, description"</em>. Plak het resultaat in <strong>📥 Importeren → JSON</strong> → klaar. Zo bouw je in 10 minuten een complete Monster Manual op.
