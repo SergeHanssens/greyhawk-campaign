@@ -32,7 +32,10 @@ Een gratis, open-source AD&D (Greyhawk-setting) campagne-manager. Spelers behere
 - 📄 **PDF export** van karakterblad
 - 🔑 **Wachtwoord-reset** door DM (met veiligheidsvraag voor DM-account)
 - 📷 **Scan handgeschreven karakterblad** — optioneel (vereist Netlify, zie verder)
-- 📥 **CSV-import** voor encyclopedie (DM-only)
+- 📥 **CSV / JSON / Markdown import** voor encyclopedie (DM-only)
+- 📤 **Export** karakter, sessie of encyclopedie als CSV / JSON / Markdown / PDF
+- 📅 **Sessies** — DM plant sessies, kiest deelnemers; spelers vullen per-sessie log; XP-toekenning automatisch in karakter
+- ★ **Feature-overzicht** in de app — knop rechtsboven
 
 ---
 
@@ -75,12 +78,13 @@ Bewust géén framework — geen build step, geen `npm install`, geen lock files
 
 ### Stap 3: Encyclopedie vullen
 
-1. Nieuwe SQL query
-2. Open `sql/02_seed.sql`, kopieer/plak/Run
-3. Duurt ~10-30 seconden
-4. Verwacht: *"Success"* ✓
+1. Nieuwe SQL query → run `sql/02_seed.sql`
+2. Nieuwe SQL query → run `sql/03_seed_extra.sql` (extra spreuken lvl 4-9, magic items, dragons, devils, demons, ondoden)
+3. Verwacht: *"Success"* na elke run ✓
 
-Je hebt nu rassen, klassen, ~40 wapens, ~60 spreuken, ~50 items, ~40 monsters in de database.
+Je hebt nu 7 rassen, 13 klassen, ~70 wapens, ~110 spreuken (alle levels), ~100 items + magic items, ~85 monsters.
+
+> Voor een **complete** Player's Handbook + Monster Manual moet je verder uitbreiden — dit kan via DM-paneel, CSV/JSON/MD import, of door een AI 100 entries in JSON te laten genereren en die te plakken in **📥 Importeren**.
 
 ### Stap 4: API-sleutels ophalen
 
@@ -217,3 +221,9 @@ greyhawk-campaign/
 [MIT](LICENSE) — vrij te gebruiken, modificeren en distribueren voor persoonlijk niet-commercieel gebruik.
 
 > AD&D, Dungeons & Dragons en Greyhawk zijn handelsmerken van Wizards of the Coast / Hasbro. Dit project is een onafhankelijke fan-tool, niet geaffilieerd met of onderschreven door WotC.
+
+---
+
+## Ontwikkelaar
+
+Ontwikkeld door **[SHiftEDmake](https://shiftedmake.com)** — *van Droom naar Werkelijkheid*

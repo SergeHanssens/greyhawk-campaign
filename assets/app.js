@@ -419,6 +419,7 @@ function renderSheet(c,weapons,items,skills,spells){
       <button class="btn btn-ghost btn-sm" onclick="showPage('characters');loadChars()">← Terug</button>
       <button class="btn btn-ghost btn-sm" onclick="showFullLog()">📋 Logboek</button>
       <button class="btn btn-ghost btn-sm" onclick="exportPDF()">📄 PDF</button>
+      <button class="btn btn-ghost btn-sm" onclick="openExportModal('character')">📤 Export</button>
       ${canEdit?`<button class="btn btn-success btn-sm">✓ Auto-opslaan</button>`:''}
       ${canEdit?`<button class="btn btn-danger btn-sm" onclick="askDeleteChar('${c.id}','${c.name.replace(/'/g,"\\'")}')">🗑 Verwijderen</button>`:''}
       ${canEdit?`<button class="btn btn-ghost btn-sm" onclick="toggleActive('${c.id}',${c.is_active!==false})">${c.is_active===false?'✓ Activeren':'⏸ Inactief'}</button>`:''}
@@ -1462,12 +1463,11 @@ async function openSession(id){
       </div>`:'<div style="font-size:12px;color:var(--ink3);font-style:italic;">Nog geen log-inhoud.</div>'}
     </div>`;
   }).join('');
-  if(isDM){
-    html+=`<div style="text-align:right;margin-top:14px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
-      <button class="btn btn-ghost btn-sm" onclick="editSession('${s.id}')">✏ Bewerken</button>
-      <button class="btn btn-danger btn-sm" onclick="deleteSession('${s.id}')">🗑 Verwijderen</button>
-    </div>`;
-  }
+  html+=`<div style="text-align:right;margin-top:14px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+    <button class="btn btn-ghost btn-sm" onclick="openExportModal('session')">📤 Export</button>
+    ${isDM?`<button class="btn btn-ghost btn-sm" onclick="editSession('${s.id}')">✏ Bewerken</button>
+    <button class="btn btn-danger btn-sm" onclick="deleteSession('${s.id}')">🗑 Verwijderen</button>`:''}
+  </div>`;
   document.getElementById('sd-body').innerHTML=html;
   openM('sd-modal');
 }
@@ -1586,6 +1586,346 @@ async function confirmAwardXp(sessionId,characterId,oldAwarded){
 document.addEventListener('DOMContentLoaded',()=>{
   // After login, dm-only elements get display:block via existing code. Nothing extra needed.
 });
+
+// =====================================================================
+// FEATURE OVERVIEW
+// =====================================================================
+function showFeatureOverview(){
+  const isDM=CU?.is_dm;
+  const playerFeat=`
+    <h3 style="font-family:'Cinzel',serif;color:var(--rust);margin:0 0 10px;">Voor spelers</h3>
+    <table style="width:100%;font-size:13px;border-collapse:collapse;">
+      <thead><tr><th style="text-align:left;padding:6px;border-bottom:1px solid var(--divider);font-family:'Cinzel',serif;font-size:11px;color:var(--ink3);">Feature</th><th style="text-align:left;padding:6px;border-bottom:1px solid var(--divider);font-family:'Cinzel',serif;font-size:11px;color:var(--ink3);">Wat het doet</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:6px;"><strong>+ Nieuw Karakter</strong></td><td style="padding:6px;">Ras + klasse + gezindheid aanmaken met AD&D regels</td></tr>
+        <tr><td style="padding:6px;"><strong>📷 Scan karakterblad</strong></td><td style="padding:6px;">Foto van handgeschreven blad → automatisch ingelezen (vereist Netlify)</td></tr>
+        <tr><td style="padding:6px;"><strong>Click-to-edit</strong></td><td style="padding:6px;">Elke waarde met stippellijn: klik, typ, auto-opslaan</td></tr>
+        <tr><td style="padding:6px;"><strong>📷 Profielfoto</strong></td><td style="padding:6px;">Upload afbeelding van je karakter (max 2MB)</td></tr>
+        <tr><td style="padding:6px;"><strong>Wapens / Items / Skills / Spells</strong></td><td style="padding:6px;">Toevoegen met zoekmodal tegen Greyhawk-encyclopedie</td></tr>
+        <tr><td style="padding:6px;"><strong>📋 Logboek</strong></td><td style="padding:6px;">Bij login automatisch notificatie wat DM wijzigde</td></tr>
+        <tr><td style="padding:6px;"><strong>📅 Sessies</strong></td><td style="padding:6px;">Per sessie eigen log (ontmoetingen, NPCs, loot, notities)</td></tr>
+        <tr><td style="padding:6px;"><strong>📚 Encyclopedie</strong></td><td style="padding:6px;">750+ items met uitgebreide beschrijvingen</td></tr>
+        <tr><td style="padding:6px;"><strong>📄 PDF karakterblad</strong></td><td style="padding:6px;">Volledig printbaar of opslaan als PDF</td></tr>
+        <tr><td style="padding:6px;"><strong>📤 Export</strong></td><td style="padding:6px;">Karakter / sessies / encyclopedie als CSV, JSON, MD of PDF</td></tr>
+        <tr><td style="padding:6px;"><strong>🔑 Wachtwoord</strong></td><td style="padding:6px;">Zelf wijzigen, of door DM resetten</td></tr>
+      </tbody>
+    </table>`;
+  const dmFeat=`
+    <h3 style="font-family:'Cinzel',serif;color:var(--dm-text);margin:16px 0 10px;">Extra voor de DM</h3>
+    <table style="width:100%;font-size:13px;border-collapse:collapse;background:rgba(42,26,74,.04);">
+      <thead><tr><th style="text-align:left;padding:6px;border-bottom:1px solid var(--divider);font-family:'Cinzel',serif;font-size:11px;color:var(--ink3);">Feature</th><th style="text-align:left;padding:6px;border-bottom:1px solid var(--divider);font-family:'Cinzel',serif;font-size:11px;color:var(--ink3);">Wat het doet</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:6px;"><strong>DM Dashboard</strong></td><td style="padding:6px;">Alle karakters van alle spelers in één overzicht</td></tr>
+        <tr><td style="padding:6px;"><strong>🔒 Privé Notities</strong></td><td style="padding:6px;">Per karakter — onzichtbaar voor speler</td></tr>
+        <tr><td style="padding:6px;"><strong>🔒 Sessie-aantekeningen</strong></td><td style="padding:6px;">Voor XP-planning — onzichtbaar voor speler</td></tr>
+        <tr><td style="padding:6px;"><strong>Alle karakters bewerken</strong></td><td style="padding:6px;">Volledige toegang incl. verwijderen, inactief zetten</td></tr>
+        <tr><td style="padding:6px;"><strong>+ Nieuwe sessie</strong></td><td style="padding:6px;">Deelnemers kiezen, datum, locatie, summary, DM-only notities</td></tr>
+        <tr><td style="padding:6px;"><strong>⭐ XP toekennen</strong></td><td style="padding:6px;">Per speler per sessie — updatet karakter.xp + logt transparant</td></tr>
+        <tr><td style="padding:6px;"><strong>🔒 Per-sessie DM-notities</strong></td><td style="padding:6px;">Per speler per sessie een privé veld</td></tr>
+        <tr><td style="padding:6px;"><strong>✏ Encyclopedie bewerken</strong></td><td style="padding:6px;">Elke entry bewerken/verwijderen; + toevoegen onderaan</td></tr>
+        <tr><td style="padding:6px;"><strong>📥 Bulk import</strong></td><td style="padding:6px;">CSV, JSON of Markdown — honderden entries tegelijk</td></tr>
+        <tr><td style="padding:6px;"><strong>🔑 Wachtwoord reset</strong></td><td style="padding:6px;">Tijdelijk wachtwoord voor speler die zijn wachtwoord vergat</td></tr>
+        <tr><td style="padding:6px;"><strong>🔒 Veiligheidsvraag</strong></td><td style="padding:6px;">DM-only bij registratie</td></tr>
+      </tbody>
+    </table>`;
+  const techFeat=`
+    <h3 style="font-family:'Cinzel',serif;color:var(--ink3);margin:16px 0 10px;">Technisch</h3>
+    <div style="font-size:13px;background:rgba(196,160,96,.08);padding:10px;border-radius:4px;">
+      Gratis Supabase PostgreSQL · GitHub Pages / Netlify hosting · Geen build step · Eén gedeelde database voor hele groep · Open source MIT · <a href="https://shiftedmake.com" target="_blank" style="color:var(--blue2);">shiftedmake.com</a>
+    </div>`;
+  document.getElementById('feat-body').innerHTML=playerFeat+(isDM?dmFeat:'')+techFeat;
+  openM('feat-modal');
+}
+
+// =====================================================================
+// UNIVERSELE EXPORT (CSV / JSON / MD / PDF) — encyclopedie, karakter, sessie
+// =====================================================================
+function csvEscape(v){if(v==null)return '';const s=String(v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+function rowsToCsv(rows){if(!rows.length)return '';const keys=Object.keys(rows[0]);return keys.join(',')+'\n'+rows.map(r=>keys.map(k=>csvEscape(r[k])).join(',')).join('\n');}
+function rowsToJson(rows){return JSON.stringify(rows,null,2);}
+function rowsToMd(rows,title){
+  if(!rows.length)return '_Geen data._';
+  const keys=Object.keys(rows[0]);
+  let out=title?`# ${title}\n\n`:'';
+  out+='| '+keys.join(' | ')+' |\n';
+  out+='|'+keys.map(()=>'---').join('|')+'|\n';
+  rows.forEach(r=>{out+='| '+keys.map(k=>String(r[k]==null?'':r[k]).replace(/\|/g,'\\|').replace(/\n/g,' ')).join(' | ')+' |\n';});
+  return out;
+}
+function downloadBlob(name,mime,content){
+  const blob=new Blob([content],{type:mime});const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+async function openExportModal(scope){
+  let html='';
+  if(scope==='encyclopedia'){
+    const t=encCurrentTable||'weapons';
+    html=`<p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Exporteer de volledige <strong>${t}</strong> tabel van de encyclopedie.</p>
+      <div class="fg"><label>Formaat</label><select id="exp-fmt">
+        <option value="csv">CSV (Excel/spreadsheets)</option>
+        <option value="json">JSON (AI / scripts)</option>
+        <option value="md">Markdown (documentatie)</option>
+        <option value="pdf">PDF (afdrukbare referentiegids)</option>
+      </select></div>
+      <div style="text-align:right;margin-top:12px;">
+        <button class="btn btn-ghost btn-sm" onclick="closeM('exp-modal')">Annuleren</button>
+        <button class="btn btn-primary btn-sm" onclick="doExport('enc','${t}')">📤 Downloaden</button>
+      </div>`;
+  }else if(scope==='character'){
+    html=`<p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Exporteer <strong>${CC?.name||'dit karakter'}</strong> inclusief wapens, items, skills, spells en logboek.</p>
+      <div class="fg"><label>Formaat</label><select id="exp-fmt">
+        <option value="json">JSON (volledig, backup-waardig)</option>
+        <option value="md">Markdown (leesbaar dossier)</option>
+        <option value="pdf">PDF (karakterblad)</option>
+      </select></div>
+      <div style="text-align:right;margin-top:12px;">
+        <button class="btn btn-ghost btn-sm" onclick="closeM('exp-modal')">Annuleren</button>
+        <button class="btn btn-primary btn-sm" onclick="doExport('character','${CC?.id}')">📤 Downloaden</button>
+      </div>`;
+  }else if(scope==='session'){
+    html=`<p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Exporteer deze sessie met alle deelnemers en hun logs.</p>
+      <div class="fg"><label>Formaat</label><select id="exp-fmt">
+        <option value="json">JSON</option>
+        <option value="md">Markdown (sessieverslag)</option>
+        <option value="pdf">PDF (afdrukbaar)</option>
+      </select></div>
+      <div style="text-align:right;margin-top:12px;">
+        <button class="btn btn-ghost btn-sm" onclick="closeM('exp-modal')">Annuleren</button>
+        <button class="btn btn-primary btn-sm" onclick="doExport('session','${currentSession?.id}')">📤 Downloaden</button>
+      </div>`;
+  }
+  document.getElementById('exp-body').innerHTML=html;
+  openM('exp-modal');
+}
+
+async function doExport(scope,id){
+  const fmt=document.getElementById('exp-fmt').value;
+  if(scope==='enc'){
+    const{data}=await sb.from(id).select('*').order('name');
+    const rows=data||[];
+    const base='greyhawk_'+id+'_'+new Date().toISOString().substring(0,10);
+    if(fmt==='csv')downloadBlob(base+'.csv','text/csv',rowsToCsv(rows));
+    else if(fmt==='json')downloadBlob(base+'.json','application/json',rowsToJson(rows));
+    else if(fmt==='md')downloadBlob(base+'.md','text/markdown',rowsToMd(rows,'Greyhawk — '+id));
+    else if(fmt==='pdf')exportEncPdf(id,rows);
+  }else if(scope==='character'){
+    const{data:c}=await sb.from('characters').select('*').eq('id',id).single();
+    const[{data:w},{data:it},{data:sk},{data:sp},{data:lg}]=await Promise.all([
+      sb.from('character_weapons').select('*').eq('character_id',id),
+      sb.from('character_items').select('*').eq('character_id',id),
+      sb.from('character_skills').select('*').eq('character_id',id),
+      sb.from('character_spells').select('*').eq('character_id',id),
+      sb.from('character_log').select('*').eq('character_id',id).order('created_at',{ascending:false}).limit(200),
+    ]);
+    const pkg={character:c,weapons:w||[],items:it||[],skills:sk||[],spells:sp||[],log:lg||[]};
+    const base=(c.name||'karakter').replace(/[^a-z0-9]/gi,'_')+'_'+new Date().toISOString().substring(0,10);
+    if(fmt==='json')downloadBlob(base+'.json','application/json',JSON.stringify(pkg,null,2));
+    else if(fmt==='md')downloadBlob(base+'.md','text/markdown',characterToMd(pkg));
+    else if(fmt==='pdf'){closeM('exp-modal');exportPDF();return;}
+  }else if(scope==='session'){
+    const{data:s}=await sb.from('sessions').select('*').eq('id',id).single();
+    const{data:parts}=await sb.from('session_participants').select('*,characters(name,race,class,player_name)').eq('session_id',id);
+    const{data:logs}=await sb.from('session_logs').select('*,characters(name)').eq('session_id',id);
+    const pkg={session:s,participants:parts||[],logs:logs||[]};
+    const base='sessie_'+(s.name||'').replace(/[^a-z0-9]/gi,'_')+'_'+new Date().toISOString().substring(0,10);
+    if(fmt==='json')downloadBlob(base+'.json','application/json',JSON.stringify(pkg,null,2));
+    else if(fmt==='md')downloadBlob(base+'.md','text/markdown',sessionToMd(pkg));
+    else if(fmt==='pdf')exportSessionPdf(pkg);
+  }
+  closeM('exp-modal');toast('✓ Gedownload');
+}
+
+function characterToMd(p){
+  const c=p.character;
+  let m=`# ${c.name}\n\n`;
+  m+=`**${c.race||''} ${c.class||''}** · Level ${c.level||1} · ${c.alignment||''}\n\n`;
+  m+=`## Vitalen\n- HP: ${c.hp_current||0}/${c.hp_max||0}\n- AC: ${c.ac||'—'}\n- THAC0: ${c.thac0||'—'}\n- XP: ${c.xp||0}${c.xp_next?' / '+c.xp_next:''}\n\n`;
+  m+=`## Ability Scores\n| STR | DEX | INT | WIS | CON | CHA |\n|---|---|---|---|---|---|\n| ${c.str||'—'} | ${c.dex||'—'} | ${c.int||'—'} | ${c.wis||'—'} | ${c.con||'—'} | ${c.cha||'—'} |\n\n`;
+  m+=`## Saves\n| Paralyz/Death | Rod/Staff/Wand | Pet./Polym. | Breath | Spell | Poison |\n|---|---|---|---|---|---|\n| ${c.sv_pd||'—'} | ${c.sv_rsw||'—'} | ${c.sv_pp||'—'} | ${c.sv_bw||'—'} | ${c.sv_spell||'—'} | ${c.sv_poison||'—'} |\n\n`;
+  m+=`## Geld\nPP ${c.pp||0} · GP ${c.gp||0} · SP ${c.sp||0} · CP ${c.cp||0}\n\n`;
+  if(p.weapons.length){m+=`## Wapens\n`;p.weapons.forEach(w=>{m+=`- **${w.weapon_name}** — ${w.damage||'—'} (SF ${w.speed_factor||'—'}, ${w.attacks_per_round||'1/1'})${w.notes?' — '+w.notes:''}\n`;});m+='\n';}
+  if(p.items.length){m+=`## Items\n`;p.items.forEach(i=>{m+=`- ${i.item_name}${i.quantity>1?` (${i.quantity}×)`:''}${i.category?' — '+i.category:''}${i.notes?' — '+i.notes:''}\n`;});m+='\n';}
+  if(p.skills.length){m+=`## Vaardigheden\n`;p.skills.forEach(s=>{m+=`- ${s.skill_name} (${s.skill_type||''})${s.stat_modifier?' — '+s.stat_modifier:''}\n`;});m+='\n';}
+  if(p.spells.length){m+=`## Spreuken\n`;p.spells.forEach(s=>{m+=`- ${s.spell_name} — Lv.${s.spell_level||'?'} ${s.spell_class||''}${s.prepared?' **(bereid)**':''}\n`;});m+='\n';}
+  if(c.notes){m+=`## Notities\n${c.notes}\n\n`;}
+  if(p.log&&p.log.length){m+=`## Logboek (laatste ${p.log.length})\n`;p.log.slice(0,30).forEach(l=>{m+=`- ${new Date(l.created_at).toLocaleString('nl-BE')} · ${l.username}${l.is_dm?' [DM]':''}: ${l.beschrijving}\n`;});}
+  return m;
+}
+
+function sessionToMd(p){
+  const s=p.session;
+  let m=`# ${s.name}\n\n`;
+  m+=`**Datum:** ${s.session_date||'—'} · **Locatie:** ${s.location||'—'} · **Status:** ${s.status}\n\n`;
+  if(s.summary){m+=`## Samenvatting\n${s.summary}\n\n`;}
+  m+=`## Deelnemers (${p.participants.length})\n`;
+  p.participants.forEach(pt=>{const c=pt.characters||{};m+=`- **${c.name||'?'}** (${c.race||''} ${c.class||''}) ${pt.xp_awarded?`— ⭐ ${pt.xp_awarded} XP`:''}\n`;});
+  m+='\n';
+  m+=`## Logs per karakter\n\n`;
+  p.logs.forEach(l=>{
+    const c=l.characters||{};
+    m+=`### ${c.name||'?'}\n`;
+    if(l.encounters)m+=`**⚔ Ontmoetingen:** ${l.encounters}\n\n`;
+    if(l.npcs_met)m+=`**💬 NPCs:** ${l.npcs_met}\n\n`;
+    if(l.loot_found)m+=`**💰 Loot:** ${l.loot_found}\n\n`;
+    if(l.player_notes)m+=`**📝 Notities:** ${l.player_notes}\n\n`;
+  });
+  return m;
+}
+
+function exportEncPdf(table,rows){
+  const w=window.open('','_blank');
+  const cols=Object.keys(rows[0]||{}).filter(k=>k!=='id'&&k!=='source');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Greyhawk — ${table}</title>
+  <style>body{font-family:Georgia,serif;max-width:900px;margin:20px auto;padding:20px;font-size:11px;color:#2a1a0a;}
+  h1{font-size:22px;text-align:center;border-bottom:3px double #8a6030;padding-bottom:8px;margin-bottom:12px;}
+  .entry{margin-bottom:10px;padding:8px;border:1px solid #c4a060;border-radius:3px;page-break-inside:avoid;}
+  .entry h2{font-size:14px;color:#7a1c1c;margin-bottom:4px;}
+  .meta{font-size:10px;color:#7a5030;margin-bottom:4px;}
+  .desc{font-size:11px;line-height:1.4;}
+  @media print{.noprint{display:none}}</style></head><body>
+  <button class="noprint" onclick="window.print()" style="padding:8px 18px;background:#7a1c1c;color:white;border:none;border-radius:3px;cursor:pointer;margin-bottom:12px;">🖨️ Afdrukken / PDF</button>
+  <h1>Greyhawk Referentie — ${table}</h1>`);
+  rows.forEach(r=>{
+    const desc=r.description||'';
+    const metaPairs=cols.filter(c=>c!=='name'&&c!=='description').map(c=>r[c]?`<strong>${c}:</strong> ${r[c]}`:'').filter(Boolean).join(' · ');
+    w.document.write(`<div class="entry"><h2>${r.name||'?'}</h2>${metaPairs?`<div class="meta">${metaPairs}</div>`:''}${desc?`<div class="desc">${desc}</div>`:''}</div>`);
+  });
+  w.document.write(`</body></html>`);w.document.close();
+}
+
+function exportSessionPdf(p){
+  const s=p.session;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Sessie: ${s.name}</title>
+  <style>body{font-family:Georgia,serif;max-width:820px;margin:20px auto;padding:20px;color:#2a1a0a;font-size:13px;}
+  h1{font-size:24px;border-bottom:3px double #8a6030;padding-bottom:8px;}h2{font-size:16px;color:#7a1c1c;margin-top:18px;}h3{font-size:13px;color:#1a3a6a;margin-top:12px;}
+  .meta{color:#7a5030;font-style:italic;margin-bottom:12px;}
+  .log-entry{border:1px solid #c4a060;border-radius:3px;padding:10px;margin-bottom:10px;page-break-inside:avoid;}
+  @media print{.noprint{display:none}}</style></head><body>
+  <button class="noprint" onclick="window.print()" style="padding:8px 18px;background:#7a1c1c;color:white;border:none;border-radius:3px;cursor:pointer;margin-bottom:12px;">🖨️ Afdrukken / PDF</button>
+  <h1>${s.name}</h1>
+  <div class="meta">📅 ${s.session_date||'—'} · 📍 ${s.location||'—'} · Status: ${s.status}</div>`);
+  if(s.summary)w.document.write(`<h2>Samenvatting</h2><p>${s.summary.replace(/\n/g,'<br>')}</p>`);
+  w.document.write(`<h2>Deelnemers</h2><ul>`);
+  p.participants.forEach(pt=>{const c=pt.characters||{};w.document.write(`<li><strong>${c.name||'?'}</strong> (${c.race||''} ${c.class||''})${pt.xp_awarded?' — ⭐ '+pt.xp_awarded+' XP':''}</li>`);});
+  w.document.write(`</ul><h2>Logs per karakter</h2>`);
+  p.logs.forEach(l=>{
+    const c=l.characters||{};
+    w.document.write(`<div class="log-entry"><h3>${c.name||'?'}</h3>`);
+    if(l.encounters)w.document.write(`<p><strong>⚔ Ontmoetingen:</strong> ${l.encounters.replace(/\n/g,'<br>')}</p>`);
+    if(l.npcs_met)w.document.write(`<p><strong>💬 NPCs:</strong> ${l.npcs_met.replace(/\n/g,'<br>')}</p>`);
+    if(l.loot_found)w.document.write(`<p><strong>💰 Loot:</strong> ${l.loot_found.replace(/\n/g,'<br>')}</p>`);
+    if(l.player_notes)w.document.write(`<p><strong>📝 Notities:</strong> ${l.player_notes.replace(/\n/g,'<br>')}</p>`);
+    w.document.write(`</div>`);
+  });
+  w.document.write(`</body></html>`);w.document.close();
+}
+
+// =====================================================================
+// UNIVERSELE IMPORT (CSV / JSON / MD)
+// =====================================================================
+function openImportModal(table){
+  if(!CU?.is_dm){toast('Alleen voor DM',false);return;}
+  document.getElementById('imp-table-name').textContent=table;
+  document.getElementById('imp-file').value='';
+  document.getElementById('imp-text').value='';
+  document.getElementById('imp-err').textContent='';
+  document.getElementById('imp-status').textContent='';
+  document.getElementById('imp-format').value='csv';
+  window._impTable=table;
+  updateImportHint();
+  openM('imp-modal');
+}
+
+function updateImportHint(){
+  const t=window._impTable||'weapons';
+  const fmt=document.getElementById('imp-format').value;
+  const fields=(CSV_FIELDS[t]||['name','description']).join(', ');
+  let hint='';
+  if(fmt==='csv'){hint=`<strong>CSV</strong> — eerste rij = kolomnamen. Verwachte velden voor <strong>${t}</strong>: <code style="font-size:11px;">${fields}</code>. Tekst met komma's: tussen "…".`;}
+  else if(fmt==='json'){hint=`<strong>JSON</strong> — array van objecten. Voorbeeld: <code style="font-size:11px;">[{"name":"...","description":"..."}]</code>. Velden voor <strong>${t}</strong>: <code style="font-size:11px;">${fields}</code>.`;}
+  else if(fmt==='md'){hint=`<strong>Markdown-tabel</strong> — eerste regel headers, tweede regel \`|---|\` scheiders, daarna data. Velden voor <strong>${t}</strong>: <code style="font-size:11px;">${fields}</code>.`;}
+  document.getElementById('imp-hint').innerHTML=hint;
+}
+
+function parseJsonInput(text){
+  const data=JSON.parse(text);
+  if(!Array.isArray(data))throw new Error('Verwacht JSON array van objecten.');
+  return data;
+}
+
+function parseMdTable(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim().startsWith('|'));
+  if(lines.length<3)throw new Error('Markdown tabel heeft header + separator + data nodig.');
+  const parseRow=l=>l.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(c=>c.trim().replace(/\\\|/g,'|'));
+  const headers=parseRow(lines[0]).map(h=>h.toLowerCase());
+  const rows=[];
+  for(let i=2;i<lines.length;i++){
+    const cells=parseRow(lines[i]);
+    const obj={};headers.forEach((h,idx)=>{if(cells[idx]!==undefined&&cells[idx]!=='')obj[h]=cells[idx];});
+    if(obj.name)rows.push(obj);
+  }
+  return rows;
+}
+
+async function doImport(){
+  const t=window._impTable||'weapons';
+  const fmt=document.getElementById('imp-format').value;
+  let text=document.getElementById('imp-text').value;
+  const f=document.getElementById('imp-file').files?.[0];
+  if(f&&!text){text=await f.text();}
+  if(!text){document.getElementById('imp-err').textContent='Geen inhoud.';return;}
+  let records=[];
+  try{
+    if(fmt==='csv'){
+      const rows=parseCSV(text);
+      if(rows.length<2)throw new Error('CSV moet header + minstens 1 rij hebben.');
+      const header=rows[0].map(h=>h.trim().toLowerCase());
+      const allowed=new Set(CSV_FIELDS[t]||['name','description']);
+      const numFields=new Set(CSV_NUMERIC[t]||[]);
+      for(let i=1;i<rows.length;i++){
+        const obj={source:'Import'};
+        header.forEach((h,idx)=>{
+          if(!allowed.has(h))return;
+          let v=rows[i][idx]??'';v=String(v).trim();if(v==='')return;
+          if(numFields.has(h)){const n=parseInt(v);if(!isNaN(n))obj[h]=n;}else obj[h]=v;
+        });
+        if(obj.name)records.push(obj);
+      }
+    }else if(fmt==='json'){records=parseJsonInput(text);}
+    else if(fmt==='md'){records=parseMdTable(text);}
+  }catch(e){document.getElementById('imp-err').textContent='Parse-fout: '+e.message;return;}
+  // filter naar toegelaten velden
+  const allowed=new Set([...(CSV_FIELDS[t]||['name','description']),'source']);
+  const numFields=new Set(CSV_NUMERIC[t]||[]);
+  records=records.map(r=>{
+    const o={};Object.keys(r).forEach(k=>{
+      const lk=k.toLowerCase();
+      if(!allowed.has(lk))return;
+      let v=r[k];
+      if(numFields.has(lk)){v=parseInt(v);if(isNaN(v))return;}
+      o[lk]=v;
+    });
+    if(!o.source)o.source='Import';
+    return o;
+  }).filter(r=>r.name);
+  if(!records.length){document.getElementById('imp-err').textContent='Geen geldige rijen met "name" veld.';return;}
+  document.getElementById('imp-status').textContent='Importeren van '+records.length+' rijen...';
+  let ok=0;
+  for(let i=0;i<records.length;i+=100){
+    const chunk=records.slice(i,i+100);
+    const{error}=await sb.from(t).insert(chunk);
+    if(error){document.getElementById('imp-err').textContent='Fout: '+error.message;break;}
+    ok+=chunk.length;
+  }
+  try{await sb.from('csv_imports').insert({table_name:t,imported_by:CU.id,row_count:ok});}catch(e){}
+  document.getElementById('imp-status').textContent=`✓ ${ok} rijen geïmporteerd.`;
+  toast(`✓ ${ok} rijen toegevoegd aan ${t}`);
+  if(ok>0)loadEnc(t);
+  setTimeout(()=>closeM('imp-modal'),1200);
+}
 
 // KEYBOARD
 document.addEventListener('keydown',e=>{

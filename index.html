@@ -174,6 +174,7 @@
       <span class="dm-badge" id="t-dm" style="display:none">Dungeon Master</span>
       <button class="btn btn-ghost btn-sm dm-only" id="t-dmreset" style="display:none" onclick="openDMReset()">🔑 Reset</button>
       <button class="btn btn-ghost btn-sm" onclick="openM('cpw-modal')">🔑 Wachtwoord</button>
+      <button class="btn btn-ghost btn-sm" onclick="showFeatureOverview()">★ Features</button>
       <button class="btn btn-ghost btn-sm" onclick="showAppHelp()">? Help</button>
       <button class="btn btn-ghost btn-sm" onclick="doLogout()">Uitloggen</button>
     </div>
@@ -232,10 +233,16 @@
       <input class="search-input" type="text" id="enc-search" placeholder="Zoeken in encyclopedie..." oninput="filterEnc()">
       <div id="enc-content"><div style="padding:40px;text-align:center;color:var(--ink3);font-style:italic;">Kies een categorie...</div></div>
     </div>
+    <div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="openExportModal('encyclopedia')">📤 Exporteren (CSV/JSON/MD/PDF)</button>
+        <button class="btn btn-ghost btn-sm dm-only" style="display:none;" onclick="openImportModal(encCurrentTable||'weapons')">📥 Importeren (CSV/JSON/MD)</button>
+      </div>
+    </div>
     <div class="card dm-only" id="enc-add-card" style="display:none;">
       <div class="card-header">
         + Toevoegen aan Database (DM)
-        <button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="openCsvImport()" title="Importeer meerdere items uit een CSV bestand">📥 CSV importeren</button>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="openCsvImport()" title="Legacy CSV importvenster">📥 CSV</button>
       </div>
       <div id="enc-add-form"></div>
     </div>
@@ -343,6 +350,47 @@
   </div>
 </div>
 
+<!-- FEATURE OVERVIEW MODAL -->
+<div class="modal-overlay" id="feat-modal">
+  <div class="modal" style="max-width:720px;">
+    <div class="modal-header"><h2>★ Alle Features</h2><button class="modal-close" onclick="closeM('feat-modal')">✕</button></div>
+    <div class="modal-body" id="feat-body">Laden...</div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="exp-modal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header"><h2>📤 Exporteren</h2><button class="modal-close" onclick="closeM('exp-modal')">✕</button></div>
+    <div class="modal-body" id="exp-body">Laden...</div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL (multi-format) -->
+<div class="modal-overlay" id="imp-modal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header"><h2>📥 Importeren — <span id="imp-table-name">…</span></h2><button class="modal-close" onclick="closeM('imp-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Formaat</label>
+        <select id="imp-format" onchange="updateImportHint()">
+          <option value="csv">CSV (komma-gescheiden)</option>
+          <option value="json">JSON (array van objecten)</option>
+          <option value="md">Markdown (tabel)</option>
+        </select>
+      </div>
+      <div id="imp-hint" style="background:rgba(196,160,96,.1);border:1px solid var(--card-border);border-radius:4px;padding:10px;font-size:12px;margin-bottom:10px;"></div>
+      <div class="fg"><label>Bestand uploaden</label><input type="file" id="imp-file" accept=".csv,.json,.md,.txt"></div>
+      <div class="fg"><label>Of plak inhoud direct</label><textarea id="imp-text" rows="8" style="width:100%;font-family:monospace;font-size:12px;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;"></textarea></div>
+      <div id="imp-status" style="font-size:13px;color:var(--ink3);"></div>
+      <div class="err" id="imp-err"></div>
+      <div style="text-align:right;margin-top:12px;">
+        <button class="btn btn-ghost btn-sm" onclick="closeM('imp-modal')">Annuleren</button>
+        <button class="btn btn-primary btn-sm" onclick="doImport()">📥 Importeren</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- CSV IMPORT MODAL -->
 <div class="modal-overlay" id="csv-modal">
   <div class="modal" style="max-width:600px;">
@@ -373,6 +421,28 @@
 </div>
 
 <div class="status-toast" id="toast"></div>
+
+<!-- DEVELOPER ATTRIBUTION -->
+<footer class="dev-footer">
+  <a href="https://shiftedmake.com" target="_blank" rel="noopener" class="dev-link" title="Ontwikkeld door SHiftEDmake">
+    <span class="dev-logo" aria-hidden="true">
+      <svg width="26" height="26" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="46" fill="#d9d6f0" opacity="0.55"/>
+        <polygon points="50,18 82,36 82,64 50,82 18,64 18,36" fill="none" stroke="#1b1d3a" stroke-width="2"/>
+        <polygon points="50,18 82,36 50,50 18,36" fill="#3fb9b0"/>
+        <polygon points="82,36 82,64 50,82 50,50" fill="#eb5a6a"/>
+        <polygon points="18,36 18,64 50,82 50,50" fill="#6fd7b2"/>
+        <line x1="50" y1="18" x2="50" y2="50" stroke="#1b1d3a" stroke-width="2"/>
+        <line x1="18" y1="36" x2="50" y2="50" stroke="#1b1d3a" stroke-width="2"/>
+        <line x1="82" y1="36" x2="50" y2="50" stroke="#1b1d3a" stroke-width="2"/>
+      </svg>
+    </span>
+    <span class="dev-text">
+      Ontwikkeld door <strong>SH<span style="color:#3fb9b0">ift</span><span style="color:#6248a6">ED</span><span style="color:#e8a947">make</span></strong>
+      <small>van Droom naar Werkelijkheid · shiftedmake.com</small>
+    </span>
+  </a>
+</footer>
 
 <script>
 const SB_URL='https://otyubyxzvwlaazoszcgi.supabase.co';
