@@ -1,0 +1,28 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Node (alleen voor lokale netlify-cli testing)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Netlify lokaal
+.netlify/
+
+# Env files (NOOIT API keys committen!)
+.env
+.env.local
+.env.*.local
+
+# Backups
+*.bak
+*.orig
+~$*
+
+# Claude Code workspace
+.claude/

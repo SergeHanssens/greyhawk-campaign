@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greyhawk — DM Handleiding (Vertrouwelijk)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+:root{--parch:#fdf5e0;--ink:#2a1a0a;--ink3:#7a5030;--border:#8a6030;--rust:#8a2010;--rust2:#c03020;--blue2:#2a5a9a;--divider:#c4a060;--dm:#1a1030;--dm2:#4a3a7a;--dmt:#c0a0f0;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0e0820;font-family:'Crimson Text',serif;padding:20px;}
+.page{max-width:820px;margin:0 auto;background:var(--parch);border:2px solid var(--border);border-radius:6px;padding:36px;position:relative;}
+.page::before{content:'';position:absolute;inset:8px;border:1px solid var(--divider);border-radius:3px;pointer-events:none;}
+h1{font-family:'Cinzel',serif;font-size:28px;color:var(--dm2);text-align:center;margin-bottom:4px;}
+.sub{text-align:center;font-style:italic;color:var(--ink3);font-size:14px;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--border);}
+h2{font-family:'Cinzel',serif;font-size:17px;color:var(--dm2);margin:24px 0 10px;padding-bottom:5px;border-bottom:1px solid rgba(74,58,122,.3);}
+h3{font-family:'Cinzel',serif;font-size:13px;color:var(--ink3);margin:14px 0 6px;}
+p{font-size:14px;color:var(--ink);line-height:1.75;margin-bottom:10px;}
+.box{background:rgba(139,96,48,.08);border:1px solid var(--divider);border-radius:4px;padding:12px 16px;margin:10px 0;}
+.dm-box{background:rgba(26,16,48,.08);border:1px solid rgba(74,58,122,.3);border-radius:4px;padding:12px 16px;margin:10px 0;}
+.dm-box::before{content:'🔒 DM ONLY: ';font-family:'Cinzel',serif;font-size:10px;font-weight:600;color:var(--dm2);letter-spacing:.5px;}
+.warn{background:rgba(138,32,16,.06);border:1px solid rgba(138,32,16,.25);border-radius:4px;padding:10px 14px;margin:10px 0;}
+.step{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;}
+.n{background:var(--dm2);color:#e0d0f0;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:12px;font-weight:600;flex-shrink:0;margin-top:1px;}
+.sc{flex:1;}
+.sc strong{display:block;font-size:14px;color:var(--ink);margin-bottom:3px;}
+.sc p{margin:0;font-size:13px;}
+code{background:rgba(74,58,122,.1);border:1px solid rgba(74,58,122,.2);border-radius:3px;padding:1px 6px;font-family:monospace;font-size:12px;color:var(--dm2);}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;}
+th{background:rgba(74,58,122,.12);padding:7px 10px;text-align:left;font-family:'Cinzel',serif;font-size:10px;color:var(--ink3);letter-spacing:.5px;border-bottom:1px solid rgba(74,58,122,.2);}
+td{padding:7px 10px;border-bottom:1px dotted rgba(196,160,96,.3);}
+.ornament{text-align:center;color:var(--divider);font-size:18px;margin:20px 0;letter-spacing:8px;}
+.btn{font-family:'Cinzel',serif;font-size:12px;padding:8px 20px;border-radius:4px;cursor:pointer;border:2px solid var(--dm2);background:var(--dm2);color:#e0d0f0;margin-bottom:16px;}
+@media print{.btn{display:none;}.page{border:none;padding:20px;}}
+</style>
+</head>
+<body>
+<div class="page">
+<button class="btn" onclick="window.print()">🖨️ Afdrukken / PDF opslaan</button>
+
+<h1>Greyhawk Campaign Manager</h1>
+<div class="sub">Dungeon Master Handleiding — Vertrouwelijk · Niet delen met spelers</div>
+
+<div class="dm-box" style="margin-bottom:20px;">
+DM Code: <code>GREYHAWK_DM_2025</code> · Deel dit NIET met spelers · App: greyhawk-frostbraid.netlify.app
+</div>
+
+<h2>1. DM Account aanmaken</h2>
+<div class="step"><div class="n">1</div><div class="sc"><strong>Ga naar de app-link</strong></div></div>
+<div class="step"><div class="n">2</div><div class="sc"><strong>Klik "Nieuw account aanmaken"</strong><p>Kies gebruikersnaam (bv. <code>bart_dm</code>) en wachtwoord (min. 6 tekens).</p></div></div>
+<div class="step"><div class="n">3</div><div class="sc"><strong>Vul de DM Code in</strong><p>Typ <code>GREYHAWK_DM_2025</code> in het DM Code veld. Vervolgens verschijnt een extra sectie voor je <strong>veiligheidsvraag</strong>.</p></div></div>
+<div class="step"><div class="n">4</div><div class="sc"><strong>Stel een veiligheidsvraag in</strong><p>Kies een vraag die alleen jij weet, bv. "Wat is de naam van mijn eerste karakter?" + antwoord. Dit gebruik je als je ooit je wachtwoord vergeet.</p></div></div>
+<div class="step"><div class="n">5</div><div class="sc"><strong>Log in → je ziet "Dungeon Master" badge + extra tabblad "DM Dashboard"</strong></div></div>
+
+<h2>2. DM Dashboard</h2>
+<p>Het tabblad <strong>DM Dashboard</strong> toont alle karakters van alle spelers in één overzicht.</p>
+<table>
+<tr><th>Wat je ziet</th><th>Betekenis</th></tr>
+<tr><td>HP balk groen</td><td>Speler is gezond (>50% HP)</td></tr>
+<tr><td>HP balk geel</td><td>Speler gewond (25-50% HP)</td></tr>
+<tr><td>HP balk rood</td><td>Speler in gevaar (<25% HP)</td></tr>
+<tr><td>Uitgevaagde kaart</td><td>Karakter staat op inactief</td></tr>
+<tr><td>🔒 preview tekst</td><td>Jouw privé DM-notitie voor dit karakter</td></tr>
+</table>
+<p>Klik op een karakterkaart om het volledig te openen en te bewerken.</p>
+
+<h2>3. Karakters bewerken als DM</h2>
+<p>Als DM kan je <strong>alle karakters van alle spelers</strong> bekijken en aanpassen:</p>
+<div class="box">
+✓ HP aanpassen (schade na gevecht, genezing)<br>
+✓ XP toekennen na sessie<br>
+✓ Items/wapens/vaardigheden/spreuken toevoegen of verwijderen<br>
+✓ Alle statistieken aanpassen (level-up)<br>
+✓ Privé DM notities schrijven<br>
+✓ Sessie-aantekeningen bijhouden<br>
+✓ Karakters inactief zetten of verwijderen
+</div>
+
+<h3>HP aanpassen na gevecht</h3>
+<div class="step"><div class="n">1</div><div class="sc"><strong>Open het karakter via DM Dashboard</strong></div></div>
+<div class="step"><div class="n">2</div><div class="sc"><strong>Klik op het HP getal</strong><p>Het veld wordt bewerkbaar met een stippellijn. Typ het nieuwe getal.</p></div></div>
+<div class="step"><div class="n">3</div><div class="sc"><strong>Druk Enter of klik ergens anders</strong><p>Automatisch opgeslagen. De speler ziet dit bij de volgende login.</p></div></div>
+
+<h2>4. DM Privé Notities & Sessie-aantekeningen</h2>
+<div class="dm-box">Privé Notities: onderaan elk karakterblad in een paars kader. <strong>Alleen jij ziet dit.</strong> Gebruik voor: geheimen over het karakter, geplande verhaalontwikkelingen, zwaktes...</div>
+<div class="dm-box">Sessie-aantekeningen: tweede paars kader. <strong>Alleen jij ziet dit.</strong> Gebruik voor: bijhouden wat de speler deed deze sessie, op basis waarvan je XP gaat toekennen, interessante momenten voor verhaalontwikkeling.</div>
+
+<h2>5. Logboek</h2>
+<p>Klik <strong>📋 Logboek</strong> op een karakter voor een volledig overzicht van alle wijzigingen (wie, wat, wanneer, oude → nieuwe waarde).</p>
+<p>Spelers zien <strong>automatisch</strong> jouw wijzigingen bij de volgende keer dat ze het karakter openen. Ze hoeven niet zelf het logboek te checken.</p>
+
+<h2>6. Wachtwoord resetten van speler</h2>
+<div class="step"><div class="n">1</div><div class="sc"><strong>Klik "🔑 Reset" rechtsboven in de app</strong></div></div>
+<div class="step"><div class="n">2</div><div class="sc"><strong>Kies de speler en stel een tijdelijk wachtwoord in</strong><p>Bv. <code>Greyhawk2025</code> — geef dit mondeling mee aan de speler.</p></div></div>
+<div class="step"><div class="n">3</div><div class="sc"><strong>De speler logt in met dit tijdelijk wachtwoord</strong><p>Ze worden automatisch verplicht een nieuw persoonlijk wachtwoord te kiezen.</p></div></div>
+
+<h2>7. Encyclopedie beheren</h2>
+<p>Als DM zie je in de Encyclopedie tab een <strong>✏ bewerk-icoon</strong> naast elk item en een <strong>+ Toevoegen</strong> formulier onderaan.</p>
+<table>
+<tr><th>Actie</th><th>Hoe</th></tr>
+<tr><td>Item bewerken</td><td>Klik ✏ → pas velden aan → Opslaan</td></tr>
+<tr><td>Item verwijderen</td><td>Klik ✏ → Verwijderen knop</td></tr>
+<tr><td>Nieuw item toevoegen</td><td>Kies categorie → vul formulier in onderaan → Toevoegen</td></tr>
+<tr><td>Homebrew monster</td><td>Tab Monsters → + formulier onderaan</td></tr>
+<tr><td><strong>📥 CSV importeren</strong></td><td>Klik <strong>📥 CSV importeren</strong> rechtsboven het + formulier. Upload een CSV-bestand of plak inhoud direct. Eerste rij = kolomnamen.</td></tr>
+</table>
+<p>Alles wat je toevoegt is meteen beschikbaar voor spelers als ze wapens/items zoeken.</p>
+
+<h3>CSV importeren — voorbeeld</h3>
+<p>Per categorie zijn er verwachte kolommen (zie tooltip in het importvenster). Voorbeeld voor <code>monsters</code>:</p>
+<div class="box">
+<code style="white-space:pre;font-size:11px;">name,ac,hp_dice,thac0,damage,move,alignment,description
+Goblin Chief,4,3+1,18,1d8+2,9,"Lawful Evil",Leider van een goblin-clan
+Wolf Pack Alpha,6,3+3,16,1d6+2,18,"Neutral",Grootste wolf in een roedel</code>
+</div>
+<p>Tekstvelden met komma's: tussen aanhalingstekens (<code>"…"</code>). Onbekende kolommen worden genegeerd. Kolom <code>name</code> is altijd verplicht.</p>
+
+<h2>7b. Scan-functie voor karakterbladen 📷</h2>
+<p>Spelers (en jij) kunnen een foto van een handgeschreven karakterblad inscannen. Claude (Anthropic API) leest de gegevens automatisch uit en stelt een nieuw karakter voor.</p>
+<div class="dm-box">
+<strong>Vereist:</strong> Deze functie werkt enkel als de app op <strong>Netlify</strong> draait (niet op gewone GitHub Pages) én als <code>ANTHROPIC_API_KEY</code> als environment variable is ingesteld.<br>
+<strong>Setup (eenmalig):</strong> zie README onder "Optioneel: scan-functie via Netlify". Geschatte kost: gratis Netlify tier + ~€0,01 per scan via Anthropic API.
+</div>
+
+<h2>8. Karakter inactief / verwijderen</h2>
+<p><strong>Inactief:</strong> Klik <strong>⏸ Inactief</strong> op het karakterblad. Het karakter is nog bewaard maar verdwijnt iets uit het zicht. Kan altijd opnieuw geactiveerd worden met <strong>✓ Activeren</strong>.</p>
+<p><strong>Verwijderen:</strong> Klik <strong>🗑 Verwijderen</strong> → bevestigingsvenster → definitief. Alle wapens, items, het logboek — alles wordt gewist. Niet ongedaan te maken!</p>
+
+<h2>9. Supabase — directe database toegang</h2>
+<p>Voor bulk-wijzigingen of technische problemen: ga naar <code>supabase.com</code> → jouw project → <strong>Table Editor</strong>.</p>
+<div class="box">
+Nuttige tabellen:<br>
+• <code>players</code> — alle gebruikers (zet <code>is_dm = true</code> om iemand DM te maken)<br>
+• <code>characters</code> — alle karakteren<br>
+• <code>character_log</code> — volledig wijzigingslogboek<br>
+• <code>weapons/spells/items/monsters</code> — de encyclopedie
+</div>
+
+<h2>10. GitHub & Updates</h2>
+<p>De app staat op GitHub. Updates worden automatisch actief zodra Serge het nieuwe HTML-bestand uploadt. Spelers hoeven niets te doen.</p>
+<p>Als de app offline gaat of iets kapot gaat: contacteer Serge — hij beheert de technische kant.</p>
+
+<div class="ornament">⸻ ✦ ⸻</div>
+<div class="dm-box">
+Snelle referentie:<br>
+DM Code: <code>GREYHAWK_DM_2025</code><br>
+Database: supabase.com → greyhawk-dnd project<br>
+App: greyhawk-frostbraid.netlify.app<br>
+GitHub: github.com/SergeHanssens/greyhawk-campaign (of vergelijkbaar)
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# Netlify configuratie voor Greyhawk Campaign Manager
+#
+# Optioneel: deze repo werkt 100% op GitHub Pages zonder Netlify.
+# Deploy op Netlify alleen als je de scan-functie wilt gebruiken
+# (foto van handgeschreven karakterblad → automatisch karakter aanmaken).
+#
+# Vergeet niet ANTHROPIC_API_KEY in te stellen via:
+#   Site settings → Build & deploy → Environment → Environment variables
+
+[build]
+  publish = "."
+  functions = "netlify/functions"
+  command = "echo 'Static site — no build step'"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Vriendelijke fallback voor 404
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greyhawk Campaign Manager</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<!-- TOOLTIP -->
+<div class="tt-overlay" id="tt-overlay" onclick="if(event.target===this)closeTT()">
+  <div class="tt-box">
+    <button class="tt-close" onclick="closeTT()">✕</button>
+    <h3 id="tt-title"></h3>
+    <div id="tt-body"></div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Greyhawk</div>
+    <div class="login-sub">Campaign Manager — AD&amp;D</div>
+    <div class="fg"><label>Gebruikersnaam</label><input type="text" id="lu" autocomplete="username"></div>
+    <div class="fg"><label>Wachtwoord</label><input type="password" id="lp" autocomplete="current-password"></div>
+    <div id="le" class="err"></div>
+    <br>
+    <button class="btn btn-primary btn-block" onclick="doLogin()">Betreed de Campagne</button>
+    <br><br>
+    <button class="btn btn-ghost btn-sm" onclick="openM('reg-modal')">Nieuw account aanmaken</button>
+  </div>
+</div>
+
+<!-- MODALS -->
+<!-- Register -->
+<div class="modal-overlay" id="reg-modal">
+<div class="modal"><h2>Nieuw Account <button class="modal-close" onclick="closeM('reg-modal')">✕</button></h2>
+  <div class="fg-row col2">
+    <div class="fg"><label>Gebruikersnaam <span class="req">*</span></label><input type="text" id="ru"></div>
+    <div class="fg"><label>Wachtwoord <span class="req">*</span><small>Min. 6 tekens</small></label><input type="password" id="rp"></div>
+  </div>
+  <div class="fg"><label>DM Code <small>Laat leeg als speler — vraag de DM</small></label><input type="text" id="rd" placeholder="Alleen voor de DM"></div>
+  <div class="fg" id="reg-sq-wrap" style="display:none">
+    <label>Veiligheidsvraag (voor DM) <span class="req">*</span><small>Stel een vraag in om je wachtwoord te resetten</small></label>
+    <input type="text" id="rsq" placeholder="bv. Wat is de naam van je eerste karakter?">
+    <br><br>
+    <label>Antwoord op veiligheidsvraag <span class="req">*</span></label>
+    <input type="text" id="rsa" placeholder="Je antwoord (niet hoofdlettergevoelig)">
+  </div>
+  <div id="re" class="err"></div><br>
+  <button class="btn btn-primary" onclick="doRegister()">Account aanmaken</button>
+</div></div>
+
+<!-- New Character -->
+<div class="modal-overlay" id="nc-modal">
+<div class="modal"><h2>Nieuw Karakter <button class="modal-close" onclick="closeM('nc-modal')">✕</button></h2>
+  <div class="fg-row col2">
+    <div class="fg"><label>Karakternaam <span class="req">*</span></label><input type="text" id="nc-name"></div>
+    <div class="fg"><label>Jouw naam (speler)</label><input type="text" id="nc-player"></div>
+  </div>
+  <div class="fg-row col2">
+    <div class="fg"><label>Ras <span class="req">*</span> <button class="help-btn" onclick="showHelp('ras')">?</button></label>
+      <select id="nc-race" onchange="updateClasses()">
+        <option>Human</option><option>Dwarf</option><option>Elf</option><option>Gnome</option>
+        <option>Half-Elf</option><option>Halfling</option><option>Half-Orc</option>
+      </select>
+    </div>
+    <div class="fg"><label>Klasse <span class="req">*</span> <button class="help-btn" onclick="showHelp('klasse')">?</button><small>Beperkt per ras</small></label>
+      <select id="nc-class"></select>
+    </div>
+  </div>
+  <div class="fg-row col2">
+    <div class="fg"><label>Gezindheid <button class="help-btn" onclick="showHelp('gezindheid')">?</button></label>
+      <select id="nc-align">
+        <option>Lawful Good</option><option>Neutral Good</option><option>Chaotic Good</option>
+        <option>Lawful Neutral</option><option selected>True Neutral</option><option>Chaotic Neutral</option>
+        <option>Lawful Evil</option><option>Neutral Evil</option><option>Chaotic Evil</option>
+      </select>
+    </div>
+    <div class="fg"><label>Geslacht</label>
+      <select id="nc-sex"><option>Male</option><option>Female</option><option>Other</option></select>
+    </div>
+  </div>
+  <div id="nc-err" class="err"></div><br>
+  <button class="btn btn-primary" onclick="createChar()">Karakter Aanmaken</button>
+</div></div>
+
+<!-- Add Item/Weapon/Skill/Spell -->
+<div class="modal-overlay" id="add-modal">
+<div class="modal"><h2 id="add-modal-title">Toevoegen <button class="modal-close" onclick="closeM('add-modal')">✕</button></h2>
+  <p style="font-size:13px;color:var(--ink3);font-style:italic;margin-bottom:10px;">Zoek in de Greyhawk database of vul zelf in:</p>
+  <div class="filter-bar" id="add-filter-bar" style="display:none">
+    <label>Filtertype:</label>
+    <select id="add-type-filter" onchange="filterAddResults()">
+      <option value="">Alle types</option>
+    </select>
+  </div>
+  <input class="search-input" type="text" id="add-search" placeholder="Zoeken..." oninput="searchAddItems(this.value)" style="margin-bottom:8px;">
+  <div class="select-list" id="add-results"><div style="padding:20px;text-align:center;color:var(--ink3);font-style:italic;">Laden...</div></div>
+  <div id="add-form"></div>
+</div></div>
+
+<!-- Changelog -->
+<div class="modal-overlay" id="log-modal">
+<div class="modal"><h2>📋 Logboek <button class="modal-close" onclick="closeM('log-modal')">✕</button></h2>
+  <div id="log-body"><div style="padding:20px;text-align:center;color:var(--ink3);font-style:italic;">Laden...</div></div>
+</div></div>
+
+<!-- Change Password -->
+<div class="modal-overlay" id="cpw-modal">
+<div class="modal"><h2 id="cpw-title">Wachtwoord Wijzigen <button class="modal-close" onclick="closeM('cpw-modal')">✕</button></h2>
+  <p id="cpw-msg" style="color:var(--rust2);font-size:13px;font-style:italic;margin-bottom:12px;display:none;background:rgba(138,32,16,.08);border:1px solid rgba(138,32,16,.2);border-radius:4px;padding:10px;">⚠ De DM heeft een tijdelijk wachtwoord ingesteld. Kies een nieuw persoonlijk wachtwoord.</p>
+  <div class="fg"><label>Huidig / Tijdelijk wachtwoord <span class="req">*</span></label><input type="password" id="cpw-cur"></div>
+  <div class="fg"><label>Nieuw wachtwoord <span class="req">*</span><small>Min. 6 tekens</small></label><input type="password" id="cpw-new"></div>
+  <div class="fg"><label>Bevestig nieuw wachtwoord <span class="req">*</span></label><input type="password" id="cpw-conf"></div>
+  <div id="cpw-err" class="err"></div><br>
+  <button class="btn btn-primary" onclick="doChangePw()">Wachtwoord Wijzigen</button>
+</div></div>
+
+<!-- DM Reset Password -->
+<div class="modal-overlay" id="dmreset-modal">
+<div class="modal"><h2>🔑 Wachtwoord Resetten <button class="modal-close" onclick="closeM('dmreset-modal')">✕</button></h2>
+  <p style="font-size:13px;color:var(--ink2);margin-bottom:14px;">Stel een tijdelijk wachtwoord in. De speler moet dit bij de volgende login wijzigen.</p>
+  <div class="fg"><label>Speler <span class="req">*</span></label><select id="dmr-player" style="width:100%;padding:9px;border:1.5px solid var(--card-border);border-radius:4px;font-family:'Crimson Text',serif;font-size:14px;"></select></div>
+  <div class="fg"><label>Tijdelijk wachtwoord <span class="req">*</span><small>Deel dit mondeling mee aan de speler</small></label><input type="text" id="dmr-pw" placeholder="bv. Greyhawk2025"></div>
+  <div id="dmr-err" class="err"></div><br>
+  <button class="btn btn-primary" onclick="doDMReset()">Tijdelijk wachtwoord instellen</button>
+</div></div>
+
+<!-- Info -->
+<div class="modal-overlay" id="info-modal">
+<div class="modal"><h2 id="info-title"> <button class="modal-close" onclick="closeM('info-modal')">✕</button></h2>
+  <div id="info-body" style="font-size:14px;line-height:1.75;color:var(--ink);"></div>
+</div></div>
+
+<!-- DB Edit Modal (DM) -->
+<div class="modal-overlay" id="dbedit-modal">
+<div class="modal"><h2 id="dbedit-title">Item bewerken <button class="modal-close" onclick="closeM('dbedit-modal')">✕</button></h2>
+  <div id="dbedit-form"></div>
+  <div id="dbedit-err" class="err"></div><br>
+  <div style="display:flex;gap:10px;">
+    <button class="btn btn-primary" onclick="submitDBEdit()">Opslaan</button>
+    <button class="btn btn-danger" onclick="deleteDBItem()">Verwijderen</button>
+  </div>
+</div></div>
+
+<!-- Confirm Delete Character -->
+<div class="modal-overlay" id="delchar-modal">
+<div class="modal"><h2 style="color:var(--rust2);">⚠ Karakter Verwijderen <button class="modal-close" onclick="closeM('delchar-modal')">✕</button></h2>
+  <p style="font-size:14px;color:var(--ink);margin-bottom:16px;">Ben je zeker dat je karakter <strong id="delchar-name"></strong> permanent wil verwijderen?</p>
+  <div style="background:rgba(138,32,16,.08);border:1px solid rgba(138,32,16,.2);border-radius:4px;padding:12px;margin-bottom:16px;font-size:13px;color:var(--rust2);">
+    ⚠ Dit kan NIET ongedaan gemaakt worden. Alle wapens, items, vaardigheden en het logboek worden ook verwijderd.
+  </div>
+  <div style="display:flex;gap:10px;">
+    <button class="btn btn-danger" onclick="confirmDeleteChar()">Ja, definitief verwijderen</button>
+    <button class="btn btn-ghost" onclick="closeM('delchar-modal')">Annuleren</button>
+  </div>
+</div></div>
+
+<!-- Help Modal -->
+<div class="modal-overlay" id="help-modal">
+<div class="modal" style="max-width:800px;"><h2>? App Handleiding <button class="modal-close" onclick="closeM('help-modal')">✕</button></h2>
+  <div id="help-body" style="font-size:13px;line-height:1.75;color:var(--ink);"></div>
+</div></div>
+
+<!-- APP -->
+<div id="app" style="display:flex;flex-direction:column;min-height:100vh;">
+  <div class="topbar">
+    <div class="topbar-brand">Greyhawk Campaign</div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="t-user"></span>
+      <span class="dm-badge" id="t-dm" style="display:none">Dungeon Master</span>
+      <button class="btn btn-ghost btn-sm dm-only" id="t-dmreset" style="display:none" onclick="openDMReset()">🔑 Reset</button>
+      <button class="btn btn-ghost btn-sm" onclick="openM('cpw-modal')">🔑 Wachtwoord</button>
+      <button class="btn btn-ghost btn-sm" onclick="showAppHelp()">? Help</button>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Uitloggen</button>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="nav-tab active" onclick="showPage('characters')">Karakters</div>
+    <div class="nav-tab" onclick="showPage('sheet')">Character Sheet</div>
+    <div class="nav-tab" onclick="showPage('encyclopedia')">Encyclopedie</div>
+    <div class="nav-tab dm-only" onclick="showPage('dm')" style="display:none">DM Dashboard</div>
+  </div>
+
+  <!-- CHARACTERS -->
+  <div class="page active" id="page-characters">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+      <h2 style="font-family:'Cinzel',serif;font-size:22px;color:var(--gold2);">Mijn Karakters</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="openScanModal()" title="Foto van handgeschreven karakterblad inlezen">📷 Scan karakterblad</button>
+        <button class="btn btn-primary btn-sm" onclick="openNewChar()">+ Nieuw Karakter</button>
+      </div>
+    </div>
+    <div class="char-grid" id="chars-grid"><div style="padding:40px;text-align:center;color:var(--gold);font-style:italic;">Laden...</div></div>
+  </div>
+
+  <!-- SHEET -->
+  <div class="page" id="page-sheet">
+    <div id="sheet-content"><div style="padding:60px;text-align:center;color:var(--gold);font-style:italic;">Selecteer een karakter om te bekijken.</div></div>
+  </div>
+
+  <!-- ENCYCLOPEDIA -->
+  <div class="page" id="page-encyclopedia">
+    <div class="card">
+      <div class="card-header">Greyhawk Encyclopedie</div>
+      <div class="db-tabs" id="enc-tabs">
+        <div class="db-tab active" onclick="loadEnc('weapons',event)">Wapens</div>
+        <div class="db-tab" onclick="loadEnc('spells',event)">Spreuken</div>
+        <div class="db-tab" onclick="loadEnc('items',event)">Items</div>
+        <div class="db-tab" onclick="loadEnc('races',event)">Rassen</div>
+        <div class="db-tab" onclick="loadEnc('classes',event)">Klassen</div>
+        <div class="db-tab" onclick="loadEnc('skills',event)">Vaardigheden</div>
+        <div class="db-tab" onclick="loadEnc('monsters',event)">Monsters</div>
+      </div>
+      <div class="filter-bar" id="enc-filter-bar">
+        <label>Filter:</label>
+        <select id="enc-type-filter" onchange="filterEnc()"><option value="">Alle types</option></select>
+      </div>
+      <input class="search-input" type="text" id="enc-search" placeholder="Zoeken in encyclopedie..." oninput="filterEnc()">
+      <div id="enc-content"><div style="padding:40px;text-align:center;color:var(--ink3);font-style:italic;">Kies een categorie...</div></div>
+    </div>
+    <div class="card dm-only" id="enc-add-card" style="display:none;">
+      <div class="card-header">
+        + Toevoegen aan Database (DM)
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="openCsvImport()" title="Importeer meerdere items uit een CSV bestand">📥 CSV importeren</button>
+      </div>
+      <div id="enc-add-form"></div>
+    </div>
+  </div>
+
+  <!-- DM DASHBOARD -->
+  <div class="page" id="page-dm">
+    <div class="card">
+      <div class="card-header" style="color:var(--dm-text);">🔒 DM Dashboard — Alle Karakters</div>
+      <div class="char-grid" id="dm-grid"><div style="padding:40px;text-align:center;color:var(--ink3);font-style:italic;">Laden...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SCAN MODAL -->
+<div class="modal-overlay" id="scan-modal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header"><h2>📷 Scan Karakterblad</h2><button class="modal-close" onclick="closeM('scan-modal')">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Maak een foto van je handgeschreven AD&D karakterblad. Claude leest de gegevens automatisch in en maakt een nieuw karakter aan.</p>
+      <div id="scan-warn" style="display:none;background:rgba(196,160,96,.15);border:1px solid var(--gold);border-radius:4px;padding:10px;font-size:12px;margin-bottom:10px;">
+        <strong>⚠ Scan-functie niet beschikbaar</strong><br>
+        Deze functie vereist een Netlify deployment met <code>ANTHROPIC_API_KEY</code>. Op GitHub Pages werkt deze knop niet — gebruik in plaats daarvan "+ Nieuw Karakter" en vul handmatig in.
+      </div>
+      <div class="fg">
+        <label>Foto van karakterblad</label>
+        <input type="file" id="scan-file" accept="image/jpeg,image/png,image/webp" onchange="previewScan(this)">
+      </div>
+      <div id="scan-preview" style="display:none;text-align:center;margin:10px 0;">
+        <img id="scan-img" style="max-width:100%;max-height:300px;border:1px solid var(--card-border);border-radius:4px;">
+      </div>
+      <div id="scan-status" style="font-style:italic;color:var(--ink3);font-size:13px;margin-top:8px;"></div>
+      <div class="err" id="scan-err"></div>
+      <div style="text-align:right;margin-top:14px;">
+        <button class="btn btn-ghost btn-sm" onclick="closeM('scan-modal')">Annuleren</button>
+        <button class="btn btn-primary btn-sm" id="scan-go" onclick="doScan()" disabled>🔍 Inlezen met Claude</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCAN RESULT MODAL -->
+<div class="modal-overlay" id="scan-result-modal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header"><h2>✓ Karakter herkend</h2><button class="modal-close" onclick="closeM('scan-result-modal')">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Controleer en pas aan waar nodig. Klik dan "Karakter aanmaken".</p>
+      <div id="scan-result-form"></div>
+      <div class="err" id="scan-result-err"></div>
+      <div style="text-align:right;margin-top:14px;">
+        <button class="btn btn-ghost btn-sm" onclick="closeM('scan-result-modal')">Annuleren</button>
+        <button class="btn btn-success btn-sm" onclick="confirmScanResult()">✓ Karakter aanmaken</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CSV IMPORT MODAL -->
+<div class="modal-overlay" id="csv-modal">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header"><h2>📥 CSV Import — <span id="csv-table-name">…</span></h2><button class="modal-close" onclick="closeM('csv-modal')">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Upload een CSV-bestand met als eerste rij de kolomnamen. Onbekende kolommen worden genegeerd.</p>
+      <div style="background:rgba(196,160,96,.1);border:1px solid var(--card-border);border-radius:4px;padding:10px;font-size:12px;margin-bottom:10px;">
+        <strong>Verwachte kolommen voor <span id="csv-table-name2">…</span>:</strong><br>
+        <code id="csv-cols-hint" style="font-family:monospace;font-size:11px;"></code><br>
+        <small style="color:var(--ink3);">Velden: gescheiden door komma. Tekst met komma's: tussen aanhalingstekens. Kolom <code>name</code> is verplicht.</small>
+      </div>
+      <div class="fg">
+        <label>CSV bestand</label>
+        <input type="file" id="csv-file" accept=".csv,text/csv">
+      </div>
+      <div class="fg">
+        <label>Of plak CSV inhoud direct</label>
+        <textarea id="csv-text" rows="6" placeholder="name,description&#10;Voorbeeld,Een korte beschrijving" style="width:100%;font-family:monospace;font-size:12px;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;"></textarea>
+      </div>
+      <div id="csv-status" style="font-size:13px;color:var(--ink3);"></div>
+      <div class="err" id="csv-err"></div>
+      <div style="text-align:right;margin-top:14px;">
+        <button class="btn btn-ghost btn-sm" onclick="closeM('csv-modal')">Annuleren</button>
+        <button class="btn btn-primary btn-sm" onclick="doCsvImport()">📥 Importeren</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="status-toast" id="toast"></div>
+
+<script>
+const SB_URL='https://otyubyxzvwlaazoszcgi.supabase.co';
+const SB_KEY='sb_publishable_hbiG9tLK1tsVx7hlOxHbzw_YYDkjw08';
+const DM_CODE='GREYHAWK_DM_2025';
+const {createClient}=supabase;
+const sb=createClient(SB_URL,SB_KEY);
+</script>
+<script src="assets/app.js" defer></script>
+</body>
+</html>
