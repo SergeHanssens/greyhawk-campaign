@@ -1,260 +1,299 @@
 -- =====================================================================
--- Greyhawk Campaign Manager — Database Schema
+-- Greyhawk Campaign Manager — Database Schema (v3, authoritatief)
 -- =====================================================================
--- Run dit bestand EERST in de Supabase SQL Editor.
--- Daarna: run 02_seed.sql voor de basis encyclopedie.
+-- Dit schema is een 1-op-1 consolidatie van de migraties die Serge op
+-- zijn Supabase project heeft uitgevoerd:
+--   e178e845  greyhawk_setup_sql
+--   6faf4fc0  greyhawk_complete_sql
+--   a27f33aa  disable_rls_and_grant_access_to_players
+--   de451e71  disable_rls_and_grant_broad_access_to_roles
+--   bc5332ad  disable_rls_and_grant_public_read_access
+--   d1b6ba86  greyhawk_v_3_tables
+--   107b4d0f  greyhawk_pwreset
+--   e3bee988  greyhawk_final_setup
 --
--- Veilig om meerdere keren te draaien (IF NOT EXISTS).
+-- Run dit EERST in Supabase SQL Editor, dan 02_seed.sql.
+-- Veilig om opnieuw uit te voeren (IF NOT EXISTS + ON CONFLICT).
 -- =====================================================================
 
--- Voor het genereren van UUIDs
 create extension if not exists "pgcrypto";
 
--- =====================================================================
--- GEBRUIKERS / SPELERS
--- =====================================================================
+-- ---------------------------------------------------------------------
+-- PLAYERS
+-- ---------------------------------------------------------------------
 create table if not exists public.players (
-  id                       uuid primary key default gen_random_uuid(),
-  username                 text unique not null,
-  password_hash            text,
-  is_dm                    boolean default false,
-  security_question        text,
-  security_answer_hash     text,
-  temp_password_hash       text,
-  must_change_password     boolean default false,
-  last_login               timestamptz,
-  created_at               timestamptz default now()
+  id                      uuid        primary key default gen_random_uuid(),
+  username                text        not null unique,
+  password_hash           text        not null,
+  is_dm                   boolean     default false,
+  created_at              timestamptz default now(),
+  last_login              timestamptz,
+  must_change_password    boolean     default false,
+  temp_password_hash      text,
+  email                   text,
+  security_question       text,
+  security_answer_hash    text
 );
 
--- =====================================================================
--- KARAKTERS
--- =====================================================================
--- Let op: "int" is een gereserveerd PostgreSQL keyword, daarom met quotes.
+-- ---------------------------------------------------------------------
+-- CHARACTERS
+-- ---------------------------------------------------------------------
+-- NB: "int" is een PostgreSQL keyword, vandaar de quotes.
 create table if not exists public.characters (
-  id                  uuid primary key default gen_random_uuid(),
-  player_id           uuid references public.players(id) on delete set null,
-  name                text not null,
-  player_name         text,
+  id                  uuid        primary key default gen_random_uuid(),
+  player_id           uuid        references public.players(id),
+  name                text        not null,
   race                text,
   class               text,
+  level               integer     default 1,
   alignment           text,
   sex                 text,
-  level               integer default 1,
-  hp_current          integer default 10,
-  hp_max              integer default 10,
-  ac                  text default '10',
-  thac0               integer default 20,
-  xp                  integer default 0,
-  xp_next             integer,
-  -- Ability scores
-  str                 integer,
-  dex                 integer,
-  "int"               integer,
-  wis                 integer,
-  con                 integer,
-  cha                 integer,
+  player_name         text,
+  str                 integer,   str_mod  text,
+  dex                 integer,   dex_mod  text,
+  "int"               integer,   int_mod  text,
+  wis                 integer,   wis_mod  text,
+  con                 integer,   con_mod  text,
+  cha                 integer,   cha_mod  text,
   comeliness          integer,
-  -- Modifiers (text — kan "+1/+2" of "18(00)" zijn)
-  str_mod             text,
-  dex_mod             text,
-  int_mod             text,
-  wis_mod             text,
-  con_mod             text,
-  cha_mod             text,
-  -- Saves
+  hp_current          integer,
+  hp_max              integer,
+  ac                  text,
+  thac0               integer,
+  xp                  integer     default 0,
+  xp_next             integer,
   sv_pd               integer,
   sv_rsw              integer,
   sv_pp               integer,
   sv_bw               integer,
   sv_spell            integer,
   sv_poison           integer,
-  -- Money
-  pp                  integer default 0,
-  gp                  integer default 0,
-  sp                  integer default 0,
-  cp                  integer default 0,
-  -- Profielfoto (base64 data URL — kan groot zijn)
-  avatar_url          text,
-  -- Notities
+  pp                  integer     default 0,
+  gp                  integer     default 0,
+  sp                  integer     default 0,
+  cp                  integer     default 0,
+  special_abilities   jsonb       default '[]'::jsonb,
   notes               text,
   dm_notes            text,
   dm_session_notes    text,
-  -- State
-  is_active           boolean default true,
+  avatar_url          text,
+  is_active           boolean     default true,
   created_at          timestamptz default now(),
   updated_at          timestamptz default now()
 );
 
--- =====================================================================
--- KARAKTER SUBTABELLEN
--- =====================================================================
+-- ---------------------------------------------------------------------
+-- CHARACTER SUBTABLES
+-- ---------------------------------------------------------------------
 create table if not exists public.character_weapons (
-  id                  bigserial primary key,
-  character_id        uuid references public.characters(id) on delete cascade,
-  weapon_name         text not null,
-  attacks_per_round   text default '1/1',
+  id                  serial      primary key,
+  character_id        uuid        references public.characters(id),
+  weapon_name         text        not null,
+  attack_bonus        text,
+  damage_bonus        text,
+  thac0_mod           integer     default 0,
+  attacks_per_round   text,
+  speed_factor        integer,
   damage              text,
-  speed_factor        integer default 7,
-  notes               text,
-  created_at          timestamptz default now()
+  notes               text
 );
 
 create table if not exists public.character_items (
-  id                  bigserial primary key,
-  character_id        uuid references public.characters(id) on delete cascade,
-  item_name           text not null,
-  category            text default 'item',
-  quantity            integer default 1,
-  notes               text,
-  created_at          timestamptz default now()
+  id                  serial      primary key,
+  character_id        uuid        references public.characters(id),
+  item_name           text        not null,
+  category            text        default 'item',
+  quantity            integer     default 1,
+  notes               text
 );
 
 create table if not exists public.character_skills (
-  id                  bigserial primary key,
-  character_id        uuid references public.characters(id) on delete cascade,
-  skill_name          text not null,
-  skill_type          text default 'Non-Weapon',
+  id                  serial      primary key,
+  character_id        uuid        references public.characters(id),
+  skill_name          text        not null,
+  skill_type          text,
   stat_modifier       text,
-  notes               text,
-  created_at          timestamptz default now()
+  notes               text
 );
 
 create table if not exists public.character_spells (
-  id                  bigserial primary key,
-  character_id        uuid references public.characters(id) on delete cascade,
-  spell_name          text not null,
-  spell_level         integer default 1,
+  id                  serial      primary key,
+  character_id        uuid        references public.characters(id),
+  spell_name          text        not null,
+  spell_level         integer     default 1,
   spell_class         text,
-  prepared            boolean default false,
+  prepared            boolean     default true,
   notes               text,
   created_at          timestamptz default now()
 );
 
--- =====================================================================
+-- ---------------------------------------------------------------------
 -- LOGBOEK
--- =====================================================================
+-- ---------------------------------------------------------------------
 create table if not exists public.character_log (
-  id                  bigserial primary key,
-  character_id        uuid references public.characters(id) on delete cascade,
-  user_id             uuid,
-  username            text,
-  is_dm               boolean default false,
-  beschrijving        text,
-  type                text,
-  oude_waarde         text,
-  nieuwe_waarde       text,
-  created_at          timestamptz default now()
+  id              serial      primary key,
+  character_id    uuid        references public.characters(id),
+  user_id         uuid        references public.players(id),
+  username        text,
+  is_dm           boolean     default false,
+  beschrijving    text,
+  type            text        default 'edit',
+  oude_waarde     text        default '',
+  nieuwe_waarde   text        default '',
+  created_at      timestamptz default now()
 );
 
-create index if not exists idx_log_char_created
-  on public.character_log (character_id, created_at desc);
-
 create table if not exists public.character_opens (
-  character_id        uuid references public.characters(id) on delete cascade,
-  user_id             uuid,
-  last_opened_at      timestamptz default now(),
+  character_id    uuid        not null references public.characters(id),
+  user_id         uuid        not null references public.players(id),
+  last_opened_at  timestamptz default now(),
   primary key (character_id, user_id)
 );
 
--- =====================================================================
--- ENCYCLOPEDIE TABELLEN
--- =====================================================================
+-- ---------------------------------------------------------------------
+-- SESSIES (campagne-sessies met logboek per karakter)
+-- ---------------------------------------------------------------------
+create table if not exists public.sessions (
+  id                 uuid        primary key default gen_random_uuid(),
+  name               text        not null,
+  session_date       date,
+  location           text,
+  summary            text,                              -- korte samenvatting (zichtbaar voor iedereen)
+  dm_notes           text,                              -- DM-privé notities (onzichtbaar voor spelers)
+  status             text        default 'planned',    -- planned | active | completed
+  xp_awarded_total   integer     default 0,
+  created_by         uuid        references public.players(id),
+  created_at         timestamptz default now(),
+  updated_at         timestamptz default now()
+);
+
+create table if not exists public.session_participants (
+  session_id           uuid        not null references public.sessions(id)   on delete cascade,
+  character_id         uuid        not null references public.characters(id) on delete cascade,
+  xp_awarded           integer     default 0,           -- XP specifiek voor deze speler in deze sessie
+  joined_at            timestamptz default now(),
+  primary key (session_id, character_id)
+);
+
+create table if not exists public.session_logs (
+  id              uuid        primary key default gen_random_uuid(),
+  session_id      uuid        not null references public.sessions(id)   on delete cascade,
+  character_id    uuid        not null references public.characters(id) on delete cascade,
+  player_notes    text        default '',   -- vrije tekst door de speler
+  encounters      text        default '',   -- tegen wie gevochten
+  npcs_met        text        default '',   -- wie gesproken / ontmoet
+  loot_found      text        default '',   -- wat opgepakt / verdiend
+  dm_notes        text        default '',   -- DM-privé per speler per sessie
+  created_at      timestamptz default now(),
+  updated_at      timestamptz default now(),
+  unique (session_id, character_id)
+);
+
+create index if not exists idx_session_logs_session on public.session_logs (session_id);
+create index if not exists idx_session_logs_character on public.session_logs (character_id);
+create index if not exists idx_session_participants_char on public.session_participants (character_id);
+
+-- ---------------------------------------------------------------------
+-- CSV IMPORT AUDIT
+-- ---------------------------------------------------------------------
+create table if not exists public.csv_imports (
+  id            serial      primary key,
+  table_name    text        not null,
+  imported_by   uuid        references public.players(id),
+  row_count     integer,
+  imported_at   timestamptz default now()
+);
+
+-- ---------------------------------------------------------------------
+-- ENCYCLOPEDIE
+-- ---------------------------------------------------------------------
 create table if not exists public.weapon_types (
-  id                  bigserial primary key,
-  name                text unique not null
+  id          serial      primary key,
+  name        text        not null unique,
+  description text,
+  source      text        default 'Greyhawk'
 );
 
 create table if not exists public.weapons (
-  id                  bigserial primary key,
-  name                text not null,
-  weapon_type         text,
-  damage              text,
-  speed_factor        integer,
-  weight              text,
-  type                text,
-  description         text,
-  source              text default 'Greyhawk'
+  id           serial      primary key,
+  name         text        not null,
+  damage       text,
+  speed_factor integer,
+  weight       real,
+  type         text,
+  description  text,
+  source       text        default 'Greyhawk',
+  weapon_type  text        default 'Other'
 );
-create index if not exists idx_weapons_name on public.weapons (name);
-create index if not exists idx_weapons_type on public.weapons (weapon_type);
 
 create table if not exists public.spells (
-  id                  bigserial primary key,
-  name                text not null,
-  level               integer,
-  class               text,
-  range               text,
-  duration            text,
-  area                text,
-  description         text,
-  source              text default 'Greyhawk'
+  id          serial      primary key,
+  name        text        not null,
+  level       integer,
+  class       text,
+  range       text,
+  duration    text,
+  area        text,
+  description text,
+  source      text        default 'Greyhawk'
 );
-create index if not exists idx_spells_name on public.spells (name);
-create index if not exists idx_spells_class on public.spells (class);
 
 create table if not exists public.items (
-  id                  bigserial primary key,
-  name                text not null,
-  category            text,
-  weight              text,
-  cost                text,
-  description         text,
-  source              text default 'Greyhawk'
+  id          serial      primary key,
+  name        text        not null,
+  category    text,
+  weight      real,
+  cost        text,
+  description text,
+  source      text        default 'Greyhawk'
 );
-create index if not exists idx_items_name on public.items (name);
 
 create table if not exists public.skills (
-  id                  bigserial primary key,
-  name                text not null,
-  type                text,
-  base_stat           text,
-  description         text,
-  source              text default 'Greyhawk'
+  id          serial      primary key,
+  name        text        not null,
+  type        text,
+  base_stat   text,
+  description text,
+  source      text        default 'Greyhawk'
 );
-create index if not exists idx_skills_name on public.skills (name);
 
 create table if not exists public.races (
-  id                  bigserial primary key,
-  name                text unique not null,
-  description         text,
-  source              text default 'Greyhawk'
+  id          serial      primary key,
+  name        text        not null,
+  description text,
+  traits      jsonb,
+  source      text        default 'Greyhawk'
 );
 
 create table if not exists public.classes (
-  id                  bigserial primary key,
-  name                text unique not null,
-  description         text,
-  hit_die             text,
-  primary_stat        text,
-  source              text default 'Greyhawk'
+  id           serial      primary key,
+  name         text        not null,
+  description  text,
+  hit_die      text,
+  primary_stat text,
+  source       text        default 'Greyhawk'
 );
 
 create table if not exists public.monsters (
-  id                  bigserial primary key,
-  name                text not null,
-  ac                  text,
-  hp_dice             text,
-  thac0               text,
-  damage              text,
-  move                text,
-  alignment           text,
-  description         text,
-  source              text default 'Greyhawk'
+  id          serial      primary key,
+  name        text        not null,
+  ac          integer,
+  hp_dice     text,
+  thac0       integer,
+  damage      text,
+  move        integer,
+  alignment   text,
+  description text,
+  source      text        default 'Greyhawk'
 );
-create index if not exists idx_monsters_name on public.monsters (name);
 
--- =====================================================================
--- TOEGANGSRECHTEN
--- =====================================================================
--- Geen Row Level Security — dit project gebruikt eigen authenticatie.
--- De Supabase publishable key heeft enkel de 'anon' role.
--- Alles staat open voor 'anon' want we vertrouwen de groep gebruikers.
--- Als je dit publiek maakt: zet RLS aan en schrijf policies.
+-- ---------------------------------------------------------------------
+-- PERMISSIONS (RLS bewust uitgeschakeld — app dwingt regels in JS af)
+-- ---------------------------------------------------------------------
+grant usage on schema public to anon, authenticated;
+grant all on all tables    in schema public to anon, authenticated;
+grant all on all sequences in schema public to anon, authenticated;
+alter default privileges in schema public grant all on tables    to anon, authenticated;
+alter default privileges in schema public grant all on sequences to anon, authenticated;
 
-grant usage on schema public to anon;
-grant all on all tables in schema public to anon;
-grant all on all sequences in schema public to anon;
-alter default privileges in schema public grant all on tables to anon;
-alter default privileges in schema public grant all on sequences to anon;
-
--- Klaar! Nu 02_seed.sql draaien voor de basis encyclopedie.
+-- Klaar. Nu 02_seed.sql draaien voor de basis encyclopedie.

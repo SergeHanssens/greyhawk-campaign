@@ -166,9 +166,10 @@ function showPage(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
-  const tabs=['characters','sheet','encyclopedia','dm'];
+  const tabs=['characters','sheet','sessions','encyclopedia','dm'];
   document.querySelectorAll('.nav-tab')[tabs.indexOf(p)]?.classList.add('active');
   if(p==='dm')loadDMDash();
+  if(p==='sessions')loadSessions();
 }
 function efKey(e,el){if(e.key==='Enter'){e.preventDefault();el.blur();}}
 
@@ -1292,6 +1293,299 @@ async function doCsvImport(){
   if(ok>0)loadEnc(t);
   setTimeout(()=>closeM('csv-modal'),1500);
 }
+
+// =====================================================================
+// SESSIES (campagne-sessies met logboek per karakter)
+// =====================================================================
+let editingSessionId=null, currentSession=null, currentLogEntry=null;
+
+async function loadSessions(){
+  const el=document.getElementById('sessions-list');
+  el.innerHTML='<div style="padding:30px;text-align:center;color:var(--gold);font-style:italic;">Laden...</div>';
+  let q=sb.from('sessions').select('*').order('session_date',{ascending:false}).order('created_at',{ascending:false});
+  const{data:sessions,error}=await q;
+  if(error){el.innerHTML=`<div style="padding:20px;color:var(--rust2);">Fout: ${error.message}</div>`;return;}
+  // voor niet-DM: filter op sessies waar hun karakter in zit
+  let visible=sessions||[];
+  if(!CU.is_dm&&visible.length){
+    const{data:myChars}=await sb.from('characters').select('id').eq('player_id',CU.id);
+    const myIds=(myChars||[]).map(c=>c.id);
+    if(myIds.length){
+      const{data:parts}=await sb.from('session_participants').select('session_id,character_id').in('character_id',myIds);
+      const sessionSet=new Set((parts||[]).map(p=>p.session_id));
+      visible=visible.filter(s=>sessionSet.has(s.id));
+    }else{visible=[];}
+  }
+  if(!visible.length){
+    el.innerHTML=CU.is_dm
+      ?'<div style="padding:40px;text-align:center;color:var(--ink3);font-style:italic;">Nog geen sessies. Klik "+ Nieuwe sessie" om te beginnen.</div>'
+      :'<div style="padding:40px;text-align:center;color:var(--ink3);font-style:italic;">Je karakter zit nog in geen enkele sessie. Vraag aan de DM.</div>';
+    return;
+  }
+  // Voor elke sessie: laad deelnemers-count
+  const sessionIds=visible.map(s=>s.id);
+  const{data:allParts}=await sb.from('session_participants').select('session_id,character_id,xp_awarded').in('session_id',sessionIds);
+  const partsBySession={};(allParts||[]).forEach(p=>{(partsBySession[p.session_id]=partsBySession[p.session_id]||[]).push(p);});
+  el.innerHTML=visible.map(s=>{
+    const parts=partsBySession[s.id]||[];
+    const statusColor={planned:'var(--blue2)',active:'var(--green2)',completed:'var(--ink3)'}[s.status]||'var(--ink3)';
+    const statusLabel={planned:'Gepland',active:'Actief',completed:'Afgesloten'}[s.status]||s.status;
+    const dateStr=s.session_date?new Date(s.session_date).toLocaleDateString('nl-BE',{day:'numeric',month:'long',year:'numeric'}):'Geen datum';
+    return`<div class="card" style="cursor:pointer;" onclick="openSession('${s.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div style="flex:1;">
+          <div style="font-family:'Cinzel',serif;font-size:16px;color:var(--rust);font-weight:600;">${s.name}</div>
+          <div style="font-size:13px;color:var(--ink3);margin-top:4px;">📅 ${dateStr}${s.location?' · 📍 '+s.location:''}</div>
+          ${s.summary?`<div style="font-size:13px;color:var(--ink);margin-top:6px;font-style:italic;">${s.summary.substring(0,200)}${s.summary.length>200?'...':''}</div>`:''}
+        </div>
+        <div style="text-align:right;">
+          <span style="display:inline-block;padding:3px 10px;border-radius:3px;background:${statusColor};color:#fff;font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;">${statusLabel}</span>
+          <div style="font-size:11px;color:var(--ink3);margin-top:6px;">${parts.length} karakter${parts.length===1?'':'s'}</div>
+          ${s.xp_awarded_total?`<div style="font-size:11px;color:var(--gold);margin-top:2px;">⭐ ${s.xp_awarded_total} XP</div>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openNewSession(){
+  editingSessionId=null;
+  document.getElementById('ns-title').textContent='+ Nieuwe Sessie';
+  document.getElementById('ns-name').value='';
+  document.getElementById('ns-date').value=new Date().toISOString().substring(0,10);
+  document.getElementById('ns-loc').value='';
+  document.getElementById('ns-summary').value='';
+  document.getElementById('ns-dmnotes').value='';
+  document.getElementById('ns-status').value='planned';
+  document.getElementById('ns-err').textContent='';
+  await loadParticipantsPicker([]);
+  openM('ns-modal');
+}
+
+async function loadParticipantsPicker(checkedIds){
+  const{data:chars}=await sb.from('characters').select('id,name,race,class,player_name,is_active').order('is_active',{ascending:false}).order('name');
+  const set=new Set(checkedIds);
+  document.getElementById('ns-participants').innerHTML=(chars||[]).map(c=>`
+    <label style="display:flex;gap:8px;align-items:center;padding:4px 2px;cursor:pointer;${c.is_active===false?'opacity:.5;':''}">
+      <input type="checkbox" value="${c.id}" ${set.has(c.id)?'checked':''}>
+      <span><strong>${c.name}</strong> <span style="color:var(--ink3);">${c.race||''} ${c.class||''}${c.player_name?' ('+c.player_name+')':''}${c.is_active===false?' — inactief':''}</span></span>
+    </label>`).join('')||'<div style="color:var(--ink3);font-style:italic;">Geen karakters gevonden.</div>';
+}
+
+async function submitSession(){
+  const name=document.getElementById('ns-name').value.trim();
+  if(!name){document.getElementById('ns-err').textContent='Naam is verplicht.';return;}
+  const checked=[...document.querySelectorAll('#ns-participants input[type=checkbox]:checked')].map(el=>el.value);
+  if(!checked.length){document.getElementById('ns-err').textContent='Selecteer minstens één karakter.';return;}
+  const obj={
+    name,
+    session_date:document.getElementById('ns-date').value||null,
+    location:document.getElementById('ns-loc').value||null,
+    summary:document.getElementById('ns-summary').value||null,
+    dm_notes:document.getElementById('ns-dmnotes').value||null,
+    status:document.getElementById('ns-status').value,
+    created_by:CU.id,
+    updated_at:new Date().toISOString()
+  };
+  let sessionId=editingSessionId;
+  if(editingSessionId){
+    const{error}=await sb.from('sessions').update(obj).eq('id',editingSessionId);
+    if(error){document.getElementById('ns-err').textContent='Fout: '+error.message;return;}
+  }else{
+    const{data,error}=await sb.from('sessions').insert(obj).select().single();
+    if(error){document.getElementById('ns-err').textContent='Fout: '+error.message;return;}
+    sessionId=data.id;
+  }
+  // sync participants: delete + insert
+  await sb.from('session_participants').delete().eq('session_id',sessionId);
+  if(checked.length){
+    const rows=checked.map(cid=>({session_id:sessionId,character_id:cid}));
+    await sb.from('session_participants').insert(rows);
+    // ensure session_logs exist for each participant
+    const{data:existing}=await sb.from('session_logs').select('character_id').eq('session_id',sessionId);
+    const has=new Set((existing||[]).map(e=>e.character_id));
+    const newLogs=checked.filter(cid=>!has.has(cid)).map(cid=>({session_id:sessionId,character_id:cid}));
+    if(newLogs.length)await sb.from('session_logs').insert(newLogs);
+  }
+  closeM('ns-modal');toast(editingSessionId?'✓ Sessie bijgewerkt':'✓ Sessie aangemaakt');
+  loadSessions();
+}
+
+async function openSession(id){
+  const{data:s,error}=await sb.from('sessions').select('*').eq('id',id).single();
+  if(error||!s){toast('Sessie niet gevonden',false);return;}
+  currentSession=s;
+  const{data:participants}=await sb.from('session_participants').select('*,characters(id,name,race,class,player_id,player_name,xp,avatar_url,is_active)').eq('session_id',id);
+  const{data:logs}=await sb.from('session_logs').select('*').eq('session_id',id);
+  const logByChar={};(logs||[]).forEach(l=>logByChar[l.character_id]=l);
+  const isDM=CU.is_dm;
+  const statusColor={planned:'var(--blue2)',active:'var(--green2)',completed:'var(--ink3)'}[s.status]||'var(--ink3)';
+  const statusLabel={planned:'Gepland',active:'Actief',completed:'Afgesloten'}[s.status]||s.status;
+  const dateStr=s.session_date?new Date(s.session_date).toLocaleDateString('nl-BE',{day:'numeric',month:'long',year:'numeric'}):'Geen datum';
+  document.getElementById('sd-title').textContent=s.name;
+  let html=`
+    <div style="margin-bottom:16px;padding:12px;background:rgba(196,160,96,.08);border:1px solid var(--card-border);border-radius:4px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+        <span style="font-size:13px;color:var(--ink3);">📅 ${dateStr}${s.location?' · 📍 '+s.location:''}</span>
+        <span style="display:inline-block;padding:3px 10px;border-radius:3px;background:${statusColor};color:#fff;font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;">${statusLabel}</span>
+      </div>
+      ${s.summary?`<div style="font-size:13px;color:var(--ink);margin-top:6px;">${s.summary.replace(/\n/g,'<br>')}</div>`:''}
+    </div>`;
+  if(isDM){
+    html+=`<div class="dm-panel" style="margin-bottom:16px;">
+      <div class="dm-panel-title">🔒 DM-notities <small style="font-size:10px;opacity:.7;">(Onzichtbaar voor spelers)</small></div>
+      <textarea class="dm-textarea" onblur="saveSessionDMNotes('${s.id}',this.value)" style="min-height:60px;">${s.dm_notes||''}</textarea>
+    </div>`;
+  }
+  html+=`<div style="font-family:'Cinzel',serif;font-size:12px;color:var(--ink3);letter-spacing:1px;margin:10px 0 6px;">DEELNEMERS & HUN LOGBOEK</div>`;
+  html+=(participants||[]).map(p=>{
+    const c=p.characters;if(!c)return '';
+    const log=logByChar[c.id]||{};
+    const canEdit=isDM||c.player_id===CU.id;
+    const hasContent=log.player_notes||log.encounters||log.npcs_met||log.loot_found;
+    const initials=(c.name||'?').substring(0,2).toUpperCase();
+    return`<div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+        ${c.avatar_url?`<img src="${c.avatar_url}" style="width:40px;height:40px;border-radius:4px;object-fit:cover;">`:`<div style="width:40px;height:40px;border-radius:4px;background:var(--rust);color:#fdf5e0;font-family:'Cinzel',serif;display:flex;align-items:center;justify-content:center;font-weight:600;">${initials}</div>`}
+        <div style="flex:1;">
+          <div style="font-family:'Cinzel',serif;font-weight:600;color:var(--rust);">${c.name}</div>
+          <div style="font-size:12px;color:var(--ink3);">${c.race||''} ${c.class||''} · XP: ${c.xp||0}${p.xp_awarded?` (+${p.xp_awarded} deze sessie)`:''}</div>
+        </div>
+        ${canEdit?`<button class="btn btn-primary btn-sm" onclick="openSessionLog('${s.id}','${c.id}','${c.name.replace(/'/g,"&#39;")}')">${hasContent?'✏ Bewerk log':'+ Log aanvullen'}</button>`:''}
+        ${isDM?`<button class="btn btn-ghost btn-sm" onclick="openAwardXp('${s.id}','${c.id}','${c.name.replace(/'/g,"&#39;")}',${p.xp_awarded||0})">⭐ XP</button>`:''}
+      </div>
+      ${hasContent?`<div style="font-size:12px;color:var(--ink);background:rgba(196,160,96,.06);padding:8px;border-radius:3px;">
+        ${log.encounters?`<div><strong>⚔ Ontmoetingen:</strong> ${log.encounters.substring(0,150)}${log.encounters.length>150?'...':''}</div>`:''}
+        ${log.npcs_met?`<div><strong>💬 NPCs:</strong> ${log.npcs_met.substring(0,150)}${log.npcs_met.length>150?'...':''}</div>`:''}
+        ${log.loot_found?`<div><strong>💰 Loot:</strong> ${log.loot_found.substring(0,150)}${log.loot_found.length>150?'...':''}</div>`:''}
+        ${log.player_notes?`<div><strong>📝 Notities:</strong> ${log.player_notes.substring(0,200)}${log.player_notes.length>200?'...':''}</div>`:''}
+      </div>`:'<div style="font-size:12px;color:var(--ink3);font-style:italic;">Nog geen log-inhoud.</div>'}
+    </div>`;
+  }).join('');
+  if(isDM){
+    html+=`<div style="text-align:right;margin-top:14px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="editSession('${s.id}')">✏ Bewerken</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteSession('${s.id}')">🗑 Verwijderen</button>
+    </div>`;
+  }
+  document.getElementById('sd-body').innerHTML=html;
+  openM('sd-modal');
+}
+
+async function saveSessionDMNotes(id,val){
+  await sb.from('sessions').update({dm_notes:val,updated_at:new Date().toISOString()}).eq('id',id);
+  toast('✓ DM-notities opgeslagen');
+}
+
+async function editSession(id){
+  if(!CU.is_dm)return;
+  closeM('sd-modal');
+  const{data:s}=await sb.from('sessions').select('*').eq('id',id).single();
+  if(!s)return;
+  editingSessionId=id;
+  document.getElementById('ns-title').textContent='Sessie Bewerken';
+  document.getElementById('ns-name').value=s.name||'';
+  document.getElementById('ns-date').value=s.session_date||'';
+  document.getElementById('ns-loc').value=s.location||'';
+  document.getElementById('ns-summary').value=s.summary||'';
+  document.getElementById('ns-dmnotes').value=s.dm_notes||'';
+  document.getElementById('ns-status').value=s.status||'planned';
+  document.getElementById('ns-err').textContent='';
+  const{data:parts}=await sb.from('session_participants').select('character_id').eq('session_id',id);
+  await loadParticipantsPicker((parts||[]).map(p=>p.character_id));
+  openM('ns-modal');
+}
+
+async function deleteSession(id){
+  if(!CU.is_dm)return;
+  if(!confirm('Deze sessie en ALLE bijhorende logs permanent verwijderen?'))return;
+  await sb.from('session_logs').delete().eq('session_id',id);
+  await sb.from('session_participants').delete().eq('session_id',id);
+  await sb.from('sessions').delete().eq('id',id);
+  closeM('sd-modal');toast('✓ Sessie verwijderd');loadSessions();
+}
+
+async function openSessionLog(sessionId,characterId,characterName){
+  let{data:log}=await sb.from('session_logs').select('*').eq('session_id',sessionId).eq('character_id',characterId).maybeSingle();
+  if(!log){
+    const ins=await sb.from('session_logs').insert({session_id:sessionId,character_id:characterId}).select().single();
+    log=ins.data;
+  }
+  currentLogEntry={sessionId,characterId,logId:log.id};
+  const isDM=CU.is_dm;
+  document.getElementById('slog-title').textContent=`Logboek — ${characterName}`;
+  document.getElementById('slog-body').innerHTML=`
+    <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;font-style:italic;">Vul aan wat nuttig is voor de volgende sessie: tegen wie je vocht, wie je sprak, wat je vond, belangrijke momenten.</p>
+    <div class="fg"><label>⚔ Ontmoetingen & gevechten</label><textarea id="slog-enc" rows="3" style="width:100%;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;">${log.encounters||''}</textarea></div>
+    <div class="fg"><label>💬 NPCs & gesprekken</label><textarea id="slog-npc" rows="3" style="width:100%;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;">${log.npcs_met||''}</textarea></div>
+    <div class="fg"><label>💰 Loot & vondsten</label><textarea id="slog-loot" rows="2" style="width:100%;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;">${log.loot_found||''}</textarea></div>
+    <div class="fg"><label>📝 Algemene notities</label><textarea id="slog-notes" rows="4" style="width:100%;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;">${log.player_notes||''}</textarea></div>
+    ${isDM?`<div class="fg"><label>🔒 DM-notities <small>(onzichtbaar voor speler)</small></label><textarea id="slog-dm" rows="3" style="width:100%;padding:8px;border:1.5px solid var(--dm-border);border-radius:4px;background:#f0e8f8;">${log.dm_notes||''}</textarea></div>`:''}
+    <div class="err" id="slog-err"></div>
+    <div style="text-align:right;margin-top:12px;">
+      <button class="btn btn-ghost btn-sm" onclick="closeM('slog-modal')">Annuleren</button>
+      <button class="btn btn-primary btn-sm" onclick="saveSessionLog()">✓ Opslaan</button>
+    </div>`;
+  openM('slog-modal');
+}
+
+async function saveSessionLog(){
+  if(!currentLogEntry)return;
+  const upd={
+    encounters:document.getElementById('slog-enc').value,
+    npcs_met:document.getElementById('slog-npc').value,
+    loot_found:document.getElementById('slog-loot').value,
+    player_notes:document.getElementById('slog-notes').value,
+    updated_at:new Date().toISOString()
+  };
+  const dmEl=document.getElementById('slog-dm');
+  if(dmEl)upd.dm_notes=dmEl.value;
+  const{error}=await sb.from('session_logs').update(upd).eq('id',currentLogEntry.logId);
+  if(error){document.getElementById('slog-err').textContent='Fout: '+error.message;return;}
+  toast('✓ Logboek opgeslagen');closeM('slog-modal');
+  openSession(currentLogEntry.sessionId);
+}
+
+async function openAwardXp(sessionId,characterId,characterName,currentXpAwarded){
+  if(!CU.is_dm)return;
+  document.getElementById('xp-body').innerHTML=`
+    <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Toekenning wordt direct aan het karakter''s totale XP toegevoegd én in het sessielogboek bijgehouden.</p>
+    <div class="fg"><label>Karakter</label><input type="text" disabled value="${characterName.replace(/"/g,'&quot;')}"></div>
+    <div class="fg"><label>XP deze sessie</label><input type="number" id="xp-amount" value="${currentXpAwarded||0}" min="0"></div>
+    <div class="fg"><label>Reden / beschrijving <small>(komt in karakter-logboek)</small></label><input type="text" id="xp-reason" placeholder="bv. Sessie 3: hydra verslagen"></div>
+    <div class="err" id="xp-err"></div>
+    <div style="text-align:right;margin-top:10px;">
+      <button class="btn btn-ghost btn-sm" onclick="closeM('xp-modal')">Annuleren</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmAwardXp('${sessionId}','${characterId}',${currentXpAwarded||0})">✓ Toekennen</button>
+    </div>`;
+  openM('xp-modal');
+}
+
+async function confirmAwardXp(sessionId,characterId,oldAwarded){
+  const newAwarded=parseInt(document.getElementById('xp-amount').value)||0;
+  const reason=document.getElementById('xp-reason').value.trim();
+  const delta=newAwarded-oldAwarded;
+  // update participant record
+  await sb.from('session_participants').update({xp_awarded:newAwarded}).eq('session_id',sessionId).eq('character_id',characterId);
+  // update character total xp (delta)
+  if(delta!==0){
+    const{data:c}=await sb.from('characters').select('xp').eq('id',characterId).single();
+    const newTotal=(c?.xp||0)+delta;
+    await sb.from('characters').update({xp:newTotal}).eq('id',characterId);
+    await logChange(characterId,`Sessie-XP: ${delta>0?'+':''}${delta}${reason?' ('+reason+')':''}`,'xp',c?.xp||0,newTotal);
+  }
+  // recalc session total
+  const{data:allParts}=await sb.from('session_participants').select('xp_awarded').eq('session_id',sessionId);
+  const total=(allParts||[]).reduce((a,p)=>a+(p.xp_awarded||0),0);
+  await sb.from('sessions').update({xp_awarded_total:total,updated_at:new Date().toISOString()}).eq('id',sessionId);
+  closeM('xp-modal');toast('✓ XP bijgewerkt');
+  openSession(sessionId);
+}
+
+// Show DM's "+ Nieuwe sessie" button when DM logs in — patch doLogin flow via CSS class already on button.
+document.addEventListener('DOMContentLoaded',()=>{
+  // After login, dm-only elements get display:block via existing code. Nothing extra needed.
+});
 
 // KEYBOARD
 document.addEventListener('keydown',e=>{
