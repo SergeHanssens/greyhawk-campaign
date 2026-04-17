@@ -166,10 +166,11 @@ function showPage(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
-  const tabs=['characters','sheet','sessions','encyclopedia','dm'];
+  const tabs=['characters','sheet','sessions','encyclopedia','map','tools','dm'];
   document.querySelectorAll('.nav-tab')[tabs.indexOf(p)]?.classList.add('active');
   if(p==='dm')loadDMDash();
   if(p==='sessions')loadSessions();
+  if(p==='tools')calcThac0();
 }
 function efKey(e,el){if(e.key==='Enter'){e.preventDefault();el.blur();}}
 
@@ -883,7 +884,7 @@ let encRowCache={};
 
 function renderEnc(data){
   if(!data.length){document.getElementById('enc-content').innerHTML='<div style="padding:30px;text-align:center;color:var(--ink3);font-style:italic;">Geen resultaten gevonden.</div>';return;}
-  const cols={weapons:['name','weapon_type','damage','speed_factor','type','description'],spells:['name','level','class','range','duration','description'],items:['name','category','cost','description'],races:['name','description'],classes:['name','hit_die','primary_stat','description'],skills:['name','type','base_stat','description'],monsters:['name','ac','hp_dice','thac0','damage','alignment','description']};
+  const cols={weapons:['name','weapon_type','damage','speed_factor','type','description'],spells:['name','level','class','range','duration','description'],items:['name','category','cost','description'],races:['name','description'],classes:['name','hit_die','primary_stat','description'],skills:['name','type','base_stat','description'],monsters:['name','ac','hp_dice','thac0','damage','alignment','description'],deities:['name','title','alignment','domains','symbol','description']};
   const c=cols[encCurrentTable]||['name','description'];
   const isDM=CU?.is_dm;
   encRowCache={};data.forEach(r=>{encRowCache[r.id]=r;});
@@ -951,7 +952,7 @@ async function openDBEdit(table,id){
   dbEditTable=table;dbEditId=id;
   const{data}=await sb.from(table).select('*').eq('id',id).single();
   if(!data)return;
-  const fields={weapons:['name','weapon_type','damage','speed_factor','weight','type','description'],spells:['name','level','class','range','duration','area','description'],items:['name','category','weight','cost','description'],monsters:['name','ac','hp_dice','thac0','damage','move','alignment','description'],skills:['name','type','base_stat','description'],races:['name','description'],classes:['name','description','hit_die','primary_stat']};
+  const fields={weapons:['name','weapon_type','damage','speed_factor','weight','type','description'],spells:['name','level','class','range','duration','area','description'],items:['name','category','weight','cost','description'],monsters:['name','ac','hp_dice','thac0','damage','move','alignment','description'],skills:['name','type','base_stat','description'],races:['name','description'],classes:['name','description','hit_die','primary_stat'],deities:['name','title','alignment','domains','symbol','worshippers','description']};
   const f=fields[table]||['name','description'];
   document.getElementById('dbedit-title').textContent=`${data.name} bewerken`;
   document.getElementById('dbedit-err').textContent='';
@@ -962,7 +963,7 @@ async function openDBEdit(table,id){
 }
 
 async function submitDBEdit(){
-  const fields={weapons:['name','weapon_type','damage','speed_factor','weight','type','description'],spells:['name','level','class','range','duration','area','description'],items:['name','category','weight','cost','description'],monsters:['name','ac','hp_dice','thac0','damage','move','alignment','description'],skills:['name','type','base_stat','description'],races:['name','description'],classes:['name','description','hit_die','primary_stat']};
+  const fields={weapons:['name','weapon_type','damage','speed_factor','weight','type','description'],spells:['name','level','class','range','duration','area','description'],items:['name','category','weight','cost','description'],monsters:['name','ac','hp_dice','thac0','damage','move','alignment','description'],skills:['name','type','base_stat','description'],races:['name','description'],classes:['name','description','hit_die','primary_stat'],deities:['name','title','alignment','domains','symbol','worshippers','description']};
   const f=fields[dbEditTable]||['name','description'];
   const upd={};f.forEach(field=>{const el=document.getElementById('dbe-'+field);if(el)upd[field]=el.value;});
   const imgEl=document.getElementById('dbe-image_url');
@@ -979,7 +980,7 @@ async function deleteDBItem(){
 }
 
 function renderEncAddForm(table){
-  const fields={weapons:['name','weapon_type','damage','speed_factor','type','description'],spells:['name','level','class','range','duration','area','description'],items:['name','category','cost','description'],monsters:['name','ac','hp_dice','thac0','damage','alignment','description'],skills:['name','type','base_stat','description'],races:['name','description'],classes:['name','description','hit_die','primary_stat']};
+  const fields={weapons:['name','weapon_type','damage','speed_factor','type','description'],spells:['name','level','class','range','duration','area','description'],items:['name','category','cost','description'],monsters:['name','ac','hp_dice','thac0','damage','alignment','description'],skills:['name','type','base_stat','description'],races:['name','description'],classes:['name','description','hit_die','primary_stat'],deities:['name','title','alignment','domains','symbol','worshippers','description']};
   const f=fields[table];
   if(!f){document.getElementById('enc-add-card').style.display='none';return;}
   document.getElementById('enc-add-form').innerHTML=
@@ -989,7 +990,7 @@ function renderEncAddForm(table){
 }
 
 async function submitEncAdd(table){
-  const fields={weapons:['name','weapon_type','damage','speed_factor','type','description'],spells:['name','level','class','range','duration','area','description'],items:['name','category','cost','description'],monsters:['name','ac','hp_dice','thac0','damage','alignment','description'],skills:['name','type','base_stat','description'],races:['name','description'],classes:['name','description','hit_die','primary_stat']};
+  const fields={weapons:['name','weapon_type','damage','speed_factor','type','description'],spells:['name','level','class','range','duration','area','description'],items:['name','category','cost','description'],monsters:['name','ac','hp_dice','thac0','damage','alignment','description'],skills:['name','type','base_stat','description'],races:['name','description'],classes:['name','description','hit_die','primary_stat'],deities:['name','title','alignment','domains','symbol','worshippers','description']};
   const obj={source:'Homebrew'};
   (fields[table]||[]).forEach(f=>{const el=document.getElementById('ea-'+f);if(el)obj[f]=el.value;});
   const imgEl=document.getElementById('ea-image_url');
@@ -1279,7 +1280,8 @@ const CSV_FIELDS={
   monsters:['name','ac','hp_dice','thac0','damage','move','alignment','description','image_url'],
   skills:['name','type','base_stat','description','image_url'],
   races:['name','description','image_url'],
-  classes:['name','description','hit_die','primary_stat','image_url']
+  classes:['name','description','hit_die','primary_stat','image_url'],
+  deities:['name','title','alignment','domains','symbol','worshippers','description','image_url']
 };
 const CSV_NUMERIC={spells:['level'],weapons:['speed_factor'],items:['weight'],monsters:['ac','thac0','move']};
 
@@ -1986,6 +1988,150 @@ async function doImport(){
   toast(`✓ ${ok} rijen toegevoegd aan ${t}`);
   if(ok>0)loadEnc(t);
   setTimeout(()=>closeM('imp-modal'),1200);
+}
+
+// =====================================================================
+// DICE ROLLER
+// =====================================================================
+let diceHistory=[];
+
+function parseDice(notation){
+  // Parse "3d6+2", "1d20-1", "2d8+1d4+3", "4d6" etc.
+  const cleaned=notation.replace(/\s/g,'').toLowerCase();
+  const parts=cleaned.match(/[+-]?(\d+d\d+|\d+)/g);
+  if(!parts)return null;
+  let total=0;const rolls=[];
+  parts.forEach(p=>{
+    const sign=p.startsWith('-')?-1:1;
+    const part=p.replace(/^[+-]/,'');
+    const dm=part.match(/^(\d+)d(\d+)$/);
+    if(dm){
+      const n=parseInt(dm[1]),sides=parseInt(dm[2]);
+      const dice=[];for(let i=0;i<Math.min(n,100);i++){const r=Math.floor(Math.random()*sides)+1;dice.push(r);total+=r*sign;}
+      rolls.push({expr:(sign<0?'-':'')+part,dice,sign});
+    }else{
+      const v=parseInt(part);if(!isNaN(v)){total+=v*sign;rolls.push({expr:(sign<0?'-':'')+part,dice:null,value:v*sign});}
+    }
+  });
+  return{total,rolls,notation:cleaned};
+}
+
+function rollDice(){
+  const input=document.getElementById('dice-input').value.trim();
+  if(!input)return;
+  const result=parseDice(input);
+  if(!result){document.getElementById('dice-result').innerHTML='<span style="color:var(--rust2);">Ongeldige formule. Gebruik bv. 3d6+2, 1d20, 2d8+1d4</span>';return;}
+  const diceStr=result.rolls.map(r=>r.dice?`${r.expr} → [${r.dice.join(', ')}]`:r.expr).join(' + ');
+  document.getElementById('dice-result').innerHTML=`
+    <div style="font-size:40px;color:var(--rust);font-weight:600;">${result.total}</div>
+    <div style="font-size:13px;color:var(--ink3);margin-top:4px;">${input} → ${diceStr}</div>`;
+  diceHistory.unshift({time:new Date().toLocaleTimeString('nl-BE'),notation:input,total:result.total,detail:diceStr});
+  if(diceHistory.length>20)diceHistory.pop();
+  renderDiceHistory();
+}
+
+function quickRoll(notation){
+  document.getElementById('dice-input').value=notation;
+  rollDice();
+}
+
+function renderDiceHistory(){
+  document.getElementById('dice-history').innerHTML=diceHistory.length
+    ?`<div style="font-family:'Cinzel',serif;font-size:10px;color:var(--ink3);letter-spacing:.5px;margin-bottom:4px;">GESCHIEDENIS</div>`+
+     diceHistory.map(h=>`<div style="padding:3px 0;border-bottom:1px dotted rgba(196,160,96,.2);"><span style="color:var(--ink3);">${h.time}</span> <strong>${h.notation}</strong> = <span style="color:var(--rust);font-weight:600;">${h.total}</span> <span style="font-size:10px;color:var(--ink3);">${h.detail}</span></div>`).join('')
+    :'';
+}
+
+// =====================================================================
+// INITIATIVE TRACKER
+// =====================================================================
+let initEntries=[],initCurrentIdx=-1,initRound=1;
+
+function addInitChar(){
+  const name=prompt('Naam van karakter:');
+  if(!name)return;
+  const dex=parseInt(prompt('DEX modifier (bv. 1 of -1, of 0):'))||0;
+  initEntries.push({name,type:'player',init:0,dex,hp:'',maxHp:'',notes:'',active:false});
+  renderInit();
+}
+
+function addInitEnemy(){
+  const name=prompt('Naam van vijand (bv. "Goblin #1"):');
+  if(!name)return;
+  const hp=prompt('HP (optioneel):');
+  initEntries.push({name,type:'enemy',init:0,dex:0,hp:hp||'',maxHp:hp||'',notes:'',active:false});
+  renderInit();
+}
+
+function rollAllInit(){
+  initEntries.forEach(e=>{
+    e.init=Math.floor(Math.random()*6)+1+e.dex; // d6 + dex mod (AD&D uses d6 for init)
+  });
+  sortInit();
+}
+
+function sortInit(){
+  initEntries.sort((a,b)=>a.init-b.init); // AD&D: LOWER initiative goes first
+  initCurrentIdx=-1;
+  renderInit();
+}
+
+function nextTurn(){
+  if(!initEntries.length)return;
+  initEntries.forEach(e=>e.active=false);
+  initCurrentIdx=(initCurrentIdx+1)%initEntries.length;
+  if(initCurrentIdx===0&&initRound>0)initRound++;
+  initEntries[initCurrentIdx].active=true;
+  document.getElementById('init-round').textContent=initRound;
+  renderInit();
+}
+
+function clearInit(){
+  if(!confirm('Initiative tracker resetten?'))return;
+  initEntries=[];initCurrentIdx=-1;initRound=1;
+  document.getElementById('init-round').textContent='1';
+  renderInit();
+}
+
+function removeInit(idx){initEntries.splice(idx,1);if(initCurrentIdx>=idx)initCurrentIdx--;renderInit();}
+function editInitHp(idx,val){initEntries[idx].hp=val;}
+
+function renderInit(){
+  const el=document.getElementById('init-list');
+  if(!initEntries.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--ink3);font-style:italic;">Geen deelnemers. Klik "+ Karakter" of "+ Vijand".</div>';return;}
+  el.innerHTML=initEntries.map((e,i)=>{
+    const bg=e.active?'rgba(42,122,42,.12)':e.type==='enemy'?'rgba(138,32,16,.06)':'rgba(196,160,96,.06)';
+    const border=e.active?'var(--green2)':'transparent';
+    return`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:4px;border-radius:4px;background:${bg};border-left:4px solid ${border};">
+      <div style="font-family:'Cinzel',serif;font-size:18px;font-weight:600;color:var(--rust);min-width:30px;text-align:center;">${e.init||'—'}</div>
+      <div style="flex:1;">
+        <div style="font-weight:600;${e.type==='enemy'?'color:var(--rust2);':''}">${e.active?'▶ ':''}${e.name}</div>
+        ${e.type==='enemy'?`<div style="font-size:11px;color:var(--ink3);">HP: <input type="text" value="${e.hp}" onchange="editInitHp(${i},this.value)" style="width:40px;padding:2px 4px;border:1px solid var(--card-border);border-radius:2px;font-size:11px;">${e.maxHp?' / '+e.maxHp:''}</div>`:
+        `<span style="font-size:11px;color:var(--ink3);">DEX mod: ${e.dex>=0?'+':''}${e.dex}</span>`}
+      </div>
+      <button class="btn btn-xs btn-ghost" onclick="removeInit(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// =====================================================================
+// THAC0 CALCULATOR
+// =====================================================================
+function calcThac0(){
+  const t=parseInt(document.getElementById('thac0-val')?.value)||20;
+  const ac=parseInt(document.getElementById('thac0-ac')?.value)||5;
+  const bonus=parseInt(document.getElementById('thac0-bonus')?.value)||0;
+  const needed=t-ac-bonus;
+  const actual=Math.max(1,Math.min(20,needed)); // natural 1 always misses, natural 20 always hits
+  const el=document.getElementById('thac0-result');
+  if(!el)return;
+  if(needed<=1){
+    el.innerHTML=`<span style="color:var(--green2);">Automatisch raak</span> <span style="font-size:14px;color:var(--ink3);">(elke worp ≥ 2 raakt, natural 1 mist altijd)</span>`;
+  }else if(needed>=20){
+    el.innerHTML=`<span style="color:var(--rust2);">Alleen met natural 20</span> <span style="font-size:14px;color:var(--ink3);">(THAC0 ${t} vs AC ${ac}${bonus?' met +'+bonus:''})</span>`;
+  }else{
+    el.innerHTML=`Je hebt <span style="font-size:32px;font-weight:600;color:var(--rust);">${actual}+</span> nodig <span style="font-size:14px;color:var(--ink3);">(THAC0 ${t} − AC ${ac}${bonus?' − bonus '+bonus:''} = ${needed})</span>`;
+  }
 }
 
 // KEYBOARD

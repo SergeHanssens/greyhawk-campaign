@@ -184,6 +184,8 @@
     <div class="nav-tab" onclick="showPage('sheet')">Character Sheet</div>
     <div class="nav-tab" onclick="showPage('sessions')">Sessies</div>
     <div class="nav-tab" onclick="showPage('encyclopedia')">Encyclopedie</div>
+    <div class="nav-tab" onclick="showPage('map')">Kaart</div>
+    <div class="nav-tab" onclick="showPage('tools')">Tools</div>
     <div class="nav-tab dm-only" onclick="showPage('dm')" style="display:none">DM Dashboard</div>
   </div>
 
@@ -225,6 +227,7 @@
         <div class="db-tab" onclick="loadEnc('classes',event)">Klassen</div>
         <div class="db-tab" onclick="loadEnc('skills',event)">Vaardigheden</div>
         <div class="db-tab" onclick="loadEnc('monsters',event)">Monsters</div>
+        <div class="db-tab" onclick="loadEnc('deities',event)">Goden</div>
       </div>
       <div class="filter-bar" id="enc-filter-bar">
         <label>Filter:</label>
@@ -245,6 +248,111 @@
         <button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="openCsvImport()" title="Legacy CSV importvenster">📥 CSV</button>
       </div>
       <div id="enc-add-form"></div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="page" id="page-map">
+    <div class="card">
+      <div class="card-header">🗺️ Kaart van de Flanaess (Greyhawk)</div>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Officiële Greyhawk-kaart door <a href="https://www.annabmeyer.com/" target="_blank" style="color:var(--blue2);">Anna B. Meyer</a> (CC BY 4.0). Klik voor volledig scherm. Gebruik muis-scroll om in te zoomen.</p>
+      <div id="map-container" style="position:relative;overflow:hidden;border:2px solid var(--card-border);border-radius:6px;background:#1a1a10;cursor:grab;min-height:500px;">
+        <img id="map-img" src="https://www.annabmeyer.com/wp-content/uploads/2024/01/Flanaess-598CY-2000px-1.jpg"
+             alt="Flanaess 598 CY" style="width:100%;display:block;user-select:none;" draggable="false"
+             onerror="this.parentElement.innerHTML='<div style=\'padding:60px;text-align:center;color:var(--gold);\'>Kaart kon niet geladen worden.<br><a href=\'https://www.annabmeyer.com/greyhawk-maps/online-map-1/\' target=\'_blank\' style=\'color:var(--blue3);\'>Open de online kaart direct →</a></div>';">
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="https://www.annabmeyer.com/greyhawk-maps/online-map-1/" target="_blank" class="btn btn-ghost btn-sm">🌐 Interactieve online kaart</a>
+        <a href="https://www.annabmeyer.com/greyhawk-maps/downloadable-greyhawk-maps/" target="_blank" class="btn btn-ghost btn-sm">📥 Downloadbare kaarten</a>
+        <a href="https://www.annabmeyer.com/heraldry/" target="_blank" class="btn btn-ghost btn-sm">🛡️ 470+ heraldry schilden</a>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:var(--ink3);font-style:italic;">Kaart © Anna B. Meyer, gebruikt onder CC BY 4.0 licentie. <a href="https://www.annabmeyer.com/" target="_blank" style="color:var(--ink3);">annabmeyer.com</a></div>
+    </div>
+  </div>
+
+  <!-- TOOLS -->
+  <div class="page" id="page-tools">
+    <h2 style="font-family:'Cinzel',serif;font-size:22px;color:var(--gold2);margin-bottom:16px;">DM & Speler Tools</h2>
+
+    <!-- DICE ROLLER -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">🎲 Dobbelstenen Roller</div>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Typ een formule (bv. <code>3d6+2</code>, <code>1d20</code>, <code>2d8+1d4+3</code>) of klik op een snelknop.</p>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+        <input type="text" id="dice-input" placeholder="bv. 3d6+2" style="flex:1;min-width:150px;padding:10px;font-size:16px;font-family:'Cinzel',serif;border:2px solid var(--card-border);border-radius:4px;text-align:center;background:#fff;" onkeydown="if(event.key==='Enter')rollDice()">
+        <button class="btn btn-primary" onclick="rollDice()" style="font-size:16px;padding:10px 24px;">🎲 Gooi!</button>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+        <button class="btn btn-ghost btn-sm" onclick="quickRoll('1d4')">d4</button>
+        <button class="btn btn-ghost btn-sm" onclick="quickRoll('1d6')">d6</button>
+        <button class="btn btn-ghost btn-sm" onclick="quickRoll('1d8')">d8</button>
+        <button class="btn btn-ghost btn-sm" onclick="quickRoll('1d10')">d10</button>
+        <button class="btn btn-ghost btn-sm" onclick="quickRoll('1d12')">d12</button>
+        <button class="btn btn-ghost btn-sm" onclick="quickRoll('1d20')">d20</button>
+        <button class="btn btn-ghost btn-sm" onclick="quickRoll('1d100')">d100</button>
+        <button class="btn btn-ghost btn-sm" onclick="quickRoll('3d6')">3d6</button>
+        <button class="btn btn-ghost btn-sm" onclick="quickRoll('4d6')">4d6</button>
+        <button class="btn btn-ghost btn-sm" onclick="quickRoll('2d10')">2d10</button>
+      </div>
+      <div id="dice-result" style="font-family:'Cinzel',serif;font-size:28px;font-weight:600;color:var(--rust);text-align:center;padding:12px;background:rgba(196,160,96,.08);border-radius:6px;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <span style="font-size:14px;color:var(--ink3);font-weight:400;">Klik op een dobbelsteen of typ een formule</span>
+      </div>
+      <div id="dice-history" style="margin-top:10px;font-size:12px;color:var(--ink3);max-height:150px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- INITIATIVE TRACKER -->
+    <div class="card dm-only" style="display:none;margin-bottom:16px;">
+      <div class="card-header">⚔️ Initiative Tracker (DM)</div>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Beheer de gevechtsvolgorde. Voeg karakters en vijanden toe, gooi initiative, en volg ronde per ronde.</p>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="addInitChar()">+ Karakter</button>
+        <button class="btn btn-ghost btn-sm" onclick="addInitEnemy()">+ Vijand</button>
+        <button class="btn btn-success btn-sm" onclick="rollAllInit()">🎲 Gooi alle initiative</button>
+        <button class="btn btn-ghost btn-sm" onclick="sortInit()">↕ Sorteer</button>
+        <button class="btn btn-ghost btn-sm" onclick="nextTurn()">→ Volgende beurt</button>
+        <button class="btn btn-danger btn-sm" onclick="clearInit()">✕ Reset</button>
+      </div>
+      <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--ink3);margin-bottom:6px;">Ronde: <span id="init-round" style="color:var(--gold2);font-size:14px;font-weight:600;">1</span></div>
+      <div id="init-list"></div>
+    </div>
+
+    <!-- THAC0 CALCULATOR -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">🎯 THAC0 Calculator</div>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Voer je THAC0 en de AC van je vijand in. De calculator toont welke D20-worp je minimaal nodig hebt.</p>
+      <div class="fg-row col3" style="margin-bottom:10px;">
+        <div class="fg"><label>Jouw THAC0</label><input type="number" id="thac0-val" value="20" min="0" max="30" onchange="calcThac0()"></div>
+        <div class="fg"><label>Vijand AC</label><input type="number" id="thac0-ac" value="5" min="-10" max="10" onchange="calcThac0()"></div>
+        <div class="fg"><label>Bonussen (+str, +magic)</label><input type="number" id="thac0-bonus" value="0" onchange="calcThac0()"></div>
+      </div>
+      <div id="thac0-result" style="font-family:'Cinzel',serif;font-size:20px;text-align:center;color:var(--blue2);padding:10px;background:rgba(26,58,106,.06);border-radius:4px;"></div>
+    </div>
+
+    <!-- XP CALCULATOR -->
+    <div class="card">
+      <div class="card-header">⭐ XP per monster-tabel (AD&D 1e)</div>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Snelle referentie: hoeveel XP een monster waard is op basis van zijn HD.</p>
+      <div style="overflow-x:auto;">
+        <table class="db-table" style="font-size:12px;">
+          <thead><tr><th>Monster HD</th><th>Base XP</th><th>+XP per HP</th><th>Voorbeeld</th></tr></thead>
+          <tbody>
+            <tr><td>Under 1</td><td>5</td><td>1</td><td>Kobold, Giant Rat</td></tr>
+            <tr><td>1</td><td>10</td><td>1</td><td>Goblin, Orc, Skeleton</td></tr>
+            <tr><td>1+1 tot 2</td><td>20</td><td>2</td><td>Hobgoblin, Gnoll, Zombie</td></tr>
+            <tr><td>2+1 tot 3</td><td>35</td><td>3</td><td>Bugbear, Ghoul</td></tr>
+            <tr><td>3+1 tot 4</td><td>60</td><td>4</td><td>Owlbear, Wight</td></tr>
+            <tr><td>4+1 tot 5</td><td>90</td><td>5</td><td>Ogre, Wraith, Cockatrice</td></tr>
+            <tr><td>5+1 tot 6</td><td>150</td><td>6</td><td>Troll, Basilisk</td></tr>
+            <tr><td>6+1 tot 7</td><td>225</td><td>8</td><td>Mummy, Hill Giant</td></tr>
+            <tr><td>7+1 tot 8</td><td>375</td><td>10</td><td>Vampire, Mind Flayer</td></tr>
+            <tr><td>8+1 tot 9</td><td>600</td><td>12</td><td>Fire Giant</td></tr>
+            <tr><td>9+1 tot 10+</td><td>900</td><td>14</td><td>Red Dragon, Lich</td></tr>
+            <tr><td>11+ tot 12+</td><td>1100</td><td>16</td><td>Storm Giant, Pit Fiend</td></tr>
+            <tr><td>13+</td><td>1350+</td><td>18+</td><td>Tarrasque, Beholder</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:11px;color:var(--ink3);margin-top:6px;font-style:italic;">Formule: Base XP + (bonus per HP × monster HP). Special abilities: +extra XP per DMG tabel.</p>
     </div>
   </div>
 
