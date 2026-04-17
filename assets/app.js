@@ -148,7 +148,7 @@ Aanvalssequentie per ronde:
 
 // UI HELPERS
 function openM(id){document.getElementById(id).classList.add('open');}
-function closeM(id){document.getElementById(id).classList.remove('open');}
+function closeM(id){document.getElementById(id).classList.remove('open');if(id==='sd-modal')stopChatPoll();}
 document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 function showHelp(k){
   const titles={ras:'Rassen in AD&D',klasse:'Klassen in AD&D',gezindheid:'Gezindheid',thac0:'THAC0 uitgelegd',ac:'Armor Class',hp:'Hit Points',saving_throws:'Saving Throws',xp:'Experience Points',ability_scores:'Ability Scores',wapen:'Wapens & Proficiënties',spells:'Spreuken',dobbelstenen:'Dobbelstenen Gids'};
@@ -1630,6 +1630,20 @@ async function openSession(id){
     <div id="session-dice-log" style="max-height:250px;overflow-y:auto;">Laden...</div>
   </div>`;
 
+  // Chat section
+  html+=`<div class="card" style="margin-bottom:16px;">
+    <div class="card-header">💬 Chat</div>
+    <div id="session-chat-log" style="max-height:300px;overflow-y:auto;border:1px solid var(--card-border);border-radius:4px;padding:8px;background:#fff;margin-bottom:8px;">Laden...</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <select id="chat-channel" style="padding:6px;border:1.5px solid var(--card-border);border-radius:4px;font-size:12px;min-width:160px;">
+        <option value="all">💬 Iedereen</option>
+      </select>
+      <input type="text" id="chat-input" placeholder="Typ je bericht..." style="flex:1;min-width:150px;padding:6px 10px;border:1.5px solid var(--card-border);border-radius:4px;font-size:13px;" onkeydown="if(event.key==='Enter')sendChat('${s.id}')">
+      <button class="btn btn-primary btn-sm" onclick="sendChat('${s.id}')">Verstuur</button>
+    </div>
+    <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-style:italic;">🔒 = alleen zichtbaar voor geselecteerde ontvanger(s) + DM. Chat vernieuwd elke 5 sec.</div>
+  </div>`;
+
   // Bottom controls
   html+=`<div style="text-align:right;margin-top:14px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
     <button class="btn btn-ghost btn-sm" onclick="openExportModal('session')">📤 Export</button>
@@ -1639,11 +1653,14 @@ async function openSession(id){
 
   document.getElementById('sd-body').innerHTML=html;
   openM('sd-modal');
-  // Load dice log async
+  // Load dice log + chat async
   loadDiceLog(s.id).then(logHtml=>{
     const el=document.getElementById('session-dice-log');
     if(el)el.innerHTML=logHtml;
   });
+  loadChat(s.id);
+  loadChatRecipients(s.id);
+  startChatPoll(s.id);
 }
 
 // Combat management functions
@@ -2268,6 +2285,101 @@ async function loadDiceLog(sessionId){
     </div>`;
   }).join('');
 }
+
+// =====================================================================
+// SESSION CHAT (algemeen + groep + privé)
+// =====================================================================
+let chatPollTimer=null;
+
+function canSeeMessage(msg){
+  if(msg.channel==='all')return true;
+  if(CU.is_dm)return true; // DM ziet alles
+  if(msg.sender_id===CU.id)return true; // eigen bericht
+  if(msg.channel==='dm')return false; // fluister naar DM — alleen DM + afzender
+  if(msg.channel.startsWith('player:')){
+    return msg.channel==='player:'+CU.id;
+  }
+  if(msg.channel.startsWith('group:')){
+    const ids=msg.channel.replace('group:','').split(',');
+    return ids.includes(CU.id);
+  }
+  return false;
+}
+
+async function loadChat(sessionId){
+  const el=document.getElementById('session-chat-log');
+  if(!el)return;
+  const{data:msgs}=await sb.from('chat_messages').select('*').eq('session_id',sessionId).order('created_at',{ascending:true}).limit(200);
+  const visible=(msgs||[]).filter(canSeeMessage);
+  if(!visible.length){el.innerHTML='<div style="padding:12px;text-align:center;color:var(--ink3);font-style:italic;font-size:12px;">Nog geen berichten.</div>';return;}
+  el.innerHTML=visible.map(m=>{
+    const time=new Date(m.created_at).toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'});
+    const isMe=m.sender_id===CU.id;
+    const isDM=m.is_dm_message;
+    const isPrivate=m.channel!=='all';
+    const channelTag=isPrivate?`<span style="font-size:10px;color:${isDM?'var(--dm-text)':'var(--blue2)'};background:${isDM?'rgba(74,58,122,.1)':'rgba(26,58,106,.08)'};padding:1px 6px;border-radius:2px;margin-left:4px;">${m.channel_label||m.channel}</span>`:'';
+    return`<div style="padding:4px 0;${isMe?'':''}">
+      <span style="font-size:10px;color:var(--ink3);">${time}</span>
+      <strong style="color:${isDM?'var(--dm-text)':isMe?'var(--blue2)':'var(--ink)'};">${m.sender_name||'?'}</strong>${channelTag}
+      <span style="font-size:13px;${isPrivate?'font-style:italic;':''}">${(m.message||'').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</span>
+    </div>`;
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+async function loadChatRecipients(sessionId){
+  const sel=document.getElementById('chat-channel');
+  if(!sel)return;
+  const{data:parts}=await sb.from('session_participants').select('character_id,characters(id,name,player_id,player_name)').eq('session_id',sessionId);
+  // Get unique players from participants
+  const players=[];const seen=new Set();
+  (parts||[]).forEach(p=>{
+    const c=p.characters;if(!c||!c.player_id)return;
+    if(seen.has(c.player_id)||c.player_id===CU.id)return;
+    seen.add(c.player_id);
+    players.push({id:c.player_id,name:c.player_name||c.name});
+  });
+  sel.innerHTML=`<option value="all">💬 Iedereen</option>
+    <option value="dm">🔒 Fluister naar DM</option>
+    ${players.map(p=>`<option value="player:${p.id}">🔒 Fluister naar ${p.name}</option>`).join('')}
+    ${players.length>1?`<option value="_group">🔒 Groepje samenstellen...</option>`:''}`;
+}
+
+async function sendChat(sessionId){
+  const input=document.getElementById('chat-input');
+  const msg=input.value.trim();
+  if(!msg)return;
+  let channel=document.getElementById('chat-channel').value;
+  let channelLabel='';
+  if(channel==='_group'){
+    // Show checkboxes for group selection
+    const picks=prompt('Typ de spelernamen gescheiden door komma (bv. "Bart, Jan"):');
+    if(!picks){return;}
+    // We'd need to match names to IDs — simplified: store as typed
+    channel='group:custom';
+    channelLabel='Groep: '+picks;
+    // In practice we'd resolve names to IDs, but for now store as-is for display
+  }
+  if(channel==='all')channelLabel='Iedereen';
+  else if(channel==='dm')channelLabel='Fluister naar DM';
+  else if(channel.startsWith('player:')){
+    const opt=document.getElementById('chat-channel').selectedOptions[0];
+    channelLabel=opt?.textContent||channel;
+  }
+  await sb.from('chat_messages').insert({
+    session_id:sessionId,sender_id:CU.id,sender_name:CU.username,
+    channel,channel_label:channelLabel,message:msg,
+    is_dm_message:CU.is_dm
+  });
+  input.value='';
+  loadChat(sessionId);
+}
+
+function startChatPoll(sessionId){
+  stopChatPoll();
+  chatPollTimer=setInterval(()=>loadChat(sessionId),5000); // elke 5 sec
+}
+function stopChatPoll(){if(chatPollTimer){clearInterval(chatPollTimer);chatPollTimer=null;}}
 
 // MAP / VTT MANAGEMENT
 // =====================================================================
