@@ -1187,34 +1187,43 @@ function exportPDF(){
 // HELP
 function showAppHelp(){
   const isDM=CU?.is_dm;
-  document.getElementById('help-body').innerHTML=isDM?`
-  <h3 style="font-family:'Cinzel',serif;color:#4a3a7a;margin:0 0 12px;">DM Functies</h3>
-  <div style="background:rgba(42,26,74,.06);border:1px solid rgba(106,74,154,.3);border-radius:4px;padding:12px;margin-bottom:12px;font-size:13px;">
-    <strong>DM Dashboard</strong> — zie alle karakters van alle spelers<br>
-    <strong>🔒 Privé Notities</strong> — onderaan elk karakter, onzichtbaar voor spelers<br>
-    <strong>🔒 Sessie-aantekeningen</strong> — voor XP-toekenning en verhaalbeheer<br>
-    <strong>✏ Encyclopedie bewerken</strong> — klik het ✏ icoon naast elk item<br>
-    <strong>+ Toevoegen aan database</strong> — onderaan Encyclopedie pagina<br>
-    <strong>🔑 Reset</strong> — tijdelijk wachtwoord instellen voor een speler<br>
-    <strong>⏸ Inactief</strong> — karakter tijdelijk verbergen zonder verwijderen
-  </div>
-  <h3 style="font-family:'Cinzel',serif;color:#4a3a7a;margin:12px 0 8px;">Logboek</h3>
-  <p style="font-size:13px;">Klik "📋 Logboek" op een karakter. Spelers zien automatisch DM-wijzigingen bij volgende login.</p>
-  <h3 style="font-family:'Cinzel',serif;color:#4a3a7a;margin:12px 0 8px;">DM Code</h3>
-  <p style="font-size:13px;font-family:monospace;background:rgba(42,26,74,.08);padding:8px;border-radius:4px;">GREYHAWK_DM_2025</p>
-  `:`
-  <h3 style="font-family:'Cinzel',serif;color:var(--rust);margin:0 0 10px;">Snel aan de slag</h3>
-  <div style="font-size:13px;line-height:1.8;">
-    <strong>Karakter aanmaken:</strong> Klik "+ Nieuw Karakter". Kies eerst je ras — de beschikbare klassen passen zich automatisch aan. Klik <strong>?</strong> naast elk veld voor uitleg.<br><br>
-    <strong>Velden bewerken:</strong> Klik op een waarde met de stippellijn eronder → typ → druk Enter of klik ergens anders. Auto-opslaan.<br><br>
-    <strong>Wapens/items/spreuken/vaardigheden:</strong> Klik "+ toevoegen" → zoek in de Greyhawk database → klik een item aan om het formulier in te vullen → klik Toevoegen.<br><br>
-    <strong>Wapens filteren op type:</strong> In het toevoeg-venster staat een type-filter (Sword, Axe, Bow...)<br><br>
-    <strong>Encyclopedie:</strong> 170+ monsters, 250+ spreuken, 80+ wapens, 150+ items. Klik "info" voor details.<br><br>
-    <strong>Profielfoto:</strong> Klik het 📷 icoon op je karakterblad om een foto te uploaden (max 2MB).<br><br>
-    <strong>PDF:</strong> Klik "📄 PDF" bovenaan het karakterblad → Afdrukken / PDF opslaan.<br><br>
-    <strong>Logboek:</strong> Bij elke login zie je automatisch wat de DM heeft gewijzigd. Klik "📋 Logboek" voor volledig overzicht.<br><br>
-    <strong>Inactief karakter:</strong> Karakters op inactief gezet door de DM verschijnen iets meer uitgevaagd en kunnen opnieuw geactiveerd worden.
+  let h=`<h3 style="font-family:'Cinzel',serif;color:var(--rust);margin:0 0 10px;">📚 Handleidingen & Documentatie</h3>
+  <div style="font-size:13px;margin-bottom:16px;">
+    <p>Alle documenten openen in een nieuw tabblad. Klik 🖨️ in het document om als PDF op te slaan.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+      <a href="handleidingen.html" target="_blank" class="btn btn-ghost btn-sm" style="text-align:center;text-decoration:none;display:block;">📚 Alle handleidingen</a>
+      <a href="snelkaart_speler.html" target="_blank" class="btn btn-ghost btn-sm" style="text-align:center;text-decoration:none;display:block;">📋 Snelkaart speler (A4)</a>
+      <a href="handleiding_speler.html" target="_blank" class="btn btn-ghost btn-sm" style="text-align:center;text-decoration:none;display:block;">📖 Volledige handleiding speler</a>`;
+  if(isDM){
+    h+=`<a href="snelkaart_dm.html" target="_blank" class="btn btn-ghost btn-sm" style="text-align:center;text-decoration:none;display:block;">📋 Snelkaart DM (A4)</a>
+      <a href="handleiding_dm.html" target="_blank" class="btn btn-ghost btn-sm" style="text-align:center;text-decoration:none;display:block;">🔒 Volledige handleiding DM</a>
+      <a href="testgids_dm.html" target="_blank" class="btn btn-ghost btn-sm" style="text-align:center;text-decoration:none;display:block;">🧪 DM Testgids</a>`;
+  }
+  h+=`</div></div>
+  <h3 style="font-family:'Cinzel',serif;color:var(--rust);margin:12px 0 8px;">Snel aan de slag</h3>
+  <div style="font-size:13px;line-height:1.7;">
+    <strong>Sessie openen:</strong> Tab Sessies → klik op een actieve sessie<br>
+    <strong>Initiative:</strong> Klik 🎲 naast je karakter of typ je d20 worp<br>
+    <strong>Actie declareren:</strong> Typ wat je karakter doet in het invulveld bij je naam<br>
+    <strong>Dobbelstenen:</strong> 🎲 knop in de sessie of tab Tools<br>
+    <strong>Chat:</strong> Onderaan de sessie — kies iedereen of fluister<br>
+    <strong>Character sheet:</strong> Klik op een karakternaam → details bekijken<br>
+    <strong>Encyclopedie:</strong> 240+ monsters, 460+ spreuken, 100+ wapens. Klik "info"<br>
+    <strong>Export:</strong> 📤 knop op karakter, sessie of encyclopedie → PDF/JSON/MD
   </div>`;
+  if(isDM){
+    h+=`<h3 style="font-family:'Cinzel',serif;color:#4a3a7a;margin:12px 0 8px;">DM Snelreferentie</h3>
+    <div style="font-size:13px;background:rgba(42,26,74,.06);border:1px solid rgba(106,74,154,.3);border-radius:4px;padding:10px;">
+      <strong>👤 Nieuwe speler</strong> — maak account aan op Mijn Karakters pagina<br>
+      <strong>+ Nieuw Karakter</strong> — speler of NPC type kiezen<br>
+      <strong>+ Nieuwe sessie</strong> → deelnemers kiezen → ▶ Activeren<br>
+      <strong>+ Nieuwe actie</strong> → gevecht/verkenning/sociaal → rondes beheren<br>
+      <strong>🎲 DM init</strong> → rolt voor alle DM-karakters in één klik<br>
+      <strong>Verborgen status</strong> → karakter onzichtbaar voor spelers<br>
+      <strong>🔑 Reset</strong> → tijdelijk wachtwoord voor speler
+    </div>`;
+  }
+  document.getElementById('help-body').innerHTML=h;
   openM('help-modal');
 }
 
@@ -2582,13 +2591,27 @@ async function doExport(scope,id){
     else if(fmt==='pdf'){closeM('exp-modal');exportPDF();return;}
   }else if(scope==='session'){
     const{data:s}=await sb.from('sessions').select('*').eq('id',id).single();
-    const{data:parts}=await sb.from('session_participants').select('*,characters(name,race,class,player_name)').eq('session_id',id);
-    const{data:logs}=await sb.from('session_logs').select('*,characters(name)').eq('session_id',id);
-    const pkg={session:s,participants:parts||[],logs:logs||[]};
+    const{data:parts}=await sb.from('session_participants').select('*,characters(name,race,class,player_name,xp)').eq('session_id',id);
+    const{data:sessionLogs}=await sb.from('session_logs').select('*,characters(name)').eq('session_id',id);
+    // Actions + action participants + action logs
+    let actions=[],actionLogs=[];
+    try{
+      const r1=await sb.from('session_actions').select('*').eq('session_id',id).order('created_at');actions=r1.data||[];
+      if(actions.length){
+        const actionIds=actions.map(a=>a.id);
+        const r2=await sb.from('action_log').select('*').in('action_id',actionIds).order('round_number').order('created_at');
+        actionLogs=r2.data||[];
+      }
+    }catch(e){}
+    // Dice rolls
+    let diceRolls=[];try{const r=await sb.from('dice_rolls').select('*').eq('session_id',id).order('created_at');diceRolls=r.data||[];}catch(e){}
+    // Chat
+    let chat=[];try{const r=await sb.from('chat_messages').select('*').eq('session_id',id).order('created_at');chat=r.data||[];}catch(e){}
+    const pkg={session:s,participants:parts||[],sessionLogs:sessionLogs||[],actions,actionLogs,diceRolls,chat};
     const base='sessie_'+(s.name||'').replace(/[^a-z0-9]/gi,'_')+'_'+new Date().toISOString().substring(0,10);
     if(fmt==='json')downloadBlob(base+'.json','application/json',JSON.stringify(pkg,null,2));
-    else if(fmt==='md')downloadBlob(base+'.md','text/markdown',sessionToMd(pkg));
-    else if(fmt==='pdf')exportSessionPdf(pkg);
+    else if(fmt==='md')downloadBlob(base+'.md','text/markdown',sessionToMdFull(pkg));
+    else if(fmt==='pdf')exportSessionPdfFull(pkg);
   }
   closeM('exp-modal');toast('✓ Gedownload');
 }
@@ -2608,6 +2631,119 @@ function characterToMd(p){
   if(c.notes){m+=`## Notities\n${c.notes}\n\n`;}
   if(p.log&&p.log.length){m+=`## Logboek (laatste ${p.log.length})\n`;p.log.slice(0,30).forEach(l=>{m+=`- ${new Date(l.created_at).toLocaleString('nl-BE')} · ${l.username}${l.is_dm?' [DM]':''}: ${l.beschrijving}\n`;});}
   return m;
+}
+
+function sessionToMdFull(p){
+  const s=p.session;
+  let m=`# Sessie: ${s.name}\n\n`;
+  m+=`**Datum:** ${s.session_date||'—'} · **Locatie:** ${s.location||'—'} · **Status:** ${s.status}\n\n`;
+  if(s.summary)m+=`## Samenvatting\n${s.summary}\n\n`;
+  m+=`## Deelnemers (${p.participants.length})\n`;
+  p.participants.forEach(pt=>{const c=pt.characters||{};m+=`- **${c.name||'?'}** (${c.race||''} ${c.class||''}) ${pt.xp_awarded?`— ⭐ ${pt.xp_awarded} XP`:''}\n`;});
+  m+='\n';
+  // Actions with round-by-round logs
+  if(p.actions.length){
+    m+=`## Acties (${p.actions.length})\n\n`;
+    const logsByAction={};p.actionLogs.forEach(l=>{(logsByAction[l.action_id]=logsByAction[l.action_id]||[]).push(l);});
+    p.actions.forEach(a=>{
+      m+=`### ${a.name} (${a.action_type}${a.combat_round?' — '+a.combat_round+' rondes':''})\n`;
+      m+=`Status: ${a.status}\n\n`;
+      const logs=logsByAction[a.id]||[];
+      const byRound={};logs.forEach(l=>{(byRound[l.round_number||0]=byRound[l.round_number||0]||[]).push(l);});
+      Object.keys(byRound).sort((a,b)=>a-b).forEach(r=>{
+        m+=`#### Ronde ${r}\n`;
+        byRound[r].forEach(l=>{
+          m+=`- **${l.character_name||'?'}**${l.is_dm_entry?' [DM]':''}: ${l.description||'—'}${l.result?' → '+l.result:''}\n`;
+        });
+        m+='\n';
+      });
+    });
+  }
+  // Session logs
+  if(p.sessionLogs.length){
+    m+=`## Sessie-logboeken per karakter\n\n`;
+    p.sessionLogs.forEach(l=>{
+      const c=l.characters||{};
+      m+=`### ${c.name||'?'}\n`;
+      if(l.encounters)m+=`**⚔ Ontmoetingen:** ${l.encounters}\n\n`;
+      if(l.npcs_met)m+=`**💬 NPCs:** ${l.npcs_met}\n\n`;
+      if(l.loot_found)m+=`**💰 Loot:** ${l.loot_found}\n\n`;
+      if(l.player_notes)m+=`**📝 Notities:** ${l.player_notes}\n\n`;
+    });
+  }
+  // Dice rolls
+  if(p.diceRolls.length){
+    m+=`## Dobbelsteen-log (${p.diceRolls.length} worpen)\n\n`;
+    m+='| Tijd | Speler | Resultaat | Formule | Waarvoor |\n|---|---|---|---|---|\n';
+    p.diceRolls.forEach(r=>{
+      const t=new Date(r.created_at).toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'});
+      m+=`| ${t} | ${r.player_name||'?'} | **${r.total}** | ${r.notation} → ${r.dice_detail||''} | ${r.purpose||''}${r.is_private?' 🔒':''} |\n`;
+    });
+    m+='\n';
+  }
+  // Chat
+  if(p.chat.length){
+    m+=`## Chat (${p.chat.length} berichten)\n\n`;
+    p.chat.forEach(c=>{
+      const t=new Date(c.created_at).toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'});
+      m+=`- **${t}** ${c.sender_name||'?'}${c.channel!=='all'?' ['+c.channel_label+']':''}: ${c.message}\n`;
+    });
+  }
+  return m;
+}
+
+function exportSessionPdfFull(p){
+  const s=p.session;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Sessie: ${s.name}</title>
+  <style>body{font-family:Georgia,serif;max-width:820px;margin:20px auto;padding:20px;color:#2a1a0a;font-size:12px;}
+  h1{font-size:22px;border-bottom:3px double #8a6030;padding-bottom:8px;}h2{font-size:15px;color:#7a1c1c;margin-top:16px;border-bottom:1px solid #c4a060;padding-bottom:3px;}h3{font-size:13px;color:#1a3a6a;margin-top:12px;}h4{font-size:11px;color:#4a3a7a;margin-top:8px;}
+  .meta{color:#7a5030;font-style:italic;margin-bottom:10px;font-size:11px;}
+  .entry{border:1px solid #c4a060;border-radius:3px;padding:8px;margin-bottom:6px;page-break-inside:avoid;font-size:11px;}
+  .dm{background:rgba(74,58,122,.05);border-color:rgba(74,58,122,.2);}
+  table{width:100%;border-collapse:collapse;font-size:10px;margin:4px 0;}th{background:rgba(196,160,96,.15);padding:4px 6px;text-align:left;border-bottom:1px solid #c4a060;}td{padding:3px 6px;border-bottom:1px dotted rgba(196,160,96,.3);}
+  @media print{.noprint{display:none}}</style></head><body>
+  <button class="noprint" onclick="window.print()" style="padding:6px 16px;background:#7a1c1c;color:white;border:none;border-radius:3px;cursor:pointer;margin-bottom:10px;">🖨️ Afdrukken / PDF</button>
+  <h1>${s.name}</h1>
+  <div class="meta">📅 ${s.session_date||'—'} · 📍 ${s.location||'—'} · Status: ${s.status}</div>`);
+  if(s.summary)w.document.write(`<h2>Samenvatting</h2><p>${s.summary.replace(/\n/g,'<br>')}</p>`);
+  // Participants
+  w.document.write(`<h2>Deelnemers</h2><ul>`);
+  p.participants.forEach(pt=>{const c=pt.characters||{};w.document.write(`<li><strong>${c.name||'?'}</strong> (${c.race||''} ${c.class||''})${pt.xp_awarded?' — ⭐ '+pt.xp_awarded+' XP':''}</li>`);});
+  w.document.write(`</ul>`);
+  // Actions with logs
+  if(p.actions.length){
+    w.document.write(`<h2>Acties (${p.actions.length})</h2>`);
+    const logsByAction={};p.actionLogs.forEach(l=>{(logsByAction[l.action_id]=logsByAction[l.action_id]||[]).push(l);});
+    p.actions.forEach(a=>{
+      w.document.write(`<h3>${a.name} (${a.action_type}${a.combat_round?' — '+a.combat_round+' rondes':''})</h3>`);
+      const logs=logsByAction[a.id]||[];
+      const byRound={};logs.forEach(l=>{(byRound[l.round_number||0]=byRound[l.round_number||0]||[]).push(l);});
+      Object.keys(byRound).sort((a,b)=>a-b).forEach(r=>{
+        w.document.write(`<h4>Ronde ${r}</h4>`);
+        byRound[r].forEach(l=>{
+          w.document.write(`<div class="entry${l.is_dm_entry?' dm':''}"><strong>${l.character_name||'?'}</strong>${l.is_dm_entry?' <span style="color:#4a3a7a;">[DM]</span>':''}: ${l.description||'—'}${l.result?' → <em>'+l.result+'</em>':''}</div>`);
+        });
+      });
+    });
+  }
+  // Session logs
+  if(p.sessionLogs?.length){
+    w.document.write(`<h2>Sessie-logboeken</h2>`);
+    p.sessionLogs.forEach(l=>{
+      const c=l.characters||{};
+      w.document.write(`<div class="entry"><strong>${c.name||'?'}</strong>`);
+      if(l.encounters)w.document.write(`<br>⚔ ${l.encounters}`);
+      if(l.npcs_met)w.document.write(`<br>💬 ${l.npcs_met}`);
+      if(l.loot_found)w.document.write(`<br>💰 ${l.loot_found}`);
+      if(l.player_notes)w.document.write(`<br>📝 ${l.player_notes}`);
+      w.document.write(`</div>`);
+    });
+  }
+  // Dice + Chat summary
+  if(p.diceRolls.length)w.document.write(`<h2>Dobbelsteen-log</h2><p>${p.diceRolls.length} worpen gelogd.</p>`);
+  if(p.chat.length)w.document.write(`<h2>Chat</h2><p>${p.chat.length} berichten.</p>`);
+  w.document.write(`</body></html>`);w.document.close();
 }
 
 function sessionToMd(p){
