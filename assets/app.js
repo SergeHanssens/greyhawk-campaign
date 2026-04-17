@@ -1622,6 +1622,14 @@ async function openSession(id){
     }
   }
 
+  // Dice roll section
+  html+=`<div class="card" style="margin-bottom:16px;">
+    <div class="card-header">🎲 Dobbelsteen log
+      <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="showSessionRollDialog('${s.id}')">🎲 Gooi dobbelsteen</button>
+    </div>
+    <div id="session-dice-log" style="max-height:250px;overflow-y:auto;">Laden...</div>
+  </div>`;
+
   // Bottom controls
   html+=`<div style="text-align:right;margin-top:14px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
     <button class="btn btn-ghost btn-sm" onclick="openExportModal('session')">📤 Export</button>
@@ -1631,6 +1639,11 @@ async function openSession(id){
 
   document.getElementById('sd-body').innerHTML=html;
   openM('sd-modal');
+  // Load dice log async
+  loadDiceLog(s.id).then(logHtml=>{
+    const el=document.getElementById('session-dice-log');
+    if(el)el.innerHTML=logHtml;
+  });
 }
 
 // Combat management functions
@@ -2166,6 +2179,96 @@ async function doImport(){
 }
 
 // =====================================================================
+// =====================================================================
+// SESSION DICE ROLLS (gedeeld log, privé optie)
+// =====================================================================
+async function rollSessionDice(sessionId,notation,purpose,isPrivate,charName){
+  const result=parseDice(notation);
+  if(!result)return null;
+  const diceStr=result.rolls.map(r=>r.dice?`[${r.dice.join(',')}]`:r.expr).join('+');
+  await sb.from('dice_rolls').insert({
+    session_id:sessionId,player_id:CU.id,player_name:CU.username,
+    character_name:charName||null,notation,dice_detail:diceStr,
+    total:result.total,purpose:purpose||null,is_private:!!isPrivate,
+    combat_round:currentSession?.combat_round||null
+  });
+  return result;
+}
+
+async function showSessionRollDialog(sessionId){
+  const charName=CC?.name||'';
+  const h=`
+    <div class="fg-row col2">
+      <div class="fg"><label>Formule <span class="req">*</span></label><input type="text" id="srd-notation" value="1d20" placeholder="bv. 1d20, 3d6+2"></div>
+      <div class="fg"><label>Waarvoor</label><input type="text" id="srd-purpose" placeholder="bv. Aanval, Save vs Spell"></div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('srd-notation').value='1d20'">d20</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('srd-notation').value='1d6'">d6</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('srd-notation').value='1d8'">d8</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('srd-notation').value='1d10'">d10</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('srd-notation').value='3d6'">3d6</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('srd-notation').value='2d8+2'">2d8+2</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('srd-notation').value='1d100'">d100</button>
+    </div>
+    <div class="fg"><label>Karakter</label><input type="text" id="srd-char" value="${charName.replace(/"/g,'&quot;')}" placeholder="optioneel"></div>
+    <div class="fg">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="srd-private" style="width:18px;height:18px;">
+        <span>🔒 <strong>Privé worp</strong> — alleen jij en de DM zien het resultaat</span>
+      </label>
+    </div>
+    <div id="srd-result" style="text-align:center;margin:10px 0;min-height:40px;"></div>
+    <div style="text-align:right;display:flex;gap:6px;justify-content:flex-end;">
+      <button class="btn btn-ghost btn-sm" onclick="closeM('srd-modal')">Sluiten</button>
+      <button class="btn btn-primary btn-sm" onclick="executeSessionRoll('${sessionId}')">🎲 Gooi!</button>
+    </div>`;
+  // Reuse xp-modal body for simplicity
+  document.getElementById('xp-body').innerHTML=h;
+  document.querySelector('#xp-modal h2').textContent='🎲 Dobbelsteen gooien';
+  openM('xp-modal');
+}
+
+async function executeSessionRoll(sessionId){
+  const notation=document.getElementById('srd-notation').value.trim();
+  const purpose=document.getElementById('srd-purpose').value.trim();
+  const charName=document.getElementById('srd-char').value.trim();
+  const isPrivate=document.getElementById('srd-private').checked;
+  if(!notation){toast('Vul een formule in',false);return;}
+  const result=await rollSessionDice(sessionId,notation,purpose,isPrivate,charName);
+  if(!result){toast('Ongeldige formule',false);return;}
+  const diceStr=result.rolls.map(r=>r.dice?`[${r.dice.join(', ')}]`:r.expr).join(' + ');
+  const privLabel=isPrivate?'<span style="color:var(--dm-text);font-size:11px;"> 🔒 privé</span>':'';
+  document.getElementById('srd-result').innerHTML=`
+    <div style="font-family:'Cinzel',serif;font-size:36px;font-weight:600;color:var(--rust);">${result.total}</div>
+    <div style="font-size:13px;color:var(--ink3);">${notation} → ${diceStr}${privLabel}</div>
+    ${purpose?`<div style="font-size:12px;color:var(--ink3);font-style:italic;">${purpose}</div>`:''}`;
+}
+
+async function loadDiceLog(sessionId){
+  const isDM=CU.is_dm;
+  let q=sb.from('dice_rolls').select('*').eq('session_id',sessionId).order('created_at',{ascending:false}).limit(50);
+  const{data:rolls}=await q;
+  if(!rolls||!rolls.length)return '<div style="font-size:12px;color:var(--ink3);font-style:italic;padding:8px;">Nog geen worpen.</div>';
+  return rolls.filter(r=>{
+    if(!r.is_private)return true;       // publiek: iedereen ziet
+    if(isDM)return true;                // DM ziet alles
+    if(r.player_id===CU.id)return true; // eigen privé worp
+    return false;
+  }).map(r=>{
+    const time=new Date(r.created_at).toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'});
+    const privTag=r.is_private?'<span style="color:var(--dm-text);font-size:10px;"> 🔒</span>':'';
+    return`<div style="display:flex;gap:8px;align-items:baseline;padding:3px 0;border-bottom:1px dotted rgba(196,160,96,.2);font-size:12px;">
+      <span style="color:var(--ink3);min-width:40px;">${time}</span>
+      <strong style="min-width:60px;">${r.player_name||'?'}</strong>
+      <span style="color:var(--rust);font-weight:600;font-size:16px;min-width:30px;">${r.total}</span>
+      <span style="color:var(--ink3);">${r.notation} → ${r.dice_detail||''}${privTag}</span>
+      ${r.purpose?`<span style="font-style:italic;color:var(--ink3);">${r.purpose}</span>`:''}
+      ${r.character_name?`<span style="font-size:10px;color:var(--ink3);">(${r.character_name})</span>`:''}
+    </div>`;
+  }).join('');
+}
+
 // MAP / VTT MANAGEMENT
 // =====================================================================
 async function loadMapSettings(){
