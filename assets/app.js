@@ -1444,9 +1444,12 @@ async function loadParticipantsPicker(checkedIds){
   const{data:chars}=await sb.from('characters').select('id,name,race,class,player_name,is_active').order('is_active',{ascending:false}).order('name');
   const set=new Set(checkedIds);
   document.getElementById('ns-participants').innerHTML=(chars||[]).map(c=>`
-    <label style="display:flex;gap:8px;align-items:center;padding:4px 2px;cursor:pointer;${c.is_active===false?'opacity:.5;':''}">
-      <input type="checkbox" value="${c.id}" ${set.has(c.id)?'checked':''}>
-      <span><strong>${c.name}</strong> <span style="color:var(--ink3);">${c.race||''} ${c.class||''}${c.player_name?' ('+c.player_name+')':''}${c.is_active===false?' — inactief':''}</span></span>
+    <label style="display:grid;grid-template-columns:24px 1fr;gap:8px;align-items:center;padding:6px 4px;cursor:pointer;border-bottom:1px dotted rgba(196,160,96,.2);${c.is_active===false?'opacity:.5;':''}">
+      <input type="checkbox" value="${c.id}" ${set.has(c.id)?'checked':''} style="width:18px;height:18px;margin:0;">
+      <div>
+        <strong style="font-size:14px;">${c.name}</strong>
+        <div style="font-size:12px;color:var(--ink3);">${c.race||''} ${c.class||''}${c.player_name?' — speler: '+c.player_name:''}${c.is_active===false?' — inactief':''}</div>
+      </div>
     </label>`).join('')||'<div style="color:var(--ink3);font-style:italic;">Geen karakters gevonden.</div>';
 }
 
@@ -2097,35 +2100,77 @@ function renderDiceHistory(){
 }
 
 // =====================================================================
-// INITIATIVE TRACKER
+// INITIATIVE TRACKER — loads characters from DB, DM can assign control
 // =====================================================================
 let initEntries=[],initCurrentIdx=-1,initRound=1;
 
-function addInitChar(){
-  const name=prompt('Naam van karakter:');
-  if(!name)return;
-  const dex=parseInt(prompt('DEX modifier (bv. 1 of -1, of 0):'))||0;
-  initEntries.push({name,type:'player',init:0,dex,hp:'',maxHp:'',notes:'',active:false});
+async function loadInitCharacterPicker(){
+  const{data:chars}=await sb.from('characters').select('id,name,race,class,dex,hp_current,hp_max,player_name,is_active').eq('is_active',true).order('name');
+  const el=document.getElementById('init-char-picker');
+  if(!el)return;
+  el.innerHTML=`<div style="font-family:'Cinzel',serif;font-size:11px;color:var(--ink3);letter-spacing:.5px;margin-bottom:6px;">KARAKTERS UIT DATABASE</div>`+
+    (chars||[]).map(c=>`
+    <label style="display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center;padding:5px 4px;border-bottom:1px dotted rgba(196,160,96,.2);cursor:pointer;">
+      <input type="checkbox" class="init-char-cb" value="${c.id}" data-name="${(c.name||'').replace(/"/g,'&quot;')}" data-dex="${c.dex||0}" data-hp="${c.hp_current||0}" data-hpmax="${c.hp_max||0}" data-player="${(c.player_name||'').replace(/"/g,'&quot;')}" style="width:16px;height:16px;margin:0;">
+      <div>
+        <strong>${c.name}</strong>
+        <div style="font-size:11px;color:var(--ink3);">${c.race||''} ${c.class||''} · DEX ${c.dex||'?'} · HP ${c.hp_current||0}/${c.hp_max||0}</div>
+      </div>
+      <span style="font-size:11px;color:var(--ink3);">${c.player_name||'NPC'}</span>
+    </label>`).join('')+
+    `<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" onclick="addCheckedInitChars()">✓ Geselecteerden toevoegen</button>
+      <button class="btn btn-ghost btn-sm" onclick="addCustomInitEntry()">+ Vijand / NPC handmatig</button>
+    </div>`;
+}
+
+function addCheckedInitChars(){
+  document.querySelectorAll('.init-char-cb:checked').forEach(cb=>{
+    // Prevent duplicates
+    if(initEntries.some(e=>e.charId===cb.value))return;
+    const dexScore=parseInt(cb.dataset.dex)||10;
+    const dexMod=Math.floor((dexScore-10)/2); // simplified; AD&D uses lookup table
+    initEntries.push({
+      charId:cb.value,name:cb.dataset.name,type:'player',
+      init:0,dex:dexMod,dexScore,
+      hp:cb.dataset.hp,maxHp:cb.dataset.hpmax,
+      player:cb.dataset.player||'NPC',
+      controlledBy:cb.dataset.player||'DM', // who controls this char
+      notes:'',active:false
+    });
+    cb.checked=false;
+  });
   renderInit();
 }
 
-function addInitEnemy(){
-  const name=prompt('Naam van vijand (bv. "Goblin #1"):');
+function addCustomInitEntry(){
+  const name=prompt('Naam (bv. "Goblin #1", "Skeletten groep"):');
   if(!name)return;
-  const hp=prompt('HP (optioneel):');
-  initEntries.push({name,type:'enemy',init:0,dex:0,hp:hp||'',maxHp:hp||'',notes:'',active:false});
+  const hp=prompt('HP (optioneel, bv. 8):');
+  const count=parseInt(prompt('Aantal (1 = één entry, 3 = drie aparte):'))||1;
+  for(let i=0;i<Math.min(count,20);i++){
+    const label=count>1?`${name} #${i+1}`:name;
+    initEntries.push({charId:null,name:label,type:'enemy',init:0,dex:0,dexScore:10,hp:hp||'?',maxHp:hp||'?',player:'DM',controlledBy:'DM',notes:'',active:false});
+  }
+  renderInit();
+}
+
+function changeInitControl(idx){
+  const current=initEntries[idx].controlledBy;
+  const newCtrl=prompt(`Wie speelt ${initEntries[idx].name}?\nHuidig: ${current}\nVoer spelernaam in (of "DM"):`,current);
+  if(newCtrl!==null)initEntries[idx].controlledBy=newCtrl;
   renderInit();
 }
 
 function rollAllInit(){
   initEntries.forEach(e=>{
-    e.init=Math.floor(Math.random()*6)+1+e.dex; // d6 + dex mod (AD&D uses d6 for init)
+    e.init=Math.floor(Math.random()*6)+1+e.dex;
   });
   sortInit();
 }
 
 function sortInit(){
-  initEntries.sort((a,b)=>a.init-b.init); // AD&D: LOWER initiative goes first
+  initEntries.sort((a,b)=>a.init-b.init);
   initCurrentIdx=-1;
   renderInit();
 }
@@ -2152,18 +2197,23 @@ function editInitHp(idx,val){initEntries[idx].hp=val;}
 
 function renderInit(){
   const el=document.getElementById('init-list');
-  if(!initEntries.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--ink3);font-style:italic;">Geen deelnemers. Klik "+ Karakter" of "+ Vijand".</div>';return;}
+  if(!initEntries.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--ink3);font-style:italic;">Klik "+ Karakter" om te beginnen of selecteer uit de lijst hieronder.</div>';return;}
   el.innerHTML=initEntries.map((e,i)=>{
-    const bg=e.active?'rgba(42,122,42,.12)':e.type==='enemy'?'rgba(138,32,16,.06)':'rgba(196,160,96,.06)';
+    const bg=e.active?'rgba(42,122,42,.15)':e.type==='enemy'?'rgba(138,32,16,.06)':'rgba(196,160,96,.06)';
     const border=e.active?'var(--green2)':'transparent';
-    return`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:4px;border-radius:4px;background:${bg};border-left:4px solid ${border};">
-      <div style="font-family:'Cinzel',serif;font-size:18px;font-weight:600;color:var(--rust);min-width:30px;text-align:center;">${e.init||'—'}</div>
-      <div style="flex:1;">
-        <div style="font-weight:600;${e.type==='enemy'?'color:var(--rust2);':''}">${e.active?'▶ ':''}${e.name}</div>
-        ${e.type==='enemy'?`<div style="font-size:11px;color:var(--ink3);">HP: <input type="text" value="${e.hp}" onchange="editInitHp(${i},this.value)" style="width:40px;padding:2px 4px;border:1px solid var(--card-border);border-radius:2px;font-size:11px;">${e.maxHp?' / '+e.maxHp:''}</div>`:
-        `<span style="font-size:11px;color:var(--ink3);">DEX mod: ${e.dex>=0?'+':''}${e.dex}</span>`}
+    const isDead=e.hp!=='?'&&parseInt(e.hp)<=0;
+    return`<div style="display:grid;grid-template-columns:40px 1fr 80px 30px;align-items:center;gap:6px;padding:8px 10px;margin-bottom:3px;border-radius:4px;background:${bg};border-left:4px solid ${border};${isDead?'opacity:.4;text-decoration:line-through;':''}">
+      <div style="font-family:'Cinzel',serif;font-size:20px;font-weight:600;color:var(--rust);text-align:center;">${e.init||'—'}</div>
+      <div>
+        <div style="font-weight:600;font-size:14px;${e.type==='enemy'?'color:var(--rust2);':''}">${e.active?'▶ ':''}${e.name}</div>
+        <div style="font-size:11px;color:var(--ink3);display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <span>HP: <input type="text" value="${e.hp}" onchange="editInitHp(${i},this.value)" style="width:35px;padding:1px 3px;border:1px solid var(--card-border);border-radius:2px;font-size:11px;text-align:center;">/${e.maxHp||'?'}</span>
+          <span>DEX: ${e.dexScore||'?'} (${e.dex>=0?'+':''}${e.dex})</span>
+          <span title="Klik om te wijzigen wie dit karakter speelt" onclick="changeInitControl(${i})" style="cursor:pointer;text-decoration:underline dotted;">🎮 ${e.controlledBy}</span>
+        </div>
       </div>
-      <button class="btn btn-xs btn-ghost" onclick="removeInit(${i})">✕</button>
+      <div style="font-size:10px;color:var(--ink3);text-align:right;">${e.type==='enemy'?'Vijand':'Speler'}</div>
+      <button class="btn btn-xs btn-ghost" onclick="removeInit(${i})" style="padding:2px 6px;">✕</button>
     </div>`;
   }).join('');
 }
