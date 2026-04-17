@@ -380,16 +380,20 @@ async function loadChars(){
   const grid=document.getElementById('chars-grid');
   const isDM=CU.is_dm;
   const addBtn=isDM?`<div class="new-char-card" onclick="openNewChar()"><div class="new-char-card-inner"><span class="plus">+</span><span>Nieuw karakter</span></div></div>`:'';
-  if(!data?.length){grid.innerHTML=isDM?addBtn:`<div style="padding:30px;text-align:center;color:var(--ink3);font-style:italic;">Je hebt nog geen karakter. Vraag aan de DM om er een aan te maken.</div>`;return;}
-  const isNpcChar=c=>c.race==='NPC'||c.class==='NPC'||c.race==='Monster'||c.class==='Enemy'||c.class==='Companion'||c.class==='Guard'||c.class==='Merchant'||c.class==='Noble'||c.class==='Commoner';
+  if(!data?.length){grid.innerHTML=isDM?`<div class="char-grid">${addBtn}</div>`:`<div style="padding:30px;text-align:center;color:var(--ink3);font-style:italic;">Je hebt nog geen karakter. Vraag aan de DM om er een aan te maken.</div>`;return;}
+  const isNpcChar=c=>c.race==='NPC'||c.class==='NPC'||c.race==='Monster'||c.class==='Enemy'||c.class==='Companion'||c.class==='Guard'||c.class==='Merchant'||c.class==='Noble'||c.class==='Commoner'||c.race==='Undead'||c.race==='Beast'||c.race==='Demon'||c.race==='Devil'||c.race==='Dragon'||c.race==='Giant'||c.race==='Construct';
   const playerChars=data.filter(c=>!isNpcChar(c));
   const npcChars=data.filter(isNpcChar);
   let html='';
-  html+=`<div style="font-family:'Cinzel',serif;font-size:12px;color:var(--gold);letter-spacing:1px;margin-bottom:8px;">⚔ SPELER KARAKTERS (${playerChars.length})</div>`;
-  html+=`<div class="char-grid" style="margin-bottom:24px;">${playerChars.map(renderCharCard).join('')}${addBtn}</div>`;
+  html+=`<div style="background:rgba(26,58,106,.04);border:1px solid rgba(26,58,106,.15);border-radius:8px;padding:16px;margin-bottom:20px;">
+    <div style="font-family:'Cinzel',serif;font-size:13px;color:var(--blue2);letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">⚔ SPELER KARAKTERS <span style="font-size:11px;color:var(--ink3);font-weight:400;">(${playerChars.length})</span></div>
+    <div class="char-grid">${playerChars.length?playerChars.map(renderCharCard).join(''):'<div style="padding:16px;text-align:center;color:var(--ink3);font-style:italic;font-size:13px;">Nog geen speler-karakters.</div>'}${addBtn}</div>
+  </div>`;
   if(npcChars.length||isDM){
-    html+=`<div style="font-family:'Cinzel',serif;font-size:12px;color:var(--rust);letter-spacing:1px;margin-bottom:8px;">🏰 NPC's & MONSTERS (${npcChars.length})</div>`;
-    html+=`<div class="char-grid">${npcChars.map(renderCharCard).join('')}</div>`;
+    html+=`<div style="background:rgba(138,32,16,.04);border:1px solid rgba(138,32,16,.15);border-radius:8px;padding:16px;">
+      <div style="font-family:'Cinzel',serif;font-size:13px;color:var(--rust);letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">🏰 NPC's, MONSTERS & COMPANEN <span style="font-size:11px;color:var(--ink3);font-weight:400;">(${npcChars.length})</span></div>
+      <div class="char-grid">${npcChars.length?npcChars.map(renderCharCard).join(''):'<div style="padding:16px;text-align:center;color:var(--ink3);font-style:italic;font-size:13px;">Nog geen NPCs.</div>'}</div>
+    </div>`;
   }
   grid.innerHTML=html;
 }
@@ -1622,7 +1626,7 @@ async function openSession(id){
   const npcs=sorted.filter(p=>p.is_enemy&&p.characters);
   html+=`<div class="card" style="margin-bottom:16px;">
     <div class="card-header">Deelnemers
-      ${isDM&&!isCompleted?`<button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="addNpcToSession('${s.id}','')">+ NPC</button>`:''}
+      ${isDM&&!isCompleted?`<button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="addNpcToSession('${s.id}','')">+ Karakter</button>`:''}
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
       ${players.map(p=>{const c=p.characters;return`<div onclick="openChar('${c.id}')" style="cursor:pointer;padding:6px 12px;border-radius:4px;border:1px solid var(--blue2);background:rgba(26,58,106,.06);font-size:13px;display:flex;align-items:center;gap:6px;" title="Klik om character sheet te openen">
@@ -1659,10 +1663,11 @@ async function openSession(id){
     let actParts=null;
     try{const r=await sb.from('action_participants').select('*,characters(id,name,race,class,player_id,player_name,hp_current,hp_max,ac,thac0,avatar_url,dex)').eq('action_id',act.id);actParts=r.data;}catch(e){}
     const isCombat=act.action_type==='combat';
+    const hasInit=act.has_initiative!==false; // default true
     const typeIcons={combat:'⚔️',exploration:'🗺',social:'💬',travel:'🏃',rest:'🏕',other:'📝'};
     const typeLabels={combat:'Gevecht',exploration:'Verkenning',social:'Sociaal',travel:'Rondtrekken',rest:'Rust',other:'Anders'};
     const sortedActParts=[...(actParts||[])].sort((a,b)=>{
-      if(!isCombat)return 0;
+      if(!hasInit)return 0;
       if(a.initiative_roll==null&&b.initiative_roll==null)return 0;
       if(a.initiative_roll==null)return 1;if(b.initiative_roll==null)return -1;
       return a.initiative_roll-b.initiative_roll;
@@ -1671,12 +1676,12 @@ async function openSession(id){
     html+=`<div style="border:2px solid ${isCombat?'var(--rust)':'var(--blue2)'};border-radius:8px;padding:14px;margin-bottom:12px;background:${isCombat?'rgba(138,32,16,.03)':'rgba(26,58,106,.03)'};">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
         <div style="font-family:'Cinzel',serif;font-size:15px;font-weight:600;color:${isCombat?'var(--rust)':'var(--blue2)'};">
-          ${typeIcons[act.action_type]||'📝'} ${act.name} ${isCombat&&act.combat_round?`— Ronde ${act.combat_round}`:''}
+          ${typeIcons[act.action_type]||'📝'} ${act.name} ${hasInit&&act.combat_round?` — Ronde ${act.combat_round}`:''}
         </div>
         <div style="display:flex;gap:4px;flex-wrap:wrap;">
-          ${isDM&&isCombat?`<button class="btn btn-success btn-xs" onclick="nextActionRound('${act.id}','${s.id}',${act.combat_round||0})">Ronde ${(act.combat_round||0)+1} →</button>`:''}
-          ${isDM&&isCombat?`<button class="btn btn-ghost btn-xs" onclick="rollDMActionInit('${act.id}','${s.id}')">🎲 DM init</button>`:''}
-          ${isDM?`<button class="btn btn-ghost btn-xs" onclick="addNpcToSession('${s.id}','${act.id}')">+ NPC</button>`:''}
+          ${isDM&&hasInit?`<button class="btn btn-success btn-xs" onclick="nextActionRound('${act.id}','${s.id}',${act.combat_round||0})">Ronde ${(act.combat_round||0)+1} →</button>`:''}
+          ${isDM&&hasInit?`<button class="btn btn-ghost btn-xs" onclick="rollDMActionInit('${act.id}','${s.id}')">🎲 DM init</button>`:''}
+          ${isDM?`<button class="btn btn-ghost btn-xs" onclick="addNpcToSession('${s.id}','${act.id}')">+ Karakter</button>`:''}
           ${isDM?`<button class="btn btn-ghost btn-xs" onclick="completeAction('${act.id}','${s.id}')">✓ Afsluiten</button>`:''}
         </div>
       </div>`;
@@ -1690,8 +1695,10 @@ async function openSession(id){
       const combatHp=p.hp_combat!=null?p.hp_combat:c.hp_current;
       const isDead=p.status==='dead'||p.status==='unconscious';
       const statusIcon={active:'',dead:'💀',unconscious:'😵',fled:'🏃'}[p.status]||'';
-      return`<div style="display:grid;grid-template-columns:${isCombat?'50px':''}50px 1fr auto;gap:6px;align-items:center;padding:6px 8px;margin-bottom:3px;border-radius:4px;background:${isDead?'rgba(0,0,0,.05)':isNpc?'rgba(138,32,16,.04)':'rgba(196,160,96,.04)'};${isDead?'opacity:.4;':''}border-left:3px solid ${isNpc?'var(--rust2)':'var(--blue2)'};">
-        ${isCombat?`<div style="text-align:center;">
+      const statusBg={active:'',dead:'rgba(80,0,0,.12)',unconscious:'rgba(180,120,0,.1)',fled:'rgba(100,100,100,.08)'}[p.status]||'';
+      const statusBorder={active:isNpc?'var(--rust2)':'var(--blue2)',dead:'#600',unconscious:'#a80',fled:'#888'}[p.status]||'var(--card-border)';
+      return`<div style="display:grid;grid-template-columns:${hasInit?'50px ':''}50px 1fr auto;gap:6px;align-items:center;padding:6px 8px;margin-bottom:3px;border-radius:4px;background:${statusBg||(isNpc?'rgba(138,32,16,.04)':'rgba(196,160,96,.04)')};${isDead?'opacity:.5;':''}border-left:4px solid ${statusBorder};">
+        ${hasInit?`<div style="text-align:center;">
           <div style="font-family:'Cinzel',serif;font-size:8px;color:var(--ink3);">INIT</div>
           ${canEdit?`<input type="number" value="${p.initiative_roll||''}" min="1" max="20" placeholder="?" style="width:40px;font-size:16px;font-family:'Cinzel',serif;font-weight:600;text-align:center;border:2px solid var(--gold);border-radius:4px;padding:3px;color:var(--rust);background:rgba(196,160,96,.1);" onchange="saveActionInit('${act.id}','${c.id}',this.value)">`:
           `<div style="font-size:18px;font-weight:600;color:var(--rust);">${p.initiative_roll||'?'}</div>`}
@@ -1824,7 +1831,7 @@ async function addNpcToSession(sessionId,actionId){
   const existingIds=new Set((existingParts||[]).map(p=>p.character_id));
   const available=(allChars||[]).filter(c=>!existingIds.has(c.id));
 
-  document.querySelector('#xp-modal h2').textContent='+NPC toevoegen';
+  document.querySelector('#xp-modal h2').textContent='+ Karakter toevoegen';
   document.getElementById('xp-body').innerHTML=`
     <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--ink3);letter-spacing:1px;margin-bottom:6px;">BESTAAND KARAKTER / NPC SELECTEREN</div>
     <div style="max-height:200px;overflow-y:auto;border:1px solid var(--card-border);border-radius:4px;padding:6px;margin-bottom:10px;background:#fff;">
@@ -1937,6 +1944,12 @@ async function createSessionAction(sessionId){
       </select>
     </div>
     <div class="fg">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="sa-init" checked style="width:18px;height:18px;">
+        <span><strong>Initiative volgorde</strong> <small style="color:var(--ink3);">— vink uit als de volgorde er niet toe doet (bv. herbergbezoek, rust)</small></span>
+      </label>
+    </div>
+    <div class="fg">
       <label>Deelnemers <span class="req">*</span></label>
       <div style="max-height:200px;overflow-y:auto;border:1px solid var(--card-border);border-radius:4px;padding:6px;background:#fff;">
         ${(parts||[]).map(p=>{const c=p.characters;return c?`
@@ -1960,7 +1973,8 @@ async function submitNewAction(sessionId){
   const type=document.getElementById('sa-type').value;
   const chars=[...document.querySelectorAll('.sa-char:checked')].map(el=>el.value);
   if(!chars.length){document.getElementById('sa-err').textContent='Selecteer minstens één karakter.';return;}
-  const{data:action}=await sb.from('session_actions').insert({session_id:sessionId,name,action_type:type,status:'active',combat_round:type==='combat'?1:0,created_by:CU.id}).select().single();
+  const hasInit=document.getElementById('sa-init')?.checked!==false;
+  const{data:action}=await sb.from('session_actions').insert({session_id:sessionId,name,action_type:type,status:'active',combat_round:hasInit?1:0,has_initiative:hasInit,created_by:CU.id}).select().single();
   if(action){
     const rows=chars.map(cid=>({action_id:action.id,character_id:cid}));
     await sb.from('action_participants').insert(rows);

@@ -12,7 +12,8 @@ create table if not exists public.session_actions (
   name            text        not null,           -- "Gevecht in de grot", "Herbergbezoek"
   action_type     text        default 'other',    -- combat, travel, social, exploration, rest, other
   status          text        default 'active',   -- active, completed
-  combat_round    integer     default 0,          -- alleen relevant bij action_type='combat'
+  combat_round    integer     default 0,          -- alleen relevant als has_initiative=true
+  has_initiative  boolean     default true,       -- true = initiative volgorde, false = vrije volgorde
   created_by      uuid        references public.players(id),
   created_at      timestamptz default now(),
   completed_at    timestamptz
