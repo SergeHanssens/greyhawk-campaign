@@ -1467,9 +1467,10 @@ async function loadSessions(){
   let q=sb.from('sessions').select('*').order('session_date',{ascending:false}).order('created_at',{ascending:false});
   const{data:sessions,error}=await q;
   if(error){el.innerHTML=`<div style="padding:20px;color:var(--rust2);">Fout: ${error.message}</div>`;return;}
-  // voor niet-DM: filter op sessies waar hun karakter in zit
+  // voor niet-DM: filter op sessies waar hun karakter in zit + alleen active/completed
   let visible=sessions||[];
   if(!CU.is_dm&&visible.length){
+    visible=visible.filter(s=>s.status==='active'||s.status==='completed');
     const{data:myChars}=await sb.from('characters').select('id').eq('player_id',CU.id);
     const myIds=(myChars||[]).map(c=>c.id);
     if(myIds.length){
@@ -1694,33 +1695,45 @@ async function openSession(id){
     // Participants in this action
     html+=sortedActParts.map(p=>{
       const c=p.characters;if(!c)return '';
+      // Hidden status: only DM sees these
+      if(p.status==='hidden'&&!isDM)return '';
       const isOwner=c.player_id===CU.id;
-      const canEdit=isDM||isOwner;
       const isNpc=!c.player_id||p.controlled_by==='DM';
       const combatHp=p.hp_combat!=null?p.hp_combat:c.hp_current;
       const isDead=p.status==='dead'||p.status==='unconscious';
-      const statusIcon={active:'',dead:'💀',unconscious:'😵',fled:'🏃'}[p.status]||'';
-      const statusBg={active:'',dead:'rgba(80,0,0,.12)',unconscious:'rgba(180,120,0,.1)',fled:'rgba(100,100,100,.08)'}[p.status]||'';
-      const statusBorder={active:isNpc?'var(--rust2)':'var(--blue2)',dead:'#600',unconscious:'#a80',fled:'#888'}[p.status]||'var(--card-border)';
-      return`<div style="display:grid;grid-template-columns:${hasInit?'50px ':''}50px 1fr auto;gap:6px;align-items:center;padding:6px 8px;margin-bottom:3px;border-radius:4px;background:${statusBg||(isNpc?'rgba(138,32,16,.04)':'rgba(196,160,96,.04)')};${isDead?'opacity:.5;':''}border-left:4px solid ${statusBorder};">
+      const statusIcon={active:'',dead:'💀',unconscious:'😵',fled:'🏃',hidden:'👁‍🗨'}[p.status]||'';
+      const statusLabel={active:'Actief',dead:'Dood',unconscious:'KO',fled:'Weg',hidden:'Verborgen'}[p.status]||'';
+      const statusBg={active:'',dead:'rgba(80,0,0,.12)',unconscious:'rgba(180,120,0,.1)',fled:'rgba(100,100,100,.08)',hidden:'rgba(74,58,122,.1)'}[p.status]||'';
+      const statusBorder={active:isNpc?'var(--rust2)':'var(--blue2)',dead:'#600',unconscious:'#a80',fled:'#888',hidden:'var(--dm-border)'}[p.status]||'var(--card-border)';
+      // Initiative: only own char editable, locked after filling
+      const initLocked=p.initiative_roll!=null&&!isDM;
+      const canEditInit=(isOwner&&!initLocked)||isDM;
+      // HP: only own char editable (or DM)
+      const canEditHp=isDM||isOwner;
+      return`<div style="display:grid;grid-template-columns:${hasInit?'60px ':''}50px 1fr auto;gap:6px;align-items:center;padding:6px 8px;margin-bottom:3px;border-radius:4px;background:${statusBg||(isNpc?'rgba(138,32,16,.04)':'rgba(196,160,96,.04)')};${isDead?'opacity:.5;':''}border-left:4px solid ${statusBorder};">
         ${hasInit?`<div style="text-align:center;">
           <div style="font-family:'Cinzel',serif;font-size:8px;color:var(--ink3);">INIT</div>
-          ${canEdit?`<input type="number" value="${p.initiative_roll||''}" min="1" max="20" placeholder="?" style="width:40px;font-size:16px;font-family:'Cinzel',serif;font-weight:600;text-align:center;border:2px solid var(--gold);border-radius:4px;padding:3px;color:var(--rust);background:rgba(196,160,96,.1);" onchange="saveActionInit('${act.id}','${c.id}',this.value)">`:
+          ${canEditInit?`<div style="display:flex;align-items:center;gap:2px;justify-content:center;">
+            <input type="number" id="init-${act.id}-${c.id}" value="${p.initiative_roll||''}" min="1" max="20" placeholder="?" style="width:36px;font-size:15px;font-family:'Cinzel',serif;font-weight:600;text-align:center;border:2px solid var(--gold);border-radius:4px;padding:2px;color:var(--rust);background:rgba(196,160,96,.1);" onchange="saveActionInitAndSort('${act.id}','${c.id}',this.value,'${s.id}')">
+            <button onclick="autoRollInit('${act.id}','${c.id}','${s.id}')" style="border:none;background:none;cursor:pointer;font-size:14px;padding:0;" title="Gooi 1d20 voor initiative">🎲</button>
+          </div>`:
           `<div style="font-size:18px;font-weight:600;color:var(--rust);">${p.initiative_roll||'?'}</div>`}
         </div>`:''}
         <div style="cursor:pointer;" onclick="closeM('sd-modal');openChar('${c.id}')">
           <div style="font-weight:600;font-size:14px;color:${isNpc?'var(--rust2)':'var(--ink)'};">${statusIcon}${c.name} ${isNpc?'<span style="font-size:10px;color:var(--rust);">[NPC]</span>':''}</div>
-          <div style="font-size:11px;color:var(--ink3);">HP: ${canEdit?`<input type="number" value="${combatHp||0}" style="width:35px;font-size:11px;border:1px solid var(--card-border);border-radius:2px;padding:1px 3px;text-align:center;" onclick="event.stopPropagation()" onchange="saveActionHp('${act.id}','${c.id}',this.value)">`:combatHp||0}/${c.hp_max||'?'} · AC ${c.ac||'?'}${c.thac0?' · T'+c.thac0:''}</div>
+          <div style="font-size:11px;color:var(--ink3);">HP: ${canEditHp?`<input type="number" value="${combatHp||0}" style="width:35px;font-size:11px;border:1px solid var(--card-border);border-radius:2px;padding:1px 3px;text-align:center;" onclick="event.stopPropagation()" onchange="saveActionHp('${act.id}','${c.id}',this.value)">`:combatHp||0}/${c.hp_max||'?'} · AC ${c.ac||'?'}${c.thac0?' · T'+c.thac0:''} <span style="font-size:10px;padding:2px 5px;border-radius:2px;background:${statusBg||'rgba(42,122,42,.1)'};color:${statusBorder};">${statusLabel}</span></div>
         </div>
         <div style="display:flex;gap:3px;flex-wrap:wrap;">
-          ${canEdit?`<button class="btn btn-ghost btn-xs" onclick="showSessionRollDialog('${s.id}')" title="🎲">🎲</button>`:''}
+          ${(isDM||isOwner)?`<button class="btn btn-ghost btn-xs" onclick="showSessionRollDialog('${s.id}')" title="🎲">🎲</button>`:''}
           ${isDM?`<button class="btn btn-ghost btn-xs" onclick="logActionEntry('${act.id}','${c.id}','${c.name.replace(/'/g,"&#39;")}',${act.combat_round||0})">📋</button>`:''}
-          ${isDM?`<select style="font-size:9px;border:1px solid var(--card-border);border-radius:2px;padding:1px;width:55px;" onchange="setActionParticipantStatus('${act.id}','${c.id}',this.value)">
+          ${isDM?`<select style="font-size:9px;border:1px solid var(--card-border);border-radius:2px;padding:1px;width:65px;" onchange="setActionParticipantStatus('${act.id}','${c.id}',this.value)">
             <option value="active" ${p.status==='active'?'selected':''}>Actief</option>
             <option value="unconscious" ${p.status==='unconscious'?'selected':''}>KO</option>
             <option value="dead" ${p.status==='dead'?'selected':''}>Dood</option>
             <option value="fled" ${p.status==='fled'?'selected':''}>Weg</option>
-          </select>`:''}
+            <option value="hidden" ${p.status==='hidden'?'selected':''}>Verborgen</option>
+          </select>`:
+          `<span style="font-size:9px;color:var(--ink3);">${statusLabel}</span>`}
         </div>
       </div>`;
     }).join('');
@@ -2000,6 +2013,20 @@ async function nextActionRound(actionId,sessionId,current){
 
 async function saveActionInit(actionId,charId,val){
   await sb.from('action_participants').update({initiative_roll:parseInt(val)||null}).eq('action_id',actionId).eq('character_id',charId);
+}
+
+async function saveActionInitAndSort(actionId,charId,val,sessionId){
+  await sb.from('action_participants').update({initiative_roll:parseInt(val)||null}).eq('action_id',actionId).eq('character_id',charId);
+  // Auto-sort: refresh the session to reorder
+  openSession(sessionId);
+}
+
+async function autoRollInit(actionId,charId,sessionId){
+  const roll=Math.floor(Math.random()*20)+1;
+  const el=document.getElementById('init-'+actionId+'-'+charId);
+  if(el)el.value=roll;
+  await saveActionInitAndSort(actionId,charId,roll,sessionId);
+  toast(`🎲 Initiative: ${roll}`);
 }
 
 async function saveActionHp(actionId,charId,val){
