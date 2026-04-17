@@ -148,7 +148,14 @@ Aanvalssequentie per ronde:
 
 // UI HELPERS
 function openM(id){document.getElementById(id).classList.add('open');}
-function closeM(id){document.getElementById(id).classList.remove('open');if(id==='sd-modal')stopChatPoll();}
+function closeM(id){
+  document.getElementById(id).classList.remove('open');
+  if(id==='sd-modal')stopChatPoll();
+  // Refresh dice log when closing roll dialog while session is open
+  if(id==='xp-modal'&&srdSessionId&&document.getElementById('session-dice-log')){
+    loadDiceLog(srdSessionId).then(h=>{const el=document.getElementById('session-dice-log');if(el)el.innerHTML=h;});
+  }
+}
 document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 function showHelp(k){
   const titles={ras:'Rassen in AD&D',klasse:'Klassen in AD&D',gezindheid:'Gezindheid',thac0:'THAC0 uitgelegd',ac:'Armor Class',hp:'Hit Points',saving_throws:'Saving Throws',xp:'Experience Points',ability_scores:'Ability Scores',wapen:'Wapens & Proficiënties',spells:'Spreuken',dobbelstenen:'Dobbelstenen Gids'};
@@ -1565,7 +1572,8 @@ async function openSession(id){
     return`<div class="card" style="margin-bottom:8px;${isDead?'opacity:.4;':''}${isEnemy?'border-left:4px solid var(--rust2);':'border-left:4px solid var(--blue2);'}">
       <div style="display:grid;grid-template-columns:${combatActive?'45px ':' '}50px 1fr auto;gap:8px;align-items:center;">
         ${combatActive?`<div style="text-align:center;">
-          ${(isOwner||isDM)?`<input type="number" value="${p.initiative_roll||''}" min="1" max="20" style="width:40px;font-size:18px;font-family:'Cinzel',serif;font-weight:600;text-align:center;border:2px solid var(--card-border);border-radius:4px;padding:4px;color:var(--rust);" onchange="saveInitiative('${s.id}','${c.id}',this.value)" title="Initiative (d6 + DEX mod)">`:
+          <div style="font-family:'Cinzel',serif;font-size:8px;color:var(--ink3);letter-spacing:.5px;margin-bottom:2px;">INIT</div>
+          ${(isOwner||isDM)?`<input type="number" value="${p.initiative_roll||''}" min="1" max="20" placeholder="?" style="width:42px;font-size:18px;font-family:'Cinzel',serif;font-weight:600;text-align:center;border:2px solid var(--gold);border-radius:4px;padding:4px;color:var(--rust);background:rgba(196,160,96,.1);" onchange="saveInitiative('${s.id}','${c.id}',this.value)" title="Initiative: gooi d6 + DEX modifier">`:
           `<div style="font-family:'Cinzel',serif;font-size:20px;font-weight:600;color:var(--rust);">${p.initiative_roll||'?'}</div>`}
         </div>`:''}
         <div>
@@ -1616,7 +1624,7 @@ async function openSession(id){
       html+=`<div class="card" style="margin-bottom:16px;">
         <div class="card-header">📋 Acties — Ronde ${combatRound}</div>
         ${actions.map(a=>`<div style="padding:4px 0;border-bottom:1px dotted rgba(196,160,96,.2);font-size:13px;">
-          <strong>${a.enemy_name||'Karakter'}</strong>: ${a.description||'—'} ${a.result?`→ <em>${a.result}</em>`:''}
+          <strong>${a.enemy_name||'Onbekend'}</strong> <span style="font-size:11px;color:var(--blue2);">[${a.action_type||'?'}]</span>: ${a.description||'—'} ${a.result?`→ <em style="color:var(--green2);">${a.result}</em>`:''}
         </div>`).join('')}
       </div>`;
     }
@@ -1727,17 +1735,46 @@ async function addEnemyToSession(sessionId){
   }
   toast(`✓ ${count}× ${name} toegevoegd`);openSession(sessionId);
 }
-async function declareAction(sessionId,charId,charName,round){
-  const desc=prompt(`Actie voor ${charName} in ronde ${round}:\n(bv. "Aanval op Goblin #2 met Long Sword")`);
-  if(!desc)return;
-  const result=prompt(`Resultaat (optioneel):\n(bv. "Raak! 8 dmg", "Mis", "Spell gecast")`);
+function declareAction(sessionId,charId,charName,round){
+  document.querySelector('#xp-modal h2').textContent=`📋 Actie — ${charName} (Ronde ${round})`;
+  document.getElementById('xp-body').innerHTML=`
+    <div class="fg"><label>Karakter</label><input type="text" disabled value="${charName.replace(/"/g,'&quot;')}" style="font-weight:600;"></div>
+    <div class="fg"><label>Type actie <span class="req">*</span></label>
+      <select id="act-type" style="width:100%;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;">
+        <option value="attack">⚔ Aanval</option>
+        <option value="spell">✨ Spreuk</option>
+        <option value="defend">🛡 Verdedigen</option>
+        <option value="move">🏃 Bewegen/Verplaatsen</option>
+        <option value="flee">🚪 Vluchten</option>
+        <option value="use_item">🧪 Item gebruiken</option>
+        <option value="other">📝 Anders</option>
+      </select>
+    </div>
+    <div class="fg"><label>Beschrijving <span class="req">*</span> <small>(wat doet het karakter precies?)</small></label>
+      <input type="text" id="act-desc" placeholder="bv. Aanval op Goblin #2 met Long Sword" style="width:100%;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;">
+    </div>
+    <div class="fg"><label>Resultaat <small>(optioneel — raak/mis, schade, effect)</small></label>
+      <input type="text" id="act-result" placeholder="bv. Raak! 8 dmg, Mis, Spell gecast" style="width:100%;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;">
+    </div>
+    <div class="err" id="act-err"></div>
+    <div style="text-align:right;margin-top:10px;display:flex;gap:6px;justify-content:flex-end;">
+      <button class="btn btn-ghost btn-sm" onclick="closeM('xp-modal')">Annuleren</button>
+      <button class="btn btn-primary btn-sm" onclick="submitAction('${sessionId}','${charId}','${charName.replace(/'/g,"\\'")}',${round})">✓ Vastleggen</button>
+    </div>`;
+  openM('xp-modal');
+}
+async function submitAction(sessionId,charId,charName,round){
+  const desc=document.getElementById('act-desc').value.trim();
+  if(!desc){document.getElementById('act-err').textContent='Beschrijving is verplicht.';return;}
+  const actType=document.getElementById('act-type').value;
+  const result=document.getElementById('act-result').value.trim();
   await sb.from('combat_actions').insert({
-    session_id:sessionId,character_id:charId,
-    round_number:round,action_type:'other',
+    session_id:sessionId,character_id:charId,enemy_name:charName,
+    round_number:round,action_type:actType,
     description:desc,result:result||null,
     recorded_by:CU.id
   });
-  toast('✓ Actie vastgelegd');openSession(sessionId);
+  closeM('xp-modal');toast('✓ Actie vastgelegd');openSession(sessionId);
 }
 
 async function saveSessionDMNotes(id,val){
@@ -1816,8 +1853,9 @@ async function saveSessionLog(){
 
 async function openAwardXp(sessionId,characterId,characterName,currentXpAwarded){
   if(!CU.is_dm)return;
+  document.querySelector('#xp-modal h2').textContent='⭐ XP toekennen — '+characterName;
   document.getElementById('xp-body').innerHTML=`
-    <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Toekenning wordt direct aan het karakter''s totale XP toegevoegd én in het sessielogboek bijgehouden.</p>
+    <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Toekenning wordt direct aan het karakter's totale XP toegevoegd én in het sessielogboek bijgehouden.</p>
     <div class="fg"><label>Karakter</label><input type="text" disabled value="${characterName.replace(/"/g,'&quot;')}"></div>
     <div class="fg"><label>XP deze sessie</label><input type="number" id="xp-amount" value="${currentXpAwarded||0}" min="0"></div>
     <div class="fg"><label>Reden / beschrijving <small>(komt in karakter-logboek)</small></label><input type="text" id="xp-reason" placeholder="bv. Sessie 3: hydra verslagen"></div>
