@@ -1741,33 +1741,137 @@ async function openSession(id){
       </div>`;
     }).join('');
 
-    // Initiative status check
+    // Initiative status + round started check
+    const activeP=(actParts||[]).filter(p=>p.status==='active');
+    const filledInit=activeP.filter(p=>p.initiative_roll!=null);
+    const allFilled=hasInit&&filledInit.length>=activeP.length&&activeP.length>0;
+    const roundStarted=!hasInit||allFilled;
     if(hasInit&&act.combat_round>0){
-      const activeParticipants=(actParts||[]).filter(p=>p.status==='active');
-      const filledInit=activeParticipants.filter(p=>p.initiative_roll!=null);
-      const allFilled=filledInit.length>=activeParticipants.length&&activeParticipants.length>0;
-      const waiting=activeParticipants.length-filledInit.length;
+      const waiting=activeP.length-filledInit.length;
       if(allFilled){
-        html+=`<div style="text-align:center;padding:8px;background:rgba(42,122,42,.1);border:1px solid var(--green2);border-radius:4px;margin-top:6px;font-family:'Cinzel',serif;font-size:13px;color:var(--green2);">✓ Alle initiatives ingevuld — ronde ${act.combat_round} is gestart!</div>`;
+        html+=`<div style="text-align:center;padding:8px;background:rgba(42,122,42,.1);border:1px solid var(--green2);border-radius:4px;margin-top:6px;font-family:'Cinzel',serif;font-size:13px;color:var(--green2);">✓ Alle initiatives ingevuld — ronde ${act.combat_round} loopt!</div>`;
       }else{
-        html+=`<div style="text-align:center;padding:8px;background:rgba(196,160,96,.1);border:1px solid var(--gold);border-radius:4px;margin-top:6px;font-size:13px;color:var(--ink3);">⏳ Wachten op initiative: nog ${waiting} deelnemer${waiting>1?'s':''} moeten invullen</div>`;
+        html+=`<div style="text-align:center;padding:8px;background:rgba(196,160,96,.1);border:1px solid var(--gold);border-radius:4px;margin-top:6px;font-size:13px;color:var(--ink3);">⏳ Wachten op initiative: nog ${waiting} deelnemer${waiting>1?'s':''}</div>`;
       }
     }
 
-    // Action log for this action
-    let actLogs=null;try{const r=await sb.from('action_log').select('*').eq('action_id',act.id).order('created_at',{ascending:false}).limit(10);actLogs=r.data;}catch(e){}
-    if(actLogs&&actLogs.length){
-      html+=`<div style="margin-top:8px;border-top:1px dotted var(--divider);padding-top:6px;font-size:12px;">
-        ${actLogs.map(l=>`<div style="padding:2px 0;color:var(--ink3);"><strong>${l.character_name||'?'}</strong> [${l.action_type||'?'}]: ${l.description||''} ${l.result?`→ <em style="color:var(--green2);">${l.result}</em>`:''}</div>`).join('')}
+    // ===== ROUND LOG (per-character action declarations) =====
+    if(roundStarted&&act.combat_round>0&&!isCompleted){
+      // Load logs for current round
+      let roundLogs=[];try{const r=await sb.from('action_log').select('*').eq('action_id',act.id).eq('round_number',act.combat_round).order('created_at');roundLogs=r.data||[];}catch(e){}
+      const logByChar={};roundLogs.forEach(l=>{(logByChar[l.character_id]=logByChar[l.character_id]||[]).push(l);});
+
+      html+=`<div style="margin-top:10px;border-top:1.5px solid var(--divider);padding-top:10px;">
+        <div style="font-family:'Cinzel',serif;font-size:12px;color:var(--ink3);letter-spacing:1px;margin-bottom:6px;">RONDE ${act.combat_round} — ACTIELOG</div>`;
+
+      // Per character in initiative order: show their log + input
+      const orderedChars=sortedActParts.filter(p=>p.characters&&p.status==='active');
+      // Add deferred chars at the end
+      const deferred=sortedActParts.filter(p=>p.characters&&p.deferred);
+      const extraAttack=sortedActParts.filter(p=>p.characters&&p.extra_attack);
+
+      orderedChars.forEach(p=>{
+        const c=p.characters;if(!c)return;
+        const isMe=c.player_id===CU.id||(p.controlled_by===CU.username);
+        const charLogs=logByChar[c.id]||[];
+        const playerLog=charLogs.find(l=>!l.is_dm_entry);
+        const dmLog=charLogs.find(l=>l.is_dm_entry);
+        const isNpc=!c.player_id||p.controlled_by==='DM';
+
+        html+=`<div style="padding:6px 8px;margin-bottom:4px;border-radius:4px;border-left:3px solid ${isNpc?'var(--rust2)':'var(--blue2)'};background:rgba(196,160,96,.03);">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong style="font-size:13px;color:${isNpc?'var(--rust2)':'var(--ink)'};">${c.name} ${isNpc?'[NPC]':''} <span style="font-size:11px;color:var(--ink3);">Init: ${p.initiative_roll||'?'}</span></strong>
+            <div style="display:flex;gap:4px;align-items:center;">
+              ${isDM?`<label style="font-size:10px;color:var(--ink3);display:flex;align-items:center;gap:3px;cursor:pointer;" title="Karakter komt einde ronde weer aan bod">
+                <input type="checkbox" ${p.deferred?'checked':''} onchange="toggleDeferred('${act.id}','${c.id}',this.checked,'${s.id}')" style="width:14px;height:14px;">
+                <span>Uitgesteld</span>
+              </label>`:''}
+              ${isDM?`<label style="font-size:10px;color:var(--ink3);display:flex;align-items:center;gap:3px;cursor:pointer;" title="Extra aanval aan einde ronde">
+                <input type="checkbox" ${p.extra_attack?'checked':''} onchange="toggleExtraAttack('${act.id}','${c.id}',this.checked,'${s.id}')" style="width:14px;height:14px;">
+                <span>+Aanval</span>
+              </label>`:''}
+            </div>
+          </div>`;
+
+        // Player's declaration
+        if(playerLog){
+          html+=`<div style="font-size:12px;margin-top:4px;padding:4px 6px;background:rgba(26,58,106,.05);border-radius:3px;">
+            <span style="color:var(--blue2);font-size:10px;">SPELER:</span> ${playerLog.description||'—'} ${playerLog.result?`→ <em style="color:var(--green2);">${playerLog.result}</em>`:''}
+          </div>`;
+        }else if(isMe&&!isNpc){
+          html+=`<div style="margin-top:4px;display:flex;gap:4px;">
+            <input type="text" id="rlog-${act.id}-${c.id}" placeholder="Wat ga je doen? (bv. Aanval op Goblin #2)" style="flex:1;font-size:12px;padding:4px 6px;border:1.5px solid var(--blue2);border-radius:3px;">
+            <button class="btn btn-primary btn-xs" onclick="submitRoundLog('${act.id}','${c.id}','${c.name.replace(/'/g,"\\'")}',${act.combat_round},false)">✓</button>
+          </div>`;
+        }else if(!playerLog&&!isNpc){
+          html+=`<div style="font-size:11px;color:var(--ink3);font-style:italic;margin-top:2px;">⏳ Wacht op speler...</div>`;
+        }
+
+        // DM note for this character
+        if(isDM){
+          if(dmLog){
+            html+=`<div style="font-size:12px;margin-top:2px;padding:4px 6px;background:rgba(74,58,122,.06);border-radius:3px;">
+              <span style="color:var(--dm-text);font-size:10px;">DM:</span> ${dmLog.description||'—'} ${dmLog.result?`→ <em>${dmLog.result}</em>`:''}
+            </div>`;
+          }
+          html+=`<div style="margin-top:2px;display:flex;gap:4px;">
+            <input type="text" id="dmlog-${act.id}-${c.id}" placeholder="DM notitie / resultaat..." style="flex:1;font-size:11px;padding:3px 6px;border:1px solid var(--dm-border);border-radius:3px;background:rgba(74,58,122,.03);">
+            <button class="btn btn-ghost btn-xs" onclick="submitRoundLog('${act.id}','${c.id}','${c.name.replace(/'/g,"\\'")}',${act.combat_round},true)" style="font-size:10px;">DM+</button>
+          </div>`;
+        }
+        html+=`</div>`;
+      });
+
+      // Deferred / extra attack section
+      const deferredChars=sortedActParts.filter(p=>p.characters&&(p.deferred||p.extra_attack)&&p.status==='active');
+      if(deferredChars.length){
+        html+=`<div style="margin-top:8px;padding:6px 8px;background:rgba(196,160,96,.08);border-radius:4px;border:1px dashed var(--gold);">
+          <div style="font-family:'Cinzel',serif;font-size:10px;color:var(--gold);letter-spacing:1px;margin-bottom:4px;">EINDE RONDE — UITGESTELD / EXTRA AANVAL</div>
+          ${deferredChars.map(p=>{const c=p.characters;return`<div style="font-size:12px;padding:2px 0;"><strong>${c.name}</strong> ${p.deferred?'<span style="color:var(--blue2);">[Uitgesteld]</span>':''} ${p.extra_attack?'<span style="color:var(--green2);">[+Aanval]</span>':''}</div>`;}).join('')}
+        </div>`;
+      }
+      html+=`</div>`; // end round log
+    }
+
+    // ===== ROUND NAVIGATION =====
+    if(hasInit&&act.combat_round>1){
+      html+=`<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:11px;color:var(--ink3);">Bekijk ronde:</span>
+        ${Array.from({length:act.combat_round},(_,i)=>i+1).map(r=>
+          `<button class="btn btn-ghost btn-xs" onclick="viewRoundLog('${act.id}','${s.id}',${r})" style="${r===act.combat_round?'font-weight:700;border-color:var(--rust);':''}">${r}</button>`
+        ).join('')}
       </div>`;
     }
+
+    // Full log of all rounds (collapsed by default for active actions)
+    let allActLogs=[];try{const r=await sb.from('action_log').select('*').eq('action_id',act.id).order('round_number').order('created_at');allActLogs=r.data||[];}catch(e){}
+    if(allActLogs.length>0){
+      html+=`<details style="margin-top:6px;"><summary style="font-size:11px;color:var(--ink3);cursor:pointer;">📋 Volledige actielog (${allActLogs.length} entries)</summary>
+        <div style="font-size:11px;margin-top:4px;max-height:200px;overflow-y:auto;">
+          ${allActLogs.map(l=>`<div style="padding:2px 0;border-bottom:1px dotted rgba(196,160,96,.15);">
+            <span style="color:var(--ink3);">R${l.round_number||'?'}</span>
+            <strong>${l.character_name||'?'}</strong>
+            ${l.is_dm_entry?'<span style="color:var(--dm-text);font-size:9px;">[DM]</span>':''}
+            ${l.description||'—'}
+            ${l.result?`→ <em style="color:var(--green2);">${l.result}</em>`:''}
+          </div>`).join('')}
+        </div>
+      </details>`;
+    }
+
     html+=`</div>`; // end action block
   }
 
-  // Completed actions (collapsed)
+  // Completed actions (expandable with logs)
   if(completedActions.length){
-    html+=`<details style="margin-bottom:8px;"><summary style="font-size:12px;color:var(--ink3);cursor:pointer;">✓ ${completedActions.length} afgesloten actie${completedActions.length>1?'s':''}</summary>
-      ${completedActions.map(a=>`<div style="padding:4px 8px;font-size:12px;color:var(--ink3);border-left:3px solid var(--ink3);margin:4px 0;">${a.name} (${a.action_type})</div>`).join('')}
+    html+=`<details style="margin-bottom:8px;"><summary style="font-size:13px;color:var(--ink3);cursor:pointer;font-family:'Cinzel',serif;">✓ ${completedActions.length} afgesloten actie${completedActions.length>1?'s':''}</summary>
+      ${completedActions.map(a=>`<div style="padding:8px;margin:6px 0;border:1px solid var(--card-border);border-radius:4px;border-left:3px solid var(--ink3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <strong style="font-size:13px;">${a.name}</strong>
+          <span style="font-size:11px;color:var(--ink3);">${a.action_type}${a.combat_round?' · '+a.combat_round+' rondes':''}</span>
+        </div>
+        <button class="btn btn-ghost btn-xs" style="margin-top:4px;" onclick="viewCompletedAction('${a.id}','${a.name.replace(/'/g,"\\'")}',${a.combat_round||0})">📋 Bekijk logs</button>
+      </div>`).join('')}
     </details>`;
   }
   html+=`</div>`; // end actions section
@@ -2061,12 +2165,90 @@ async function setActionParticipantStatus(actionId,charId,status){
 
 async function rollDMActionInit(actionId,sessionId){
   const{data:parts}=await sb.from('action_participants').select('*,characters(player_id)').eq('action_id',actionId);
-  const updates=(parts||[]).filter(p=>!p.characters?.player_id||p.controlled_by==='DM').map(p=>{
-    const roll=Math.floor(Math.random()*6)+1;
+  // Roll for all DM-controlled chars (NPCs + chars without player_id + controlled_by='DM')
+  const dmChars=(parts||[]).filter(p=>!p.characters?.player_id||p.controlled_by==='DM');
+  const updates=dmChars.map(p=>{
+    const roll=Math.floor(Math.random()*20)+1; // d20
     return sb.from('action_participants').update({initiative_roll:roll}).eq('action_id',actionId).eq('character_id',p.character_id);
   });
   await Promise.all(updates);
-  toast('🎲 DM initiative gegooid');openSession(sessionId);
+  // Touch session for auto-refresh
+  await sb.from('sessions').update({updated_at:new Date().toISOString()}).eq('id',sessionId);
+  toast(`🎲 DM initiative gegooid voor ${dmChars.length} karakter${dmChars.length>1?'s':''}`);
+  openSession(sessionId);
+}
+
+async function submitRoundLog(actionId,charId,charName,round,isDmEntry){
+  const prefix=isDmEntry?'dmlog':'rlog';
+  const el=document.getElementById(`${prefix}-${actionId}-${charId}`);
+  const desc=el?.value?.trim();
+  if(!desc)return;
+  await sb.from('action_log').insert({
+    action_id:actionId,character_id:charId,character_name:charName,
+    round_number:round,action_type:'declaration',
+    description:desc,is_dm_entry:!!isDmEntry,
+    recorded_by:CU.id
+  });
+  // Touch session for auto-refresh
+  if(currentSession)await sb.from('sessions').update({updated_at:new Date().toISOString()}).eq('id',currentSession.id);
+  el.value='';
+  toast('✓ Genoteerd');
+  if(currentSession)openSession(currentSession.id);
+}
+
+async function toggleDeferred(actionId,charId,checked,sessionId){
+  await sb.from('action_participants').update({deferred:checked}).eq('action_id',actionId).eq('character_id',charId);
+  await sb.from('sessions').update({updated_at:new Date().toISOString()}).eq('id',sessionId);
+}
+
+async function toggleExtraAttack(actionId,charId,checked,sessionId){
+  await sb.from('action_participants').update({extra_attack:checked}).eq('action_id',actionId).eq('character_id',charId);
+  await sb.from('sessions').update({updated_at:new Date().toISOString()}).eq('id',sessionId);
+}
+
+async function viewRoundLog(actionId,sessionId,roundNum){
+  let logs=[];try{const r=await sb.from('action_log').select('*').eq('action_id',actionId).eq('round_number',roundNum).order('created_at');logs=r.data||[];}catch(e){}
+  document.querySelector('#xp-modal h2').textContent=`📋 Ronde ${roundNum} — Actielog`;
+  document.getElementById('xp-body').innerHTML=logs.length
+    ?`<div style="max-height:400px;overflow-y:auto;">${logs.map(l=>`<div style="padding:6px 0;border-bottom:1px dotted rgba(196,160,96,.2);">
+        <strong>${l.character_name||'?'}</strong>
+        ${l.is_dm_entry?'<span style="color:var(--dm-text);font-size:10px;">[DM]</span>':''}
+        <span style="font-size:10px;color:var(--ink3);">[${l.action_type||'?'}]</span><br>
+        <span style="font-size:13px;">${l.description||'—'}</span>
+        ${l.result?`<br><em style="color:var(--green2);">→ ${l.result}</em>`:''}
+      </div>`).join('')}</div>
+      <div style="text-align:right;margin-top:10px;"><button class="btn btn-ghost btn-sm" onclick="closeM('xp-modal')">Sluiten</button></div>`
+    :`<div style="padding:20px;text-align:center;color:var(--ink3);font-style:italic;">Geen logs voor ronde ${roundNum}.</div>
+      <div style="text-align:right;margin-top:10px;"><button class="btn btn-ghost btn-sm" onclick="closeM('xp-modal')">Sluiten</button></div>`;
+  openM('xp-modal');
+}
+
+async function viewCompletedAction(actionId,actionName,totalRounds){
+  let logs=[];try{const r=await sb.from('action_log').select('*').eq('action_id',actionId).order('round_number').order('created_at');logs=r.data||[];}catch(e){}
+  // Group by round
+  const byRound={};logs.forEach(l=>{const r=l.round_number||0;(byRound[r]=byRound[r]||[]).push(l);});
+  const rounds=Object.keys(byRound).sort((a,b)=>a-b);
+
+  document.querySelector('#xp-modal h2').textContent=`📋 ${actionName} — Logs`;
+  let body='';
+  if(!rounds.length){
+    body=`<div style="padding:20px;text-align:center;color:var(--ink3);font-style:italic;">Geen logs voor deze actie.</div>`;
+  }else{
+    rounds.forEach(r=>{
+      body+=`<div style="margin-bottom:12px;">
+        <div style="font-family:'Cinzel',serif;font-size:12px;color:var(--rust);border-bottom:1px solid var(--divider);padding-bottom:3px;margin-bottom:6px;">Ronde ${r}</div>
+        ${byRound[r].map(l=>`<div style="padding:3px 0;font-size:12px;border-bottom:1px dotted rgba(196,160,96,.15);">
+          <strong>${l.character_name||'?'}</strong>
+          ${l.is_dm_entry?'<span style="color:var(--dm-text);font-size:9px;">[DM]</span>':''}
+          ${l.description||'—'}
+          ${l.result?`→ <em style="color:var(--green2);">${l.result}</em>`:''}
+        </div>`).join('')}
+      </div>`;
+    });
+  }
+  body+=`<div style="text-align:right;margin-top:10px;"><button class="btn btn-ghost btn-sm" onclick="closeM('xp-modal')">Sluiten</button></div>`;
+  document.getElementById('xp-body').innerHTML=`<div style="max-height:500px;overflow-y:auto;">${body}</div>`;
+  openM('xp-modal');
 }
 
 async function logActionEntry(actionId,charId,charName,round){
