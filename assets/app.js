@@ -1732,21 +1732,20 @@ async function openSession(id){
       <button class="btn btn-ghost btn-sm" onclick="sortByInitiative('${s.id}')">↕ Sorteer op initiative</button>
     </div>`;
   }
-  html+=`</div>`; // end combat section
-  } // end legacy combat if-block (no actions)
-
-  // Actions log for current round
+  // Actions log for current round (legacy combat)
   if(combatActive&&combatRound>0){
-    let{data:actions}=await sb.from('combat_actions').select('*').eq('session_id',s.id).eq('round_number',combatRound).order('created_at');
-    if(actions&&actions.length){
+    let{data:cActions}=await sb.from('combat_actions').select('*').eq('session_id',s.id).eq('round_number',combatRound).order('created_at');
+    if(cActions&&cActions.length){
       html+=`<div class="card" style="margin-bottom:16px;">
         <div class="card-header">📋 Acties — Ronde ${combatRound}</div>
-        ${actions.map(a=>`<div style="padding:4px 0;border-bottom:1px dotted rgba(196,160,96,.2);font-size:13px;">
+        ${cActions.map(a=>`<div style="padding:4px 0;border-bottom:1px dotted rgba(196,160,96,.2);font-size:13px;">
           <strong>${a.enemy_name||'Onbekend'}</strong> <span style="font-size:11px;color:var(--blue2);">[${a.action_type||'?'}]</span>: ${a.description||'—'} ${a.result?`→ <em style="color:var(--green2);">${a.result}</em>`:''}
         </div>`).join('')}
       </div>`;
     }
   }
+  html+=`</div>`; // end combat section
+  } // end legacy combat if-block (no actions)
 
   // Dice roll section
   html+=`<div class="card" style="margin-bottom:16px;">
