@@ -342,36 +342,25 @@
       <div id="dice-history" style="margin-top:10px;font-size:12px;color:var(--ink3);max-height:150px;overflow-y:auto;"></div>
     </div>
 
-    <!-- INITIATIVE TRACKER -->
+    <!-- INITIATIVE INFO (verwijst naar sessies voor combat) -->
     <div class="card dm-only" style="display:none;margin-bottom:16px;">
-      <div class="card-header">⚔️ Initiative Tracker (DM)</div>
-      <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Selecteer karakters en vijanden, gooi initiative (d6 + DEX mod, laagst eerst), en volg de beurten.</p>
-
-      <!-- Controls -->
-      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-        <button class="btn btn-success btn-sm" onclick="rollAllInit()">🎲 Gooi initiative</button>
-        <button class="btn btn-ghost btn-sm" onclick="sortInit()">↕ Sorteer</button>
-        <button class="btn btn-primary btn-sm" onclick="nextTurn()">→ Volgende beurt</button>
-        <button class="btn btn-danger btn-sm" onclick="clearInit()">✕ Reset</button>
+      <div class="card-header">⚔️ Gevecht & Initiative</div>
+      <p style="font-size:13px;color:var(--ink);margin-bottom:10px;">
+        Gevechten worden beheerd via de <strong>Sessies</strong> tab. Open een sessie → klik <strong>⚔️ Start gevecht</strong>.
+      </p>
+      <div style="background:rgba(196,160,96,.08);padding:10px;border-radius:4px;font-size:13px;">
+        <strong>Hoe het werkt:</strong><br>
+        1. Maak een sessie aan met alle deelnemers (tab Sessies)<br>
+        2. Open de sessie → klik "⚔️ Start gevecht"<br>
+        3. <strong>Spelers</strong> vullen zelf hun initiative-worp in (d6 + DEX mod)<br>
+        4. <strong>DM</strong> klikt "🎲 Gooi init voor DM-karakters" (vijanden/NPCs)<br>
+        5. Sorteer op initiative (laagst eerst = snelst in AD&D)<br>
+        6. Per ronde: klik "📋 Actie" per karakter om vast te leggen wat ze doen<br>
+        7. HP aanpassen, status wijzigen (dood/bewusteloos/gevlucht)<br>
+        8. 🎮 = wie bestuurt het karakter (DM kan overnemen/doorgeven)
       </div>
-
-      <!-- Active combat list -->
-      <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--ink3);margin-bottom:6px;">
-        Ronde: <span id="init-round" style="color:var(--gold2);font-size:16px;font-weight:600;">1</span>
-        <span style="margin-left:12px;">Deelnemers: <span id="init-count" style="color:var(--gold);">0</span></span>
-      </div>
-      <div id="init-list"></div>
-
-      <!-- Character picker from DB -->
-      <div style="margin-top:14px;border-top:1.5px solid var(--divider);padding-top:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <span style="font-family:'Cinzel',serif;font-size:12px;color:var(--ink3);letter-spacing:.5px;">KARAKTERS & VIJANDEN TOEVOEGEN</span>
-          <button class="btn btn-ghost btn-xs" onclick="loadInitCharacterPicker()">↻ Ververs lijst</button>
-        </div>
-        <div id="init-char-picker" style="max-height:300px;overflow-y:auto;border:1px solid var(--card-border);border-radius:4px;padding:8px;background:#fff;">
-          <div style="padding:20px;text-align:center;color:var(--ink3);font-style:italic;">Klik "↻ Ververs lijst" om karakters te laden.</div>
-        </div>
-        <p style="font-size:11px;color:var(--ink3);margin-top:6px;font-style:italic;">💡 Tip: klik 🎮 naast een karakter in de gevechtslijst om te wijzigen wie dat karakter bestuurt (bv. bij afwezigheid van een speler kan de DM of een andere speler het overnemen).</p>
+      <div style="margin-top:10px;">
+        <button class="btn btn-primary btn-sm" onclick="showPage('sessions')">→ Ga naar Sessies</button>
       </div>
     </div>
 
