@@ -150,7 +150,7 @@ Aanvalssequentie per ronde:
 function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(id){
   document.getElementById(id).classList.remove('open');
-  if(id==='sd-modal')stopChatPoll();
+  if(id==='sd-modal'){stopChatPoll();stopSessionPoll();}
   // Refresh dice log when closing roll dialog while session is open
   if(id==='xp-modal'&&srdSessionId&&document.getElementById('session-dice-log')){
     loadDiceLog(srdSessionId).then(h=>{const el=document.getElementById('session-dice-log');if(el)el.innerHTML=h;});
@@ -1536,6 +1536,121 @@ async function openSession(id){
     </div>`;
   }
 
+  // ===== CHARACTER LIST =====
+  const players=sorted.filter(p=>!p.is_enemy&&p.characters);
+  const npcs=sorted.filter(p=>p.is_enemy&&p.characters);
+  html+=`<div class="card" style="margin-bottom:16px;">
+    <div class="card-header">Deelnemers
+      ${isDM?`<button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="addNpcToSession('${s.id}','')">+ NPC</button>`:''}
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      ${players.map(p=>{const c=p.characters;return`<div onclick="openChar('${c.id}')" style="cursor:pointer;padding:6px 12px;border-radius:4px;border:1px solid var(--blue2);background:rgba(26,58,106,.06);font-size:13px;display:flex;align-items:center;gap:6px;" title="Klik om character sheet te openen">
+        <span style="font-weight:600;color:var(--blue2);">${c.name}</span>
+        <span style="font-size:11px;color:var(--ink3);">${c.player_name||''}</span>
+        <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();showSessionRollDialog('${s.id}')" title="🎲 Rol voor ${c.name}">🎲</button>
+      </div>`;}).join('')}
+      ${npcs.length?`<span style="color:var(--ink3);font-size:12px;padding:6px 4px;">|</span>`:''}
+      ${npcs.map(p=>{const c=p.characters;return`<div onclick="openChar('${c.id}')" style="cursor:pointer;padding:6px 12px;border-radius:4px;border:1px solid var(--rust);background:rgba(138,32,16,.06);font-size:13px;display:flex;align-items:center;gap:6px;" title="NPC — klik voor details">
+        <span style="font-weight:600;color:var(--rust2);">${c.name}</span>
+        <span style="font-size:10px;color:var(--ink3);">[NPC]</span>
+      </div>`;}).join('')}
+    </div>
+  </div>`;
+
+  // ===== ACTIONS (activiteiten) =====
+  let{data:actions}=await sb.from('session_actions').select('*').eq('session_id',s.id).order('created_at',{ascending:true});
+  const activeActions=(actions||[]).filter(a=>a.status==='active');
+  const completedActions=(actions||[]).filter(a=>a.status==='completed');
+
+  html+=`<div style="margin-bottom:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="font-family:'Cinzel',serif;font-size:14px;color:var(--rust);font-weight:600;">Acties</div>
+      ${isDM?`<button class="btn btn-primary btn-sm" onclick="createSessionAction('${s.id}')">+ Nieuwe actie</button>`:''}
+    </div>`;
+
+  if(!activeActions.length&&!completedActions.length){
+    html+=`<div style="padding:16px;text-align:center;color:var(--ink3);font-style:italic;font-size:13px;border:1px dashed var(--card-border);border-radius:4px;">${isDM?'Nog geen acties. Klik "+ Nieuwe actie" om te beginnen (bv. gevecht, verkenning, herbergbezoek).':'De DM heeft nog geen acties gestart.'}</div>`;
+  }
+
+  // Render each active action
+  for(const act of activeActions){
+    const{data:actParts}=await sb.from('action_participants').select('*,characters(id,name,race,class,player_id,player_name,hp_current,hp_max,ac,thac0,avatar_url,dex)').eq('action_id',act.id);
+    const isCombat=act.action_type==='combat';
+    const typeIcons={combat:'⚔️',exploration:'🗺',social:'💬',travel:'🏃',rest:'🏕',other:'📝'};
+    const typeLabels={combat:'Gevecht',exploration:'Verkenning',social:'Sociaal',travel:'Rondtrekken',rest:'Rust',other:'Anders'};
+    const sortedActParts=[...(actParts||[])].sort((a,b)=>{
+      if(!isCombat)return 0;
+      if(a.initiative_roll==null&&b.initiative_roll==null)return 0;
+      if(a.initiative_roll==null)return 1;if(b.initiative_roll==null)return -1;
+      return a.initiative_roll-b.initiative_roll;
+    });
+
+    html+=`<div style="border:2px solid ${isCombat?'var(--rust)':'var(--blue2)'};border-radius:8px;padding:14px;margin-bottom:12px;background:${isCombat?'rgba(138,32,16,.03)':'rgba(26,58,106,.03)'};">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
+        <div style="font-family:'Cinzel',serif;font-size:15px;font-weight:600;color:${isCombat?'var(--rust)':'var(--blue2)'};">
+          ${typeIcons[act.action_type]||'📝'} ${act.name} ${isCombat&&act.combat_round?`— Ronde ${act.combat_round}`:''}
+        </div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          ${isDM&&isCombat?`<button class="btn btn-success btn-xs" onclick="nextActionRound('${act.id}','${s.id}',${act.combat_round||0})">Ronde ${(act.combat_round||0)+1} →</button>`:''}
+          ${isDM&&isCombat?`<button class="btn btn-ghost btn-xs" onclick="rollDMActionInit('${act.id}','${s.id}')">🎲 DM init</button>`:''}
+          ${isDM?`<button class="btn btn-ghost btn-xs" onclick="addNpcToSession('${s.id}','${act.id}')">+ NPC</button>`:''}
+          ${isDM?`<button class="btn btn-ghost btn-xs" onclick="completeAction('${act.id}','${s.id}')">✓ Afsluiten</button>`:''}
+        </div>
+      </div>`;
+
+    // Participants in this action
+    html+=sortedActParts.map(p=>{
+      const c=p.characters;if(!c)return '';
+      const isOwner=c.player_id===CU.id;
+      const canEdit=isDM||isOwner;
+      const isNpc=!c.player_id||p.controlled_by==='DM';
+      const combatHp=p.hp_combat!=null?p.hp_combat:c.hp_current;
+      const isDead=p.status==='dead'||p.status==='unconscious';
+      const statusIcon={active:'',dead:'💀',unconscious:'😵',fled:'🏃'}[p.status]||'';
+      return`<div style="display:grid;grid-template-columns:${isCombat?'50px':''}50px 1fr auto;gap:6px;align-items:center;padding:6px 8px;margin-bottom:3px;border-radius:4px;background:${isDead?'rgba(0,0,0,.05)':isNpc?'rgba(138,32,16,.04)':'rgba(196,160,96,.04)'};${isDead?'opacity:.4;':''}border-left:3px solid ${isNpc?'var(--rust2)':'var(--blue2)'};">
+        ${isCombat?`<div style="text-align:center;">
+          <div style="font-family:'Cinzel',serif;font-size:8px;color:var(--ink3);">INIT</div>
+          ${canEdit?`<input type="number" value="${p.initiative_roll||''}" min="1" max="20" placeholder="?" style="width:40px;font-size:16px;font-family:'Cinzel',serif;font-weight:600;text-align:center;border:2px solid var(--gold);border-radius:4px;padding:3px;color:var(--rust);background:rgba(196,160,96,.1);" onchange="saveActionInit('${act.id}','${c.id}',this.value)">`:
+          `<div style="font-size:18px;font-weight:600;color:var(--rust);">${p.initiative_roll||'?'}</div>`}
+        </div>`:''}
+        <div style="cursor:pointer;" onclick="closeM('sd-modal');openChar('${c.id}')">
+          <div style="font-weight:600;font-size:14px;color:${isNpc?'var(--rust2)':'var(--ink)'};">${statusIcon}${c.name} ${isNpc?'<span style="font-size:10px;color:var(--rust);">[NPC]</span>':''}</div>
+          <div style="font-size:11px;color:var(--ink3);">HP: ${canEdit?`<input type="number" value="${combatHp||0}" style="width:35px;font-size:11px;border:1px solid var(--card-border);border-radius:2px;padding:1px 3px;text-align:center;" onclick="event.stopPropagation()" onchange="saveActionHp('${act.id}','${c.id}',this.value)">`:combatHp||0}/${c.hp_max||'?'} · AC ${c.ac||'?'}${c.thac0?' · T'+c.thac0:''}</div>
+        </div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;">
+          ${canEdit?`<button class="btn btn-ghost btn-xs" onclick="showSessionRollDialog('${s.id}')" title="🎲">🎲</button>`:''}
+          ${isDM?`<button class="btn btn-ghost btn-xs" onclick="logActionEntry('${act.id}','${c.id}','${c.name.replace(/'/g,"&#39;")}',${act.combat_round||0})">📋</button>`:''}
+          ${isDM?`<select style="font-size:9px;border:1px solid var(--card-border);border-radius:2px;padding:1px;width:55px;" onchange="setActionParticipantStatus('${act.id}','${c.id}',this.value)">
+            <option value="active" ${p.status==='active'?'selected':''}>Actief</option>
+            <option value="unconscious" ${p.status==='unconscious'?'selected':''}>KO</option>
+            <option value="dead" ${p.status==='dead'?'selected':''}>Dood</option>
+            <option value="fled" ${p.status==='fled'?'selected':''}>Weg</option>
+          </select>`:''}
+        </div>
+      </div>`;
+    }).join('');
+
+    // Action log for this action
+    const{data:actLogs}=await sb.from('action_log').select('*').eq('action_id',act.id).order('created_at',{ascending:false}).limit(10);
+    if(actLogs&&actLogs.length){
+      html+=`<div style="margin-top:8px;border-top:1px dotted var(--divider);padding-top:6px;font-size:12px;">
+        ${actLogs.map(l=>`<div style="padding:2px 0;color:var(--ink3);"><strong>${l.character_name||'?'}</strong> [${l.action_type||'?'}]: ${l.description||''} ${l.result?`→ <em style="color:var(--green2);">${l.result}</em>`:''}</div>`).join('')}
+      </div>`;
+    }
+    html+=`</div>`; // end action block
+  }
+
+  // Completed actions (collapsed)
+  if(completedActions.length){
+    html+=`<details style="margin-bottom:8px;"><summary style="font-size:12px;color:var(--ink3);cursor:pointer;">✓ ${completedActions.length} afgesloten actie${completedActions.length>1?'s':''}</summary>
+      ${completedActions.map(a=>`<div style="padding:4px 8px;font-size:12px;color:var(--ink3);border-left:3px solid var(--ink3);margin:4px 0;">${a.name} (${a.action_type})</div>`).join('')}
+    </details>`;
+  }
+  html+=`</div>`; // end actions section
+
+  // ===== LEGACY COMBAT SECTION (keep for backward compat) =====
+  // Only show if there are no actions yet (transition period)
+  if(!actions||!actions.length){
   // ===== COMBAT SECTION =====
   const combatActive=s.combat_active;
   const combatRound=s.combat_round||0;
@@ -1616,6 +1731,7 @@ async function openSession(id){
     </div>`;
   }
   html+=`</div>`; // end combat section
+  } // end legacy combat if-block (no actions)
 
   // Actions log for current round
   if(combatActive&&combatRound>0){
@@ -1661,13 +1777,14 @@ async function openSession(id){
 
   document.getElementById('sd-body').innerHTML=html;
   openM('sd-modal');
-  // Load dice log + chat async
+  // Load dice log + chat + start polling
   loadDiceLog(s.id).then(logHtml=>{
     const el=document.getElementById('session-dice-log');
     if(el)el.innerHTML=logHtml;
   });
   loadChat(s.id);
   loadChatRecipients(s.id);
+  startSessionPoll(s.id);
   startChatPoll(s.id);
 }
 
@@ -1713,27 +1830,61 @@ async function sortByInitiative(sessionId){
   // Just refresh — sorting is done in openSession
   openSession(sessionId);
 }
-async function addEnemyToSession(sessionId){
-  const name=prompt('Naam vijand (bv. "Goblin"):');if(!name)return;
-  const count=parseInt(prompt('Aantal:'))||1;
-  const hp=prompt('HP per vijand (optioneel):');
-  // Create temporary characters for enemies
-  for(let i=0;i<Math.min(count,20);i++){
-    const label=count>1?`${name} #${i+1}`:name;
-    const{data:ch}=await sb.from('characters').insert({
-      player_id:CU.id,name:label,race:'Monster',class:'Enemy',
-      level:1,hp_current:parseInt(hp)||10,hp_max:parseInt(hp)||10,
-      ac:'10',thac0:20,is_active:true
-    }).select().single();
-    if(ch){
-      await sb.from('session_participants').insert({
-        session_id:sessionId,character_id:ch.id,
-        is_enemy:true,controlled_by:'DM',
-        hp_combat:parseInt(hp)||10,status:'active'
-      });
+async function addNpcToSession(sessionId,actionId){
+  // Show modal with existing NPC chars + option to create new
+  const{data:allChars}=await sb.from('characters').select('id,name,race,class,hp_current,hp_max,ac,thac0').order('name');
+  const{data:existingParts}=await sb.from('session_participants').select('character_id').eq('session_id',sessionId);
+  const existingIds=new Set((existingParts||[]).map(p=>p.character_id));
+  const available=(allChars||[]).filter(c=>!existingIds.has(c.id));
+
+  document.querySelector('#xp-modal h2').textContent='+NPC toevoegen';
+  document.getElementById('xp-body').innerHTML=`
+    <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--ink3);letter-spacing:1px;margin-bottom:6px;">BESTAAND KARAKTER / NPC SELECTEREN</div>
+    <div style="max-height:200px;overflow-y:auto;border:1px solid var(--card-border);border-radius:4px;padding:6px;margin-bottom:10px;background:#fff;">
+      ${available.map(c=>`<label style="display:flex;gap:8px;align-items:center;padding:4px;cursor:pointer;border-bottom:1px dotted rgba(196,160,96,.2);">
+        <input type="checkbox" class="npc-pick" value="${c.id}" style="width:16px;height:16px;">
+        <span><strong>${c.name}</strong> <span style="color:var(--ink3);font-size:12px;">${c.race||''} ${c.class||''} · HP ${c.hp_current||0}/${c.hp_max||0} · AC ${c.ac||'?'}</span></span>
+      </label>`).join('')||'<div style="color:var(--ink3);font-style:italic;">Alle karakters zijn al in deze sessie.</div>'}
+    </div>
+    <div style="border-top:1px solid var(--divider);padding-top:10px;margin-bottom:10px;">
+      <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--ink3);letter-spacing:1px;margin-bottom:6px;">OF NIEUW NPC AANMAKEN</div>
+      <div class="fg-row col2">
+        <div class="fg"><label>Naam</label><input type="text" id="npc-name" placeholder="bv. Goblin"></div>
+        <div class="fg"><label>Aantal</label><input type="number" id="npc-count" value="1" min="1" max="20"></div>
+        <div class="fg"><label>HP</label><input type="number" id="npc-hp" value="10"></div>
+        <div class="fg"><label>AC</label><input type="text" id="npc-ac" value="6"></div>
+      </div>
+    </div>
+    <div style="text-align:right;display:flex;gap:6px;justify-content:flex-end;">
+      <button class="btn btn-ghost btn-sm" onclick="closeM('xp-modal')">Annuleren</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmAddNpc('${sessionId}','${actionId||''}')">✓ Toevoegen</button>
+    </div>`;
+  openM('xp-modal');
+}
+
+async function confirmAddNpc(sessionId,actionId){
+  // Add checked existing chars
+  const checked=[...document.querySelectorAll('.npc-pick:checked')].map(el=>el.value);
+  for(const cid of checked){
+    await sb.from('session_participants').upsert({session_id:sessionId,character_id:cid,is_enemy:true,controlled_by:'DM',status:'active'},{onConflict:'session_id,character_id'});
+    if(actionId){await sb.from('action_participants').upsert({action_id:actionId,character_id:cid,controlled_by:'DM',status:'active'},{onConflict:'action_id,character_id'});}
+  }
+  // Create new NPCs if name filled
+  const name=document.getElementById('npc-name').value.trim();
+  if(name){
+    const count=parseInt(document.getElementById('npc-count').value)||1;
+    const hp=parseInt(document.getElementById('npc-hp').value)||10;
+    const ac=document.getElementById('npc-ac').value||'6';
+    for(let i=0;i<Math.min(count,20);i++){
+      const label=count>1?`${name} #${i+1}`:name;
+      const{data:ch}=await sb.from('characters').insert({player_id:CU.id,name:label,race:'NPC',class:'NPC',level:1,hp_current:hp,hp_max:hp,ac,thac0:20,is_active:true}).select().single();
+      if(ch){
+        await sb.from('session_participants').insert({session_id:sessionId,character_id:ch.id,is_enemy:true,controlled_by:'DM',hp_combat:hp,status:'active'});
+        if(actionId){await sb.from('action_participants').insert({action_id:actionId,character_id:ch.id,controlled_by:'DM',status:'active'});}
+      }
     }
   }
-  toast(`✓ ${count}× ${name} toegevoegd`);openSession(sessionId);
+  closeM('xp-modal');toast('✓ NPC(s) toegevoegd');openSession(sessionId);
 }
 function declareAction(sessionId,charId,charName,round){
   document.querySelector('#xp-modal h2').textContent=`📋 Actie — ${charName} (Ronde ${round})`;
@@ -1776,6 +1927,140 @@ async function submitAction(sessionId,charId,charName,round){
   });
   closeM('xp-modal');toast('✓ Actie vastgelegd');openSession(sessionId);
 }
+
+// =====================================================================
+// ACTIONS (activiteiten binnen een sessie)
+// =====================================================================
+async function createSessionAction(sessionId){
+  document.querySelector('#xp-modal h2').textContent='Nieuwe actie';
+  // Get session participants for selection
+  const{data:parts}=await sb.from('session_participants').select('character_id,is_enemy,characters(id,name,player_name)').eq('session_id',sessionId);
+  document.getElementById('xp-body').innerHTML=`
+    <div class="fg"><label>Naam van de actie <span class="req">*</span></label>
+      <input type="text" id="sa-name" placeholder="bv. Gevecht in de grot, Herbergbezoek, Rondtrekken" style="width:100%;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;">
+    </div>
+    <div class="fg"><label>Type</label>
+      <select id="sa-type" style="width:100%;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;">
+        <option value="combat">⚔ Gevecht</option>
+        <option value="exploration">🗺 Verkenning</option>
+        <option value="social">💬 Sociaal / onderhandeling</option>
+        <option value="travel">🏃 Rondtrekken</option>
+        <option value="rest">🏕 Rust</option>
+        <option value="other">📝 Anders</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>Deelnemers <span class="req">*</span></label>
+      <div style="max-height:200px;overflow-y:auto;border:1px solid var(--card-border);border-radius:4px;padding:6px;background:#fff;">
+        ${(parts||[]).map(p=>{const c=p.characters;return c?`
+          <label style="display:flex;gap:8px;align-items:center;padding:4px;cursor:pointer;border-bottom:1px dotted rgba(196,160,96,.2);">
+            <input type="checkbox" class="sa-char" value="${c.id}" checked style="width:16px;height:16px;">
+            <span><strong>${c.name}</strong> <span style="color:var(--ink3);font-size:12px;">${p.is_enemy?'[NPC]':c.player_name||'Speler'}</span></span>
+          </label>`:''}).join('')}
+      </div>
+    </div>
+    <div class="err" id="sa-err"></div>
+    <div style="text-align:right;margin-top:10px;display:flex;gap:6px;justify-content:flex-end;">
+      <button class="btn btn-ghost btn-sm" onclick="closeM('xp-modal')">Annuleren</button>
+      <button class="btn btn-primary btn-sm" onclick="submitNewAction('${sessionId}')">✓ Actie starten</button>
+    </div>`;
+  openM('xp-modal');
+}
+
+async function submitNewAction(sessionId){
+  const name=document.getElementById('sa-name').value.trim();
+  if(!name){document.getElementById('sa-err').textContent='Naam is verplicht.';return;}
+  const type=document.getElementById('sa-type').value;
+  const chars=[...document.querySelectorAll('.sa-char:checked')].map(el=>el.value);
+  if(!chars.length){document.getElementById('sa-err').textContent='Selecteer minstens één karakter.';return;}
+  const{data:action}=await sb.from('session_actions').insert({session_id:sessionId,name,action_type:type,status:'active',combat_round:type==='combat'?1:0,created_by:CU.id}).select().single();
+  if(action){
+    const rows=chars.map(cid=>({action_id:action.id,character_id:cid}));
+    await sb.from('action_participants').insert(rows);
+  }
+  closeM('xp-modal');toast('✓ Actie gestart: '+name);openSession(sessionId);
+}
+
+async function completeAction(actionId,sessionId){
+  if(!confirm('Deze actie afsluiten?'))return;
+  await sb.from('session_actions').update({status:'completed',completed_at:new Date().toISOString()}).eq('id',actionId);
+  toast('✓ Actie afgesloten');openSession(sessionId);
+}
+
+async function nextActionRound(actionId,sessionId,current){
+  await sb.from('session_actions').update({combat_round:current+1}).eq('id',actionId);
+  toast(`Ronde ${current+1}`);openSession(sessionId);
+}
+
+async function saveActionInit(actionId,charId,val){
+  await sb.from('action_participants').update({initiative_roll:parseInt(val)||null}).eq('action_id',actionId).eq('character_id',charId);
+}
+
+async function saveActionHp(actionId,charId,val){
+  await sb.from('action_participants').update({hp_combat:parseInt(val)||0}).eq('action_id',actionId).eq('character_id',charId);
+}
+
+async function setActionParticipantStatus(actionId,charId,status){
+  await sb.from('action_participants').update({status}).eq('action_id',actionId).eq('character_id',charId);
+}
+
+async function rollDMActionInit(actionId,sessionId){
+  const{data:parts}=await sb.from('action_participants').select('*,characters(player_id)').eq('action_id',actionId);
+  const updates=(parts||[]).filter(p=>!p.characters?.player_id||p.controlled_by==='DM').map(p=>{
+    const roll=Math.floor(Math.random()*6)+1;
+    return sb.from('action_participants').update({initiative_roll:roll}).eq('action_id',actionId).eq('character_id',p.character_id);
+  });
+  await Promise.all(updates);
+  toast('🎲 DM initiative gegooid');openSession(sessionId);
+}
+
+async function logActionEntry(actionId,charId,charName,round){
+  document.querySelector('#xp-modal h2').textContent=`📋 ${charName} — Ronde ${round||'—'}`;
+  document.getElementById('xp-body').innerHTML=`
+    <div class="fg"><label>Type</label>
+      <select id="ale-type" style="width:100%;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;">
+        <option value="attack">⚔ Aanval</option><option value="spell">✨ Spreuk</option>
+        <option value="defend">🛡 Verdedigen</option><option value="move">🏃 Bewegen</option>
+        <option value="social">💬 Sociaal</option><option value="use_item">🧪 Item</option>
+        <option value="other">📝 Anders</option>
+      </select></div>
+    <div class="fg"><label>Wat doet ${charName}? <span class="req">*</span></label>
+      <input type="text" id="ale-desc" placeholder="bv. Aanval op Goblin #2 met Long Sword" style="width:100%;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;"></div>
+    <div class="fg"><label>Resultaat <small>(optioneel)</small></label>
+      <input type="text" id="ale-result" placeholder="bv. Raak! 8 dmg" style="width:100%;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;"></div>
+    <div class="err" id="ale-err"></div>
+    <div style="text-align:right;margin-top:10px;display:flex;gap:6px;justify-content:flex-end;">
+      <button class="btn btn-ghost btn-sm" onclick="closeM('xp-modal')">Annuleren</button>
+      <button class="btn btn-primary btn-sm" onclick="submitActionLog('${actionId}','${charId}','${charName.replace(/'/g,"\\'")}',${round||0})">✓ Vastleggen</button>
+    </div>`;
+  openM('xp-modal');
+}
+
+async function submitActionLog(actionId,charId,charName,round){
+  const desc=document.getElementById('ale-desc').value.trim();
+  if(!desc){document.getElementById('ale-err').textContent='Beschrijving is verplicht.';return;}
+  await sb.from('action_log').insert({action_id:actionId,character_id:charId,character_name:charName,round_number:round||null,action_type:document.getElementById('ale-type').value,description:desc,result:document.getElementById('ale-result').value.trim()||null,recorded_by:CU.id});
+  closeM('xp-modal');toast('✓ Vastgelegd');
+  // Refresh session
+  if(currentSession)openSession(currentSession.id);
+}
+
+// Session auto-refresh (polling every 5 sec)
+let sessionPollTimer=null;
+function startSessionPoll(sessionId){
+  stopSessionPoll();
+  sessionPollTimer=setInterval(async()=>{
+    // Only refresh if the session modal is still open
+    if(!document.getElementById('sd-modal')?.classList.contains('open'))return;
+    // Silently reload dice log + chat (lightest refresh)
+    try{
+      const logHtml=await loadDiceLog(sessionId);
+      const el=document.getElementById('session-dice-log');if(el)el.innerHTML=logHtml;
+      await loadChat(sessionId);
+    }catch(e){}
+  },5000);
+}
+function stopSessionPoll(){if(sessionPollTimer){clearInterval(sessionPollTimer);sessionPollTimer=null;}}
 
 async function saveSessionDMNotes(id,val){
   await sb.from('sessions').update({dm_notes:val,updated_at:new Date().toISOString()}).eq('id',id);
@@ -2301,10 +2586,14 @@ async function showSessionRollDialog(sessionId){
       </div>
     </div>
 
-    <div class="fg" style="margin-bottom:10px;">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
         <input type="checkbox" id="srd-private" style="width:18px;height:18px;" ${defaultPrivate?'checked':''}>
-        <span>🔒 <strong>Privé worp</strong> — alleen jij en de DM zien het resultaat</span>
+        <span>🔒 <strong>Privé worp</strong></span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="srd-bonus-per-die" style="width:18px;height:18px;">
+        <span>Bonus <strong>per dobbelsteen</strong> <small style="color:var(--ink3);">(i.p.v. eenmalig op totaal)</small></span>
       </label>
     </div>
 
@@ -2354,36 +2643,45 @@ async function executeSessionRoll(){
   const qty=parseInt(document.getElementById('srd-qty').value)||1;
   const die=parseInt(document.getElementById('srd-die').value)||20;
   const bonus=parseInt(document.getElementById('srd-bonus').value)||0;
-  const notation=`${qty}d${die}${bonus>0?'+'+bonus:bonus<0?''+bonus:''}`;
+  const bonusPerDie=document.getElementById('srd-bonus-per-die')?.checked;
   const purpose=document.getElementById('srd-purpose').value.trim();
   const charName=document.getElementById('srd-char').value.trim();
   const isPrivate=document.getElementById('srd-private').checked;
-  const result=parseDice(notation);
-  if(!result){toast('Ongeldige formule',false);return;}
+
+  // Roll dice manually to support bonus-per-die
+  const dice=[];
+  let total=0;
+  for(let i=0;i<Math.min(qty,100);i++){
+    const roll=Math.floor(Math.random()*die)+1;
+    dice.push(roll);
+    total+=roll;
+    if(bonusPerDie)total+=bonus;
+  }
+  if(!bonusPerDie&&bonus)total+=bonus;
+
+  const notation=`${qty}d${die}${bonus?`${bonus>0?'+':''}${bonus}${bonusPerDie?'/die':''}`:''}`;
+  const diceStr=`[${dice.join(',')}]${bonus?(bonusPerDie?`+${bonus}/die`:`+${bonus}`):''}`;
 
   // Save to DB
-  const diceStr=result.rolls.map(r=>r.dice?`[${r.dice.join(',')}]`:r.expr).join('+');
   await sb.from('dice_rolls').insert({
     session_id:srdSessionId,player_id:CU.id,player_name:CU.username,
     character_name:charName||null,notation,dice_detail:diceStr,
-    total:result.total,purpose:purpose||null,is_private:!!isPrivate,
+    total,purpose:purpose||null,is_private:!!isPrivate,
     combat_round:currentSession?.combat_round||null
   });
 
-  // Build per-die results for this roll
+  // Build per-die results for display
   const rollRows=[];
-  result.rolls.forEach(r=>{
-    if(r.dice){
-      r.dice.forEach((val,i)=>{
-        rollRows.push({label:`Worp ${i+1} (d${die})`,value:val});
-      });
-    }else if(r.value!==undefined){
-      rollRows.push({label:'Bonus',value:r.value});
-    }
+  dice.forEach((val,i)=>{
+    const rowVal=bonusPerDie?val+bonus:val;
+    rollRows.push({label:`Worp ${i+1} (d${die})${bonusPerDie?` +${bonus}`:''}`,value:rowVal});
   });
+  if(!bonusPerDie&&bonus){
+    rollRows.push({label:'Bonus',value:bonus});
+  }
 
   // Add to history
-  srdRollHistory.push({notation,total:result.total,rows:rollRows,purpose,charName,isPrivate});
+  srdRollHistory.push({notation,total,rows:rollRows,purpose,charName,isPrivate});
 
   // Render table
   renderSrdResultTable();
