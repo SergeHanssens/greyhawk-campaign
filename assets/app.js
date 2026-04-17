@@ -379,20 +379,25 @@ async function loadChars(){
   const{data}=await q.order('is_active',{ascending:false}).order('created_at');
   const grid=document.getElementById('chars-grid');
   const isDM=CU.is_dm;
-  const addBtn=isDM?`<div class="new-char-card" onclick="openNewChar()"><div class="new-char-card-inner"><span class="plus">+</span><span>Nieuw karakter</span></div></div>`:'';
-  if(!data?.length){grid.innerHTML=isDM?`<div class="char-grid">${addBtn}</div>`:`<div style="padding:30px;text-align:center;color:var(--ink3);font-style:italic;">Je hebt nog geen karakter. Vraag aan de DM om er een aan te maken.</div>`;return;}
+  if(!data?.length){grid.innerHTML=isDM?'<div style="padding:30px;text-align:center;color:var(--ink3);font-style:italic;">Nog geen karakters. Klik "+ Nieuw Karakter" om te beginnen.</div>':`<div style="padding:30px;text-align:center;color:var(--ink3);font-style:italic;">Je hebt nog geen karakter. Vraag aan de DM om er een aan te maken.</div>`;return;}
   const isNpcChar=c=>c.race==='NPC'||c.class==='NPC'||c.race==='Monster'||c.class==='Enemy'||c.class==='Companion'||c.class==='Guard'||c.class==='Merchant'||c.class==='Noble'||c.class==='Commoner'||c.race==='Undead'||c.race==='Beast'||c.race==='Demon'||c.race==='Devil'||c.race==='Dragon'||c.race==='Giant'||c.race==='Construct';
   const playerChars=data.filter(c=>!isNpcChar(c));
   const npcChars=data.filter(isNpcChar);
   let html='';
-  html+=`<div style="background:rgba(26,58,106,.04);border:1px solid rgba(26,58,106,.15);border-radius:8px;padding:16px;margin-bottom:20px;">
-    <div style="font-family:'Cinzel',serif;font-size:13px;color:var(--blue2);letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">⚔ SPELER KARAKTERS <span style="font-size:11px;color:var(--ink3);font-weight:400;">(${playerChars.length})</span></div>
-    <div class="char-grid">${playerChars.length?playerChars.map(renderCharCard).join(''):'<div style="padding:16px;text-align:center;color:var(--ink3);font-style:italic;font-size:13px;">Nog geen speler-karakters.</div>'}${addBtn}</div>
+  // Speler-karakters sectie
+  html+=`<div class="card" style="margin-bottom:16px;border-left:4px solid var(--blue2);">
+    <div class="card-header" style="color:var(--blue2);">⚔ Speler Karakters (${playerChars.length})</div>
+    ${playerChars.length
+      ?`<div class="char-grid">${playerChars.map(renderCharCard).join('')}</div>`
+      :'<div style="padding:12px;text-align:center;color:var(--ink3);font-style:italic;font-size:13px;">Nog geen speler-karakters.</div>'}
   </div>`;
+  // NPC sectie (alleen tonen als er NPCs zijn of als DM)
   if(npcChars.length||isDM){
-    html+=`<div style="background:rgba(138,32,16,.04);border:1px solid rgba(138,32,16,.15);border-radius:8px;padding:16px;">
-      <div style="font-family:'Cinzel',serif;font-size:13px;color:var(--rust);letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">🏰 NPC's, MONSTERS & COMPANEN <span style="font-size:11px;color:var(--ink3);font-weight:400;">(${npcChars.length})</span></div>
-      <div class="char-grid">${npcChars.length?npcChars.map(renderCharCard).join(''):'<div style="padding:16px;text-align:center;color:var(--ink3);font-style:italic;font-size:13px;">Nog geen NPCs.</div>'}</div>
+    html+=`<div class="card" style="border-left:4px solid var(--rust);">
+      <div class="card-header" style="color:var(--rust);">🏰 NPC's, Monsters & Companen (${npcChars.length})</div>
+      ${npcChars.length
+        ?`<div class="char-grid">${npcChars.map(renderCharCard).join('')}</div>`
+        :'<div style="padding:12px;text-align:center;color:var(--ink3);font-style:italic;font-size:13px;">Nog geen NPCs.</div>'}
     </div>`;
   }
   grid.innerHTML=html;

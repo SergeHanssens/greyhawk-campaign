@@ -206,15 +206,16 @@
 
   <!-- CHARACTERS -->
   <div class="page active" id="page-characters">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
-      <h2 style="font-family:'Cinzel',serif;font-size:22px;color:var(--gold2);">Mijn Karakters</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;" class="dm-only" style="display:none;">
-        <button class="btn btn-ghost btn-sm dm-only" style="display:none;" onclick="openCreatePlayer()">👤 Nieuwe speler</button>
-        <button class="btn btn-ghost btn-sm dm-only" style="display:none;" onclick="openScanModal()" title="Foto van handgeschreven karakterblad inlezen">📷 Scan karakterblad</button>
-        <button class="btn btn-primary btn-sm dm-only" style="display:none;" onclick="openNewChar()">+ Nieuw Karakter</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <h2 style="font-family:'Cinzel',serif;font-size:22px;color:var(--gold2);margin:0;">Mijn Karakters</h2>
+      <div class="dm-only" style="display:none;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-ghost btn-sm" onclick="openCreatePlayer()">👤 Nieuwe speler</button>
+          <button class="btn btn-primary btn-sm" onclick="openNewChar()">+ Nieuw Karakter</button>
+        </div>
       </div>
     </div>
-    <div class="char-grid" id="chars-grid"><div style="padding:40px;text-align:center;color:var(--gold);font-style:italic;">Laden...</div></div>
+    <div id="chars-grid"><div style="padding:40px;text-align:center;color:var(--gold);font-style:italic;">Laden...</div></div>
   </div>
 
   <!-- SHEET -->
