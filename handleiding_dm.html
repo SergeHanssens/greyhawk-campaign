@@ -6,11 +6,10 @@
 <title>Greyhawk — DM Handleiding (Vertrouwelijk)</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
-:root{--parch:#fdf5e0;--ink:#2a1a0a;--ink3:#7a5030;--border:#8a6030;--rust:#8a2010;--blue2:#2a5a9a;--divider:#c4a060;--dm:#1a1030;--dm2:#4a3a7a;--dmt:#c0a0f0;}
+:root{--parch:#fdf5e0;--ink:#2a1a0a;--ink3:#7a5030;--border:#8a6030;--rust:#8a2010;--blue2:#2a5a9a;--divider:#c4a060;--dm2:#4a3a7a;--dmt:#c0a0f0;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#0e0820;font-family:'Crimson Text',serif;padding:20px;}
 .page{max-width:820px;margin:0 auto;background:var(--parch);border:2px solid var(--border);border-radius:6px;padding:36px;position:relative;}
-.page::before{content:'';position:absolute;inset:8px;border:1px solid var(--divider);border-radius:3px;pointer-events:none;}
 h1{font-family:'Cinzel',serif;font-size:28px;color:var(--dm2);text-align:center;margin-bottom:4px;}
 .sub{text-align:center;font-style:italic;color:var(--ink3);font-size:14px;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--border);}
 h2{font-family:'Cinzel',serif;font-size:17px;color:var(--dm2);margin:24px 0 10px;padding-bottom:5px;border-bottom:1px solid rgba(74,58,122,.3);}
@@ -18,12 +17,8 @@ h3{font-family:'Cinzel',serif;font-size:13px;color:var(--ink3);margin:14px 0 6px
 p{font-size:14px;color:var(--ink);line-height:1.75;margin-bottom:10px;}
 .box{background:rgba(139,96,48,.08);border:1px solid var(--divider);border-radius:4px;padding:12px 16px;margin:10px 0;}
 .dm-box{background:rgba(26,16,48,.08);border:1px solid rgba(74,58,122,.3);border-radius:4px;padding:12px 16px;margin:10px 0;}
-.dm-box::before{content:'🔒 DM ONLY: ';font-family:'Cinzel',serif;font-size:10px;font-weight:600;color:var(--dm2);letter-spacing:.5px;}
+.dm-box::before{content:'🔒 ';font-size:12px;}
 .warn{background:rgba(138,32,16,.06);border:1px solid rgba(138,32,16,.25);border-radius:4px;padding:10px 14px;margin:10px 0;}
-.step{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;}
-.n{background:var(--dm2);color:#e0d0f0;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:12px;font-weight:600;flex-shrink:0;margin-top:1px;}
-.sc{flex:1;}.sc strong{display:block;font-size:14px;color:var(--ink);margin-bottom:3px;}.sc p{margin:0;font-size:13px;}
-code{background:rgba(74,58,122,.1);border:1px solid rgba(74,58,122,.2);border-radius:3px;padding:1px 6px;font-family:monospace;font-size:12px;color:var(--dm2);}
 table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;}
 th{background:rgba(74,58,122,.12);padding:7px 10px;text-align:left;font-family:'Cinzel',serif;font-size:10px;color:var(--ink3);letter-spacing:.5px;border-bottom:1px solid rgba(74,58,122,.2);}
 td{padding:7px 10px;border-bottom:1px dotted rgba(196,160,96,.3);}
@@ -37,121 +32,122 @@ td{padding:7px 10px;border-bottom:1px dotted rgba(196,160,96,.3);}
 <button class="btn" onclick="window.print()">🖨️ Afdrukken / PDF opslaan</button>
 
 <h1>Greyhawk Campaign Manager</h1>
-<div class="sub">Dungeon Master Handleiding — versie 1.7 — Vertrouwelijk</div>
+<div class="sub">Dungeon Master Handleiding — versie 3.0 — Vertrouwelijk</div>
 
-<h2>1. DM Account aanmaken</h2>
-<div class="step"><div class="n">1</div><div class="sc"><strong>Registreer met de DM Code</strong><p>Vul bij registratie de DM Code in → extra vak verschijnt voor <strong>veiligheidsvraag</strong>.</p></div></div>
-<div class="step"><div class="n">2</div><div class="sc"><strong>Stel veiligheidsvraag in</strong><p>Bv. "Naam van mijn eerste karakter?" — gebruik dit als je je wachtwoord vergeet.</p></div></div>
-<div class="step"><div class="n">3</div><div class="sc"><strong>Na login: "Dungeon Master" badge + extra tabs</strong></div></div>
+<h2>1. Accounts beheren</h2>
+<h3>DM-account (eerste keer)</h3>
+<p>Loginscherm → onderaan klein knopje "DM: eerste account aanmaken" → registreer met DM Code + veiligheidsvraag.</p>
+<h3>Speler-accounts aanmaken</h3>
+<p>Tab Mijn Karakters → <strong>👤 Nieuwe speler</strong> → gebruikersnaam + tijdelijk wachtwoord. Speler moet bij eerste login een eigen wachtwoord kiezen.</p>
+<p><strong>Spelers kunnen zelf GEEN account aanmaken.</strong> Alleen de DM.</p>
 
-<h2>2. DM Dashboard</h2>
-<p>Tab <strong>DM Dashboard</strong> toont alle karakters van alle spelers. HP-balken (groen/geel/rood), inactieve karakters uitgevaagd, en een preview van je privé DM-notities per karakter.</p>
-
-<h2>3. Karakters bewerken</h2>
-<p>Als DM kan je <strong>alle karakters</strong> bekijken en bewerken:</p>
-<div class="box">
-HP/XP/stats aanpassen · Wapens/items/spreuken toevoegen/verwijderen · Profielfoto uploaden · Inactief zetten of verwijderen · Privé DM-notities schrijven · Sessie-aantekeningen bijhouden
-</div>
-
-<h2>4. DM Privé Notities</h2>
-<div class="dm-box">Twee velden per karakter, <strong>onzichtbaar voor spelers</strong>:<br>
-<strong>Privé Notities</strong> — geheimen, zwaktes, verhaalplannen<br>
-<strong>Sessie-aantekeningen</strong> — voor XP-berekening en verhaalontwikkeling</div>
-
-<h2>5. Sessies aanmaken &amp; beheren 📅</h2>
-<div class="step"><div class="n">1</div><div class="sc"><strong>Tab Sessies → + Nieuwe sessie</strong><p>Naam, datum, locatie, samenvatting (publiek), DM-notities (privé).</p></div></div>
-<div class="step"><div class="n">2</div><div class="sc"><strong>Selecteer deelnemers</strong><p>Vink aan welke karakters meedoen. Inactieve karakters staan er ook bij (voor flashbacks).</p></div></div>
-<div class="step"><div class="n">3</div><div class="sc"><strong>Status</strong><p>Gepland → Actief → Afgesloten. Wijzig wanneer je wilt.</p></div></div>
-
-<h2>6. Gevechten beheren ⚔️</h2>
-<p>Open een sessie → klik <strong>⚔️ Start gevecht</strong>. Het gevechts-panel verschijnt.</p>
-
-<h3>Initiative</h3>
-<div class="box">
-<strong>Spelers</strong> vullen zelf hun initiative-worp in (d6 + DEX modifier) via het invulveld naast hun karakter.<br>
-<strong>DM</strong> klikt <strong>"🎲 Gooi init voor DM-karakters"</strong> → rolt alleen voor vijanden en NPCs die jij bestuurt.<br>
-<strong>Sorteer</strong> → laagste initiative = eerste beurt (AD&amp;D 1e regel).
-</div>
-
-<h3>Rondes &amp; acties</h3>
-<div class="step"><div class="n">1</div><div class="sc"><strong>Per karakter: 📋 Actie</strong><p>Klik om vast te leggen wat het karakter doet: aanval, spreuk, verdediging, vlucht. Plus het resultaat (raak/mis, schade). Wordt bewaard per ronde.</p></div></div>
-<div class="step"><div class="n">2</div><div class="sc"><strong>Ronde X →</strong><p>Klik om naar de volgende ronde te gaan. Actielog van de vorige ronde blijft zichtbaar.</p></div></div>
-<div class="step"><div class="n">3</div><div class="sc"><strong>✓ Einde gevecht</strong><p>Sluit het gevecht af.</p></div></div>
-
-<h3>Tijdens het gevecht</h3>
+<h2>2. Karakters aanmaken</h2>
+<p>Tab Mijn Karakters → <strong>+ Nieuw Karakter</strong>. Alleen de DM kan karakters aanmaken.</p>
 <table>
-<tr><th>Actie</th><th>Hoe</th></tr>
-<tr><td>HP aanpassen</td><td>Typ direct in het HP-veld naast elk karakter</td></tr>
-<tr><td>Status wijzigen</td><td>Dropdown: Actief / Bewusteloos / Dood / Gevlucht</td></tr>
-<tr><td>+ Vijand toevoegen</td><td>Klik "+ Vijand" → naam + aantal + HP. Worden als aparte entries toegevoegd</td></tr>
-<tr><td>Wie bestuurt wie</td><td>Klik 🎮 → verander naar "DM", andere spelernaam, of "owner" (terug naar eigen speler)</td></tr>
+<tr><th>Type</th><th>Gebruik</th></tr>
+<tr><td><strong>Speler-karakter</strong></td><td>Kies eigenaar (speler) uit dropdown. Ras/klasse volgens AD&D regels.</td></tr>
+<tr><td><strong>NPC</strong></td><td>Monster, vijand, compaan, stadswacht, etc. Eigenaar = DM. Vrije ras/klasse keuze.</td></tr>
+</table>
+<p>De Karakters-pagina splitst automatisch in <strong>⚔ Speler Karakters</strong> en <strong>🏰 NPC's</strong>.</p>
+
+<h2>3. DM Dashboard</h2>
+<p>Tab <strong>DM Dashboard</strong>: overzicht alle karakters van alle spelers met HP-balken.</p>
+<div class="dm-box">Per karakter: <strong>Privé Notities</strong> (geheimen, plannen) + <strong>Sessie-aantekeningen</strong> (XP-tracking). Onzichtbaar voor spelers.</div>
+
+<h2>4. Sessies</h2>
+<h3>Aanmaken</h3>
+<p>Tab Sessies → <strong>+ Nieuwe sessie</strong> → naam, datum, locatie, deelnemers selecteren. Status = Gepland.</p>
+<h3>Status-workflow</h3>
+<table>
+<tr><th>Status</th><th>Betekenis</th><th>Speler ziet?</th></tr>
+<tr><td><strong>Gepland</strong></td><td>Voorbereiding — DM kan alles instellen</td><td>❌ Nee</td></tr>
+<tr><td><strong>Actief</strong></td><td>Spel loopt — spelers nemen deel</td><td>✅ Ja</td></tr>
+<tr><td><strong>Afgesloten</strong></td><td>Alleen-lezen — archief</td><td>✅ Ja (lezen)</td></tr>
+</table>
+<p><strong>▶ Activeren:</strong> als er al een actieve sessie is → waarschuwing om die eerst af te sluiten.</p>
+<p><strong>Afgesloten:</strong> niets meer bewerkbaar tenzij DM op "✏ Bewerken" klikt.</p>
+
+<h2>5. Acties binnen een sessie</h2>
+<p>Klik <strong>+ Nieuwe actie</strong> in een actieve sessie. Types: Gevecht, Verkenning, Sociaal, Rondtrekken, Rust, Anders.</p>
+<h3>Initiative toggle</h3>
+<p>Checkbox <strong>"Initiative volgorde"</strong> — standaard aan. Vink uit voor acties zonder initiative (herbergbezoek, rust).</p>
+<h3>Meerdere acties tegelijk</h3>
+<p>Party split? Maak twee aparte acties aan met verschillende deelnemers.</p>
+
+<h2>6. Gevechtsrondes</h2>
+<h3>Ronde-flow</h3>
+<div class="box">
+1. <strong>Ronde X →</strong> klik → alle initiative velden worden <strong>gereset</strong><br>
+2. <strong>Spelers rollen</strong> eigen initiative (🎲 of typen) → vergrendeld na invullen<br>
+3. <strong>🎲 DM init</strong> → rolt d20 voor ALLE DM-karakters in één klik<br>
+4. Statusbalk: "⏳ Wachten..." → "✓ Ronde loopt!"<br>
+5. Per karakter: speler declareert actie in invulveld<br>
+6. DM vult resultaat aan via DM-notitie veld<br>
+7. Volgende ronde → herhaal
+</div>
+
+<h3>Uitgesteld / Extra aanval</h3>
+<p>Per karakter checkboxes:</p>
+<table>
+<tr><td><strong>☐ Uitgesteld</strong></td><td>Karakter stelt actie uit → komt einde ronde aan bod</td></tr>
+<tr><td><strong>☐ +Aanval</strong></td><td>Extra aanval aan einde ronde (bv. Fighter 3/2)</td></tr>
+</table>
+<p>Gemarkeerde karakters verschijnen in geel blok "EINDE RONDE".</p>
+
+<h3>Status per karakter (DM dropdown)</h3>
+<table>
+<tr><td><strong>Actief</strong></td><td>Normaal — blauw (speler) of rood (NPC)</td></tr>
+<tr><td><strong>KO</strong></td><td>Bewusteloos — oranje rand + gele achtergrond</td></tr>
+<tr><td><strong>Dood</strong></td><td>Dood — donkerrood + 50% transparant + 💀</td></tr>
+<tr><td><strong>Weg</strong></td><td>Gevlucht — grijs</td></tr>
+<tr><td><strong>Verborgen</strong></td><td>Onzichtbaar voor spelers — paars. Voor hinderlagen.</td></tr>
+</table>
+<p>Spelers zien status als label (niet aanpasbaar).</p>
+
+<h3>Ronde-navigatie</h3>
+<p>Knoppen [1] [2] [3]... verschijnen — klik om logs van eerdere rondes te bekijken.</p>
+
+<h3>Afgesloten acties</h3>
+<p>Klik driehoekje → lijst afgesloten acties → <strong>📋 Bekijk logs</strong> → ronde-per-ronde overzicht.</p>
+
+<h2>7. Permissions — wat spelers NIET kunnen</h2>
+<table>
+<tr><th>Actie</th><th>Speler</th><th>DM</th></tr>
+<tr><td>HP aanpassen</td><td>❌</td><td>✅</td></tr>
+<tr><td>Status wijzigen</td><td>❌ (leest label)</td><td>✅ (dropdown)</td></tr>
+<tr><td>Verborgen chars zien</td><td>❌</td><td>✅</td></tr>
+<tr><td>Initiative anderen wijzigen</td><td>❌</td><td>✅</td></tr>
+<tr><td>Geplande sessies zien</td><td>❌</td><td>✅</td></tr>
+<tr><td>Deelnemerslijst (sessie-niveau)</td><td>❌</td><td>✅</td></tr>
+<tr><td>Accounts/karakters aanmaken</td><td>❌</td><td>✅</td></tr>
+<tr><td>Encyclopedie bewerken</td><td>❌</td><td>✅</td></tr>
 </table>
 
-<h3>Karakter overnemen / doorgeven</h3>
-<div class="dm-box">Bij afwezigheid van een speler: klik 🎮 naast het karakter → typ de naam van de speler die het overneemt, of "DM" als jij het speelt. Meerdere karakters per speler is geen probleem.</div>
+<h2>8. XP toekennen</h2>
+<p>In sessie → <strong>⭐ XP</strong> per karakter → bedrag + reden. Updates karakter.xp + komt in logboek.</p>
 
-<h2>7. XP toekennen ⭐</h2>
-<div class="step"><div class="n">1</div><div class="sc"><strong>Open sessie → ⭐ XP naast een karakter</strong></div></div>
-<div class="step"><div class="n">2</div><div class="sc"><strong>Bedrag + reden invullen</strong><p>Reden komt in het persoonlijk logboek van de speler ("Sessie-XP: +500 (hydra verslagen)").</p></div></div>
-<div class="step"><div class="n">3</div><div class="sc"><strong>Karakter XP wordt automatisch bijgewerkt</strong></div></div>
+<h2>9. Dobbelsteen &amp; Chat</h2>
+<p><strong>🎲 Rollen:</strong> in sessie via knop. Iedereen ziet. 🔒 Privé = jij ziet ALLES (ook privé worpen van spelers).</p>
+<p><strong>💬 Chat:</strong> iedereen/fluister/groep. <strong>DM ziet ALLE berichten</strong> — ook fluisterberichten tussen spelers.</p>
 
-<h2>8. Wachtwoord resetten</h2>
-<p>Klik <strong>🔑 Reset</strong> rechtsboven → kies speler → stel tijdelijk wachtwoord in. Speler wordt bij login verplicht een nieuw te kiezen.</p>
+<h2>10. Encyclopedie</h2>
+<p>✏ bewerken, + toevoegen, 🖼 afbeelding uploaden, 📥 bulk import (CSV/JSON/MD).</p>
+<div class="dm-box">Tip: vraag AI om "50 AD&D monsters als JSON-array" → plak in 📥 JSON import.</div>
 
-<h2>9. Encyclopedie beheren</h2>
-<table>
-<tr><th>Actie</th><th>Hoe</th></tr>
-<tr><td>Bewerken</td><td>✏ knop naast elk item → pas velden aan → Opslaan</td></tr>
-<tr><td>Verwijderen</td><td>✏ → Verwijderen knop</td></tr>
-<tr><td>Toevoegen</td><td>Formulier onderaan Encyclopedie pagina</td></tr>
-<tr><td>Afbeelding</td><td>In edit/add: 🖼 veld → URL plakken of bestand uploaden (max 2MB)</td></tr>
-<tr><td>Bulk import</td><td>📥 Importeren → CSV, JSON of Markdown. Kolom <code>name</code> verplicht.</td></tr>
-</table>
-<div class="dm-box">
-<strong>Tip — snel 100 entries toevoegen:</strong> vraag aan ChatGPT/Claude: <em>"Geef me 50 AD&amp;D 1e monsters in JSON-array met velden: name, ac (int), hp_dice, thac0 (int), damage, move (int), alignment, description"</em>. Plak in 📥 Importeren → JSON → klaar.
-</div>
+<h2>11. Kaart &amp; VTT</h2>
+<p>Tab Kaart: Mythic Table link (aanpasbaar), DM kaart upload, Greyhawk referentiekaarten.</p>
 
-<h2>10. Kaart &amp; Mythic Table</h2>
-<p>Tab <strong>Kaart</strong>: link naar Mythic Table (speelveld met tokens, fog of war) + Greyhawk referentiekaarten. DM kan:</p>
-<ul style="font-size:13px;margin:4px 0 4px 20px;">
-<li>Mythic Table link aanpassen (voor als je een andere sessie-URL hebt)</li>
-<li>Eigen kaart uploaden (JPG/PNG, max 5MB) of externe URL plakken</li>
-</ul>
+<h2>12. Export &amp; Import</h2>
+<p><strong>📤 Sessie-export</strong> bevat ALLES: acties, ronde-logs, dice rolls, chat, deelnemers, XP.</p>
+<p><strong>📥 Import</strong> encyclopedie: CSV, JSON of Markdown.</p>
 
-<h2>11. Dobbelsteen rollen in sessie 🎲</h2>
-<p>Onderaan elke sessie: <strong>🎲 Dobbelsteen log</strong> met knop <strong>🎲 Gooi dobbelsteen</strong>.</p>
-<div class="box">
-<strong>Iedereen ziet elkaars worpen</strong> — transparant. Formule + resultaat + waarvoor + wie.<br>
-<strong>🔒 Privé worp:</strong> speler vinkt aan → alleen hij + jij (DM) zien het resultaat. Andere spelers weten niet eens dat er gerold werd.<br>
-<strong>Jij als DM ziet ALLES</strong> — ook alle privé worpen van alle spelers.
-</div>
+<h2>13. Wachtwoord resetten</h2>
+<p><strong>🔑 Reset</strong> rechtsboven → kies speler → tijdelijk wachtwoord.</p>
 
-<h2>12. Chat in sessie 💬</h2>
-<p>Onderaan elke sessie: <strong>💬 Chat</strong>. Spelers en DM kunnen berichten sturen.</p>
-<table>
-<tr><th>Kanaal</th><th>Wie ziet het</th></tr>
-<tr><td>💬 Iedereen</td><td>Alle deelnemers</td></tr>
-<tr><td>🔒 Fluister naar DM</td><td>Alleen afzender + jij</td></tr>
-<tr><td>🔒 Fluister naar [speler]</td><td>Alleen afzender + die speler + jij</td></tr>
-<tr><td>🔒 Groepje</td><td>Alleen afzender + geselecteerden + jij</td></tr>
-</table>
-<div class="dm-box">Jij als DM ziet ALLE berichten — ook fluisterberichten tussen spelers onderling. Chat vernieuwd elke 5 seconden. Alle berichten worden bewaard per sessie.</div>
-
-<h2>13. Export &amp; import</h2>
-<p>📤 <strong>Export</strong> op karakter, sessie of encyclopedie: JSON, Markdown, PDF of CSV.</p>
-<p>📥 <strong>Import</strong> op encyclopedie: CSV, JSON of Markdown-tabel.</p>
-
-<h2>14. Tools</h2>
-<p>Tab <strong>Tools</strong>: 🎲 Dobbelstenen roller (los van sessie), 🎯 THAC0 calculator, ⭐ XP-per-monster tabel.</p>
+<h2>14. Database reset</h2>
+<p>Voor frisse start: draai <code>sql/99_reset_game_data.sql</code> in Supabase. Verwijdert alle spelers/karakters/sessies. Encyclopedie blijft.</p>
 
 <div class="ornament">⸻ ✦ ⸻</div>
-<div class="dm-box" style="margin-bottom:0;">
-Snelle referentie:<br>
-App: <code>sergehanssens.github.io/greyhawk-campaign</code><br>
-Mythic Table: <code>fp.mythictable.com/play/...</code><br>
-Database: supabase.com → greyhawk-dnd project<br>
-GitHub: github.com/SergeHanssens/greyhawk-campaign
-</div>
 <div style="margin-top:20px;text-align:center;font-size:11px;color:#7a5030;border-top:1px solid #c4a060;padding-top:10px;">
   Ontwikkeld door <a href="https://shiftedmake.com" style="color:#4a3a7a;text-decoration:none;font-weight:600;">SHiftEDmake</a> — van Droom naar Werkelijkheid
 </div>

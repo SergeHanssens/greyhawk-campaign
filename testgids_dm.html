@@ -18,7 +18,6 @@ p{font-size:14px;line-height:1.7;margin-bottom:8px;}
 .test ol{margin:0 0 0 20px;font-size:13px;line-height:1.8;}
 .test li{margin-bottom:4px;}
 .check{color:#2a7a2a;font-weight:600;}
-.fail{color:#c03020;font-weight:600;}
 .tip{background:rgba(196,160,96,.1);border:1px solid #c4a060;border-radius:3px;padding:8px 12px;font-size:12px;margin:6px 0;}
 .btn{font-family:'Cinzel',serif;font-size:12px;padding:8px 20px;border-radius:4px;cursor:pointer;border:2px solid #4a3a7a;background:#4a3a7a;color:#e0d0f0;margin-bottom:16px;}
 @media print{.btn{display:none;}.page{border:none;padding:15px;}}
@@ -29,266 +28,147 @@ p{font-size:14px;line-height:1.7;margin-bottom:8px;}
 <button class="btn" onclick="window.print()">🖨️ Afdrukken</button>
 
 <h1>DM Testgids</h1>
-<div class="sub">Stap-voor-stap alles testen voor je de spelers uitnodigt — verwachte tijd: 30 minuten</div>
+<div class="sub">v3.0 — Stap-voor-stap alles testen (45 min) — draai eerst sql/99_reset_game_data.sql voor een frisse start</div>
 
-<p>Dit document leidt je door <strong>elke functie</strong> van de Greyhawk Campaign Manager. Test alles in volgorde. Als iets niet werkt, noteer welke stap en welke foutmelding je krijgt.</p>
+<h2>Stap 1 — DM Account aanmaken (2 min)</h2>
+<div class="test"><h3>Test 1.1</h3><ol>
+<li>Open de app → loginscherm</li>
+<li>Klik het kleine knopje onderaan: <strong>"DM: eerste account aanmaken"</strong></li>
+<li>Gebruikersnaam + wachtwoord + DM Code invullen + veiligheidsvraag</li>
+<li><span class="check">✓ Verwacht:</span> "Dungeon Master" badge + DM Dashboard tab</li>
+</ol></div>
 
-<h2>Stap 1 — Inloggen als DM (2 min)</h2>
-<div class="test">
-<h3>Test 1.1: Inloggen</h3>
-<ol>
-<li>Ga naar de app-link</li>
-<li>Log in met je DM-account</li>
-<li><span class="check">✓ Verwacht:</span> "Dungeon Master" badge rechtsboven + extra knoppen (🔑 Reset) + tab "DM Dashboard"</li>
-</ol>
-</div>
+<h2>Stap 2 — Speler-account aanmaken (2 min)</h2>
+<div class="test"><h3>Test 2.1</h3><ol>
+<li>Tab Mijn Karakters → <strong>👤 Nieuwe speler</strong></li>
+<li>Naam: "testspeler", Wachtwoord: "Test123"</li>
+<li><span class="check">✓ Verwacht:</span> "✓ Speler testspeler aangemaakt"</li>
+</ol></div>
+<div class="test"><h3>Test 2.2 — Test als speler</h3><ol>
+<li>Log uit → log in als "testspeler" met "Test123"</li>
+<li><span class="check">✓ Verwacht:</span> verplicht wachtwoord wijzigen</li>
+<li>Kies nieuw wachtwoord → <span class="check">✓</span> ingelogd als speler</li>
+<li>Controleer: geen DM Dashboard, geen + Nieuw Karakter, geen 👤 Nieuwe speler</li>
+<li>Log uit → log weer in als DM</li>
+</ol></div>
 
-<h2>Stap 2 — Karakter aanmaken (5 min)</h2>
-<div class="test">
-<h3>Test 2.1: Nieuw karakter</h3>
-<ol>
-<li>Tab <strong>Karakters</strong> → klik <strong>+ Nieuw Karakter</strong></li>
-<li>Naam: "Testridder", Ras: Human, Klasse: Fighter, Gezindheid: Lawful Good</li>
-<li>Klik <strong>Karakter Aanmaken</strong></li>
-<li><span class="check">✓ Verwacht:</span> Character sheet opent met alle velden</li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 2.2: Velden bewerken</h3>
-<ol>
-<li>Klik op het HP getal (stippellijn) → typ <strong>45</strong> → druk Enter</li>
-<li>Doe hetzelfde voor STR (typ 16), DEX (14), THAC0 (17)</li>
-<li><span class="check">✓ Verwacht:</span> groen "✓ Auto-opslaan" bevestiging, waarden bijgewerkt</li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 2.3: Wapen toevoegen</h3>
-<ol>
-<li>Klik <strong>+ wapen toevoegen</strong></li>
-<li>Typ "long" in de zoekbalk → "Long Sword" verschijnt</li>
-<li>Klik op Long Sword → formulier vult zich in</li>
-<li>Klik <strong>+ Toevoegen aan karakter</strong></li>
-<li><span class="check">✓ Verwacht:</span> Long Sword verschijnt in de wapenlijst op de sheet</li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 2.4: Profielfoto</h3>
-<ol>
-<li>Klik het 📷 icoontje linksboven op de character sheet</li>
-<li>Kies een afbeelding (max 2MB)</li>
-<li><span class="check">✓ Verwacht:</span> foto verschijnt als avatar</li>
-</ol>
-</div>
+<h2>Stap 3 — Karakters aanmaken (3 min)</h2>
+<div class="test"><h3>Test 3.1 — Speler-karakter</h3><ol>
+<li><strong>+ Nieuw Karakter</strong> → Type: <strong>Speler-karakter</strong></li>
+<li>Eigenaar: "testspeler" → Naam: "Thorin" → Dwarf Fighter</li>
+<li><span class="check">✓ Verwacht:</span> verschijnt bij ⚔ SPELER KARAKTERS</li>
+</ol></div>
+<div class="test"><h3>Test 3.2 — NPC</h3><ol>
+<li><strong>+ Nieuw Karakter</strong> → Type: <strong>NPC</strong></li>
+<li>Naam: "Goblin Sluipschutter" → Ras: Monster → Klasse: Enemy</li>
+<li><span class="check">✓ Verwacht:</span> verschijnt bij 🏰 NPC's met rode banner</li>
+</ol></div>
 
-<h2>Stap 3 — DM Dashboard (2 min)</h2>
-<div class="test">
-<h3>Test 3.1: Overzicht</h3>
-<ol>
-<li>Klik tab <strong>DM Dashboard</strong></li>
-<li><span class="check">✓ Verwacht:</span> alle karakters zichtbaar met HP-balken</li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 3.2: Privé notities</h3>
-<ol>
-<li>Open een karakter vanuit DM Dashboard</li>
-<li>Scroll naar beneden → paars kader "🔒 DM Privé Notities"</li>
-<li>Typ iets → klik ergens anders</li>
-<li><span class="check">✓ Verwacht:</span> "✓ DM notities opgeslagen" melding. Spelers zien dit NIET.</li>
-</ol>
-</div>
+<h2>Stap 4 — Sessie + Actie (5 min)</h2>
+<div class="test"><h3>Test 4.1 — Sessie aanmaken</h3><ol>
+<li>Tab Sessies → <strong>+ Nieuwe sessie</strong></li>
+<li>Naam: "Testsessie", Status: Gepland, deelnemers: Thorin + Goblin</li>
+<li><span class="check">✓ Verwacht:</span> sessie verschijnt in lijst</li>
+</ol></div>
+<div class="test"><h3>Test 4.2 — Activeren</h3><ol>
+<li>Open sessie → klik <strong>▶ Activeren</strong></li>
+<li><span class="check">✓ Verwacht:</span> status wordt "ACTIEF"</li>
+</ol></div>
+<div class="test"><h3>Test 4.3 — Actie starten</h3><ol>
+<li><strong>+ Nieuwe actie</strong> → "Hinderlaag" → Type: Gevecht → Initiative: aangevinkt</li>
+<li>Deelnemers: alle → <strong>Actie starten</strong></li>
+<li><span class="check">✓ Verwacht:</span> actie verschijnt met "Ronde 1" + init velden</li>
+</ol></div>
 
-<h2>Stap 4 — Sessie aanmaken + gevecht (10 min)</h2>
-<div class="test">
-<h3>Test 4.1: Nieuwe sessie</h3>
-<ol>
-<li>Tab <strong>Sessies</strong> → klik <strong>+ Nieuwe sessie</strong></li>
-<li>Naam: "Testsessie", Datum: vandaag, Status: Actief</li>
-<li>Vink minstens 2 karakters aan</li>
-<li>Klik <strong>✓ Opslaan</strong></li>
-<li><span class="check">✓ Verwacht:</span> sessie verschijnt in de lijst, klik erop om te openen</li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 4.2: Gevecht starten</h3>
-<ol>
-<li>Open de testsessie → klik <strong>⚔️ Start gevecht</strong></li>
-<li><span class="check">✓ Verwacht:</span> rood kader verschijnt met "Ronde 1" + initiative-velden per karakter</li>
-<li>Typ bij het eerste karakter initiative <strong>3</strong>, bij het tweede <strong>5</strong></li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 4.3: Vijand toevoegen</h3>
-<ol>
-<li>Klik <strong>+ Vijand</strong> → naam: "Goblin", aantal: 3, HP: 7</li>
-<li><span class="check">✓ Verwacht:</span> "Goblin #1", "Goblin #2", "Goblin #3" verschijnen als rode entries</li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 4.4: DM initiative rollen</h3>
-<ol>
-<li>Klik <strong>🎲 Gooi init voor DM-karakters</strong></li>
-<li><span class="check">✓ Verwacht:</span> goblins krijgen een initatiefgetal</li>
-<li>Klik <strong>↕ Sorteer</strong> → laagste initiative bovenaan</li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 4.5: Actie vastleggen</h3>
-<ol>
-<li>Klik <strong>📋 Actie</strong> bij het eerste karakter</li>
-<li>Typ: "Aanval op Goblin #1 met Long Sword" → Resultaat: "Raak! 6 dmg"</li>
-<li><span class="check">✓ Verwacht:</span> actie verschijnt in "Acties — Ronde 1"</li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 4.6: HP aanpassen + status</h3>
-<ol>
-<li>Bij Goblin #1: verander HP naar <strong>1</strong></li>
-<li>Verander status dropdown naar <strong>Dood</strong></li>
-<li><span class="check">✓ Verwacht:</span> Goblin #1 wordt uitgevaagd met 💀</li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 4.7: Volgende ronde + einde</h3>
-<ol>
+<h2>Stap 5 — Initiative + Ronde (5 min)</h2>
+<div class="test"><h3>Test 5.1 — DM initiative rollen</h3><ol>
+<li>Klik <strong>🎲 DM init</strong></li>
+<li><span class="check">✓ Verwacht:</span> alle DM-karakters (Goblin) krijgen init-getal</li>
+</ol></div>
+<div class="test"><h3>Test 5.2 — Speler initiative</h3><ol>
+<li>Bij Thorin: klik 🎲 naast INIT veld</li>
+<li><span class="check">✓ Verwacht:</span> d20 resultaat ingevuld + gesorteerd</li>
+<li><span class="check">✓ Verwacht:</span> "✓ Alle initiatives ingevuld — ronde 1 loopt!"</li>
+</ol></div>
+<div class="test"><h3>Test 5.3 — Actie declareren</h3><ol>
+<li>Bij Thorin: typ "Aanval op Goblin" → klik ✓</li>
+<li>Bij Goblin: DM notitie: "Probeert te vluchten" → DM+</li>
+<li><span class="check">✓ Verwacht:</span> beide entries verschijnen in ronde-log</li>
+</ol></div>
+<div class="test"><h3>Test 5.4 — Nieuwe ronde</h3><ol>
 <li>Klik <strong>Ronde 2 →</strong></li>
-<li><span class="check">✓ Verwacht:</span> "Ronde 2" verschijnt</li>
-<li>Klik <strong>✓ Einde gevecht</strong></li>
-</ol>
-</div>
+<li><span class="check">✓ Verwacht:</span> initiative velden leeg + "⏳ Wachten..."</li>
+</ol></div>
+<div class="test"><h3>Test 5.5 — Status wijzigen</h3><ol>
+<li>Zet Goblin op <strong>Dood</strong> via dropdown</li>
+<li><span class="check">✓ Verwacht:</span> donkerrode rand + 💀 + half transparant</li>
+<li>Zet op <strong>Verborgen</strong></li>
+<li><span class="check">✓ Verwacht:</span> paars + 👁‍🗨 (spelers zien dit niet)</li>
+</ol></div>
 
-<h2>Stap 4b — Dobbelsteen rollen in sessie (2 min)</h2>
-<div class="test">
-<h3>Test 4.8: Publieke worp</h3>
-<ol>
-<li>Onderaan de sessie: klik <strong>🎲 Gooi dobbelsteen</strong></li>
-<li>Formule: <strong>1d20</strong>, Waarvoor: "Aanval test"</li>
-<li>Laat 🔒 Privé <strong>uit</strong> → klik <strong>🎲 Gooi!</strong></li>
-<li><span class="check">✓ Verwacht:</span> resultaat verschijnt + verschijnt in het dobbelsteen-log onderaan</li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 4.9: Privé worp</h3>
-<ol>
-<li>Klik opnieuw <strong>🎲 Gooi dobbelsteen</strong></li>
-<li>Formule: <strong>1d6</strong>, vink <strong>🔒 Privé worp</strong> aan</li>
-<li>Klik <strong>🎲 Gooi!</strong></li>
-<li><span class="check">✓ Verwacht:</span> resultaat verschijnt met 🔒 icoon in het log. Spelers zullen dit NIET zien.</li>
-</ol>
-</div>
+<h2>Stap 6 — Dobbelsteen + Chat (3 min)</h2>
+<div class="test"><h3>Test 6.1 — Dobbelstenen</h3><ol>
+<li>In sessie → <strong>🎲 Gooi dobbelsteen</strong></li>
+<li>2 × d20, bonus +2 → Gooi!</li>
+<li><span class="check">✓ Verwacht:</span> resultaat in tabel + in dobbelsteen-log</li>
+</ol></div>
+<div class="test"><h3>Test 6.2 — Chat</h3><ol>
+<li>Chat → "Welkom!" → Verstuur</li>
+<li>Kanaal: Fluister naar DM → "Geheim" → Verstuur</li>
+<li><span class="check">✓ Verwacht:</span> beide berichten verschijnen</li>
+</ol></div>
 
-<h2>Stap 4c — Chat (2 min)</h2>
-<div class="test">
-<h3>Test 4.10: Algemeen bericht</h3>
-<ol>
-<li>Onderaan de sessie: <strong>💬 Chat</strong></li>
-<li>Kanaal: <strong>💬 Iedereen</strong></li>
-<li>Typ: "Welkom bij de testsessie!" → Enter</li>
-<li><span class="check">✓ Verwacht:</span> bericht verschijnt in de chat met je naam en tijdstip</li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 4.11: Privé bericht (fluisteren)</h3>
-<ol>
-<li>Verander kanaal naar <strong>🔒 Fluister naar DM</strong> (of een speler als er accounts zijn)</li>
-<li>Typ: "Dit is geheim" → Enter</li>
-<li><span class="check">✓ Verwacht:</span> bericht verschijnt met 🔒 kanaal-label. Andere spelers zien dit niet.</li>
-</ol>
-</div>
+<h2>Stap 7 — XP + Afsluiten (3 min)</h2>
+<div class="test"><h3>Test 7.1</h3><ol>
+<li><strong>⭐ XP</strong> bij Thorin → 150 XP → "Goblin verslagen" → Toekennen</li>
+<li><span class="check">✓ Verwacht:</span> "+150 XP" getoond + karakter XP bijgewerkt</li>
+</ol></div>
+<div class="test"><h3>Test 7.2 — Actie afsluiten</h3><ol>
+<li>Klik <strong>✓ Afsluiten</strong> bij de actie</li>
+<li>Klik driehoekje bij "afgesloten acties" → <strong>📋 Bekijk logs</strong></li>
+<li><span class="check">✓ Verwacht:</span> ronde-per-ronde log verschijnt</li>
+</ol></div>
+<div class="test"><h3>Test 7.3 — Sessie afsluiten</h3><ol>
+<li>Klik <strong>✓ Sessie afsluiten</strong></li>
+<li><span class="check">✓ Verwacht:</span> alles read-only</li>
+</ol></div>
 
-<h2>Stap 5 — XP toekennen (2 min)</h2>
-<div class="test">
-<h3>Test 5.1: XP</h3>
-<ol>
-<li>Open de testsessie → klik <strong>⭐ XP</strong> bij een karakter</li>
-<li>Bedrag: 100, Reden: "3 goblins verslagen"</li>
-<li>Klik <strong>✓ Toekennen</strong></li>
-<li><span class="check">✓ Verwacht:</span> karakter toont "+100 XP deze sessie" + totale XP is bijgewerkt</li>
-</ol>
-</div>
+<h2>Stap 8 — Export (2 min)</h2>
+<div class="test"><h3>Test 8.1</h3><ol>
+<li><strong>📤 Export</strong> → JSON → download</li>
+<li>Open JSON → controleer: sessie + acties + ronde-logs + dice + chat</li>
+<li><span class="check">✓ Verwacht:</span> alles aanwezig</li>
+</ol></div>
 
-<h2>Stap 6 — Encyclopedie (3 min)</h2>
-<div class="test">
-<h3>Test 6.1: Zoeken</h3>
-<ol>
-<li>Tab <strong>Encyclopedie</strong> → klik <strong>Monsters</strong></li>
-<li>Zoek "dragon" in de zoekbalk</li>
-<li>Klik <strong>info</strong> naast een resultaat</li>
-<li><span class="check">✓ Verwacht:</span> popup met naam, stats, beschrijving + afbeelding (als beschikbaar)</li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 6.2: Item bewerken (DM)</h3>
-<ol>
-<li>Klik ✏ naast een wapen</li>
-<li>Wijzig de beschrijving → klik <strong>Opslaan</strong></li>
-<li><span class="check">✓ Verwacht:</span> "✓ Opgeslagen" melding, tabel geüpdatet</li>
-</ol>
-</div>
+<h2>Stap 9 — Encyclopedie + Tools (3 min)</h2>
+<div class="test"><h3>Test 9.1</h3><ol>
+<li>Tab Encyclopedie → Monsters → zoek "dragon" → klik info</li>
+<li><span class="check">✓ Verwacht:</span> popup met details + afbeelding (als beschikbaar)</li>
+</ol></div>
+<div class="test"><h3>Test 9.2</h3><ol>
+<li>Tab Tools → klik d20 → resultaat verschijnt</li>
+<li>THAC0 Calculator: 17, AC 5, bonus 2 → <span class="check">✓ Verwacht: "10+ nodig"</span></li>
+</ol></div>
 
-<h2>Stap 7 — Kaart + Tools (2 min)</h2>
-<div class="test">
-<h3>Test 7.1: Kaart</h3>
-<ol>
-<li>Tab <strong>Kaart</strong> → klik <strong>🎮 Open Mythic Table</strong></li>
-<li><span class="check">✓ Verwacht:</span> Mythic Table opent in nieuw tabblad</li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 7.2: Dobbelstenen</h3>
-<ol>
-<li>Tab <strong>Tools</strong> → klik <strong>d20</strong></li>
-<li><span class="check">✓ Verwacht:</span> resultaat (1-20) verschijnt groot + in geschiedenis</li>
-<li>Typ <strong>3d6+2</strong> in het invoerveld → klik 🎲 Gooi!</li>
-<li><span class="check">✓ Verwacht:</span> resultaat met aparte worpen (bv. [4, 2, 5] = 13)</li>
-</ol>
-</div>
-<div class="test">
-<h3>Test 7.3: THAC0 calculator</h3>
-<ol>
-<li>THAC0: 17, Vijand AC: 5, Bonussen: 2</li>
-<li><span class="check">✓ Verwacht:</span> "Je hebt 10+ nodig"</li>
-</ol>
-</div>
+<h2>Stap 10 — Help (1 min)</h2>
+<div class="test"><h3>Test 10.1</h3><ol>
+<li>Klik <strong>? Help</strong> rechtsboven</li>
+<li><span class="check">✓ Verwacht:</span> grid met links naar alle 6 handleidingen</li>
+<li>Klik op "📋 Snelkaart speler" → opent in nieuw tabblad met 🖨️ knop</li>
+</ol></div>
 
-<h2>Stap 8 — Wachtwoord reset (2 min)</h2>
-<div class="test">
-<h3>Test 8.1: Reset voor speler</h3>
-<ol>
-<li>Klik <strong>🔑 Reset</strong> rechtsboven</li>
-<li>Kies een speler → stel tijdelijk wachtwoord in (bv. "Test123")</li>
-<li><span class="check">✓ Verwacht:</span> bevestiging. Speler wordt bij volgende login verplicht nieuw wachtwoord te kiezen.</li>
+<div style="margin-top:20px;padding:16px;background:rgba(42,122,42,.06);border:1px solid rgba(42,122,42,.25);border-radius:4px;">
+<h2 style="color:#2a7a2a;border:none;margin:0 0 8px;">✅ Alles getest?</h2>
+<p>Stuur spelers:</p>
+<ol style="font-size:13px;">
+<li>App-link: <code>sergehanssens.github.io/greyhawk-campaign</code></li>
+<li>Hun gebruikersnaam + tijdelijk wachtwoord (mondeling/privé)</li>
+<li>Snelkaart: <code>/snelkaart_speler.html</code> (print A4)</li>
 </ol>
 </div>
-
-<h2>Stap 9 — Export (2 min)</h2>
-<div class="test">
-<h3>Test 9.1: Karakter exporteren</h3>
-<ol>
-<li>Open een karakter → klik <strong>📤 Export</strong></li>
-<li>Kies <strong>PDF</strong> → een nieuw venster opent met printbaar karakterblad</li>
-<li>Kies <strong>JSON</strong> → een .json bestand wordt gedownload</li>
-<li><span class="check">✓ Verwacht:</span> beide werken zonder foutmeldingen</li>
-</ol>
-</div>
-
-<div class="ornament" style="text-align:center;color:#c4a060;font-size:18px;margin:20px 0;letter-spacing:8px;">⸻ ✦ ⸻</div>
-
-<h2>Alles getest? ✓</h2>
-<p>Als alle tests hierboven werken, is de app klaar voor de spelers. Stuur hen:</p>
-<div class="test" style="background:rgba(42,122,42,.06);border-color:rgba(42,122,42,.25);">
-<ol>
-<li>De <strong>app-link</strong>: <code>sergehanssens.github.io/greyhawk-campaign</code></li>
-<li>De <strong>snelkaart voor spelers</strong> (printbaar A4): <code>/snelkaart_speler.html</code></li>
-<li>Zeg dat ze een account moeten aanmaken (DM Code = <strong>leeg laten</strong>)</li>
-<li>Ze kunnen meteen hun karakter aanmaken en invullen</li>
-</ol>
-</div>
-
-<div class="tip"><strong>Opruimen na testen:</strong> verwijder testkarakters en testsessies via de app (🗑 Verwijderen).</div>
 
 <div style="margin-top:16px;text-align:center;font-size:11px;color:#7a5030;border-top:1px solid #4a3a7a;padding-top:8px;">
-  Greyhawk Campaign Manager v1.7 · <a href="https://shiftedmake.com" style="color:#4a3a7a;text-decoration:none;font-weight:600;">SHiftEDmake</a> — van Droom naar Werkelijkheid
+  Greyhawk Campaign Manager v3.0 · <a href="https://shiftedmake.com" style="color:#4a3a7a;text-decoration:none;font-weight:600;">SHiftEDmake</a>
 </div>
 </div>
 </body>

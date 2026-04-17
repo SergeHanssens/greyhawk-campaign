@@ -28,71 +28,76 @@ strong{color:#8a2010;}
 <div class="card">
 <button class="btn" onclick="window.print()">🖨️ Afdrukken (A4)</button>
 <h1>Greyhawk Campaign Manager</h1>
-<div class="sub">SNELKAART SPELER — bewaar dit naast je scherm</div>
+<div class="sub">SNELKAART SPELER v3.0 — bewaar naast je scherm</div>
 
 <div class="cols">
 <div>
-<h2>Eerste keer</h2>
+<h2>Inloggen &amp; Karakter</h2>
 <table>
-<tr><td>1. Account</td><td>Registreer op de app-link van de DM. DM Code = leeg laten.</td></tr>
-<tr><td>2. Karakter</td><td>Klik <span class="em">+ Nieuw Karakter</span>. Kies ras → klasse → gezindheid.</td></tr>
-<tr><td>3. Stats</td><td>Klik op elk getal met stippellijn → typ → Enter. Alles slaat automatisch op.</td></tr>
-<tr><td>4. Foto</td><td>📷 icoontje op je character sheet. Max 2MB.</td></tr>
+<tr><td>Account</td><td>DM maakt aan, je krijgt tijdelijk wachtwoord</td></tr>
+<tr><td>Eerste login</td><td>Verplicht eigen wachtwoord kiezen</td></tr>
+<tr><td>Character Sheet</td><td>Tab <span class="em">Mijn Karakters</span> → klik je karakter</td></tr>
+<tr><td>Bewerken</td><td>Klik stippellijn-waarde → typ → Enter</td></tr>
+<tr><td>Wapen/item/spell</td><td>"+ toevoegen" → zoek → klik → Toevoegen</td></tr>
 </table>
 
-<h2>Karakter bewerken</h2>
+<h2>Sessie &amp; Gevecht</h2>
 <table>
-<tr><td>Waarde wijzigen</td><td>Klik op stippellijn-getal → typ → Enter</td></tr>
-<tr><td>Wapen toevoegen</td><td>"+ wapen toevoegen" → zoek → klik → Toevoegen</td></tr>
-<tr><td>Item/skill/spell</td><td>Idem via de + knoppen</td></tr>
-<tr><td>PDF exporteren</td><td>📄 PDF knop op character sheet</td></tr>
-<tr><td>Alle export</td><td>📤 Export → kies JSON/MD/PDF</td></tr>
+<tr><td>Sessie openen</td><td>Tab <span class="em">Sessies</span> → klik actieve sessie</td></tr>
+<tr><td>Initiative rollen</td><td>🎲 naast je karakter = d20 auto-roll</td></tr>
+<tr><td>Na invullen</td><td><strong>Vergrendeld</strong> — niet meer aanpasbaar</td></tr>
+<tr><td>Actie declareren</td><td>Typ wat je doet in invulveld → ✓</td></tr>
+<tr><td>Nieuwe ronde</td><td>Initiative reset → opnieuw rollen</td></tr>
 </table>
 
-<h2>Sessie &amp; gevecht</h2>
+<h2>Dobbelstenen &amp; Chat</h2>
 <table>
-<tr><td>Sessie bekijken</td><td>Tab <span class="em">Sessies</span> → klik op sessie</td></tr>
-<tr><td>Log invullen</td><td>"+ Log" → ontmoetingen, NPCs, loot, notities</td></tr>
-<tr><td>Initiative</td><td>Bij gevecht: vul je d6 + DEX mod in het veld</td></tr>
-<tr><td>🎲 Rollen</td><td>In sessie: "🎲 Gooi dobbelsteen". 🔒 = privé (alleen jij + DM)</td></tr>
-<tr><td>💬 Chat</td><td>In sessie: typ bericht. Kies: iedereen / fluister DM / fluister speler</td></tr>
+<tr><td>🎲 In sessie</td><td>Formule kiezen, iedereen ziet. 🔒=privé</td></tr>
+<tr><td>🎲 Tab Tools</td><td>Los rollen (niet aan sessie)</td></tr>
+<tr><td>💬 Chat</td><td>Iedereen / fluister DM / fluister speler</td></tr>
 </table>
 </div>
 
 <div>
-<h2>Aanval doen (AD&amp;D)</h2>
+<h2>Gevechtsflow</h2>
 <div class="box">
-1. Gooi <strong>D20</strong><br>
-2. Tel bonussen op (STR, magie)<br>
-3. <strong>D20 + bonus ≥ THAC0 − vijand AC</strong> → RAAK!<br>
-4. Gooi <strong>schade-dobbelsteen</strong> (staat bij wapen)<br>
-5. Tel schadebonussen op
+1. DM start ronde → initiative reset<br>
+2. Jij: klik 🎲 = d20 auto-roll<br>
+3. Wacht: "⏳ Nog X deelnemers..."<br>
+4. Ronde start: typ je actie<br>
+5. DM verwerkt resultaat<br>
+6. Nieuwe ronde → herhaal
 </div>
+
+<h2>Wat je NIET kan</h2>
+<table>
+<tr><td>HP aanpassen</td><td>❌ Alleen DM</td></tr>
+<tr><td>Status wijzigen</td><td>❌ Alleen DM</td></tr>
+<tr><td>Accounts maken</td><td>❌ Alleen DM</td></tr>
+<tr><td>Verborgen chars</td><td>❌ Onzichtbaar</td></tr>
+<tr><td>Geplande sessies</td><td>❌ Niet zichtbaar</td></tr>
+</table>
 
 <h2>Tabs overzicht</h2>
 <table>
-<tr><td><span class="em">Karakters</span></td><td>Jouw karakters beheren</td></tr>
-<tr><td><span class="em">Character Sheet</span></td><td>Alle details van gekozen karakter</td></tr>
-<tr><td><span class="em">Sessies</span></td><td>Campagne-sessies + gevechten + log</td></tr>
-<tr><td><span class="em">Encyclopedie</span></td><td>Wapens, spreuken, monsters, goden, ...</td></tr>
-<tr><td><span class="em">Kaart</span></td><td>Mythic Table + referentiekaarten</td></tr>
-<tr><td><span class="em">Tools</span></td><td>Dobbelstenen, THAC0 calculator, XP tabel</td></tr>
+<tr><td><span class="em">Mijn Karakters</span></td><td>Je karakter(s)</td></tr>
+<tr><td><span class="em">Sessies</span></td><td>Actief + afgesloten</td></tr>
+<tr><td><span class="em">Encyclopedie</span></td><td>Wapens, spreuken, monsters...</td></tr>
+<tr><td><span class="em">Kaart</span></td><td>Mythic Table + referentie</td></tr>
+<tr><td><span class="em">Tools</span></td><td>🎲 Dice, 🎯 THAC0, ⭐ XP</td></tr>
 </table>
 
-<h2>Knoppen rechtsboven</h2>
+<h2>Help &amp; export</h2>
 <table>
-<tr><td>★ Features</td><td>Alles wat de app kan</td></tr>
-<tr><td>? Help</td><td>Snelle uitleg per sectie</td></tr>
+<tr><td>? Help</td><td>Alle handleidingen + snelgids</td></tr>
+<tr><td>★ Features</td><td>Overzicht alle functies</td></tr>
+<tr><td>📤 Export</td><td>Karakter/sessie als PDF/JSON/MD</td></tr>
 <tr><td>🔑 Wachtwoord</td><td>Wijzig je wachtwoord</td></tr>
 </table>
-
-<h2>Wachtwoord vergeten?</h2>
-<div class="box">Vraag aan de DM om een tijdelijk wachtwoord in te stellen. Bij volgende login word je verplicht een nieuw te kiezen.</div>
 </div>
 </div>
-
 <div style="text-align:center;font-size:9px;color:#7a5030;margin-top:8px;border-top:1px solid #c4a060;padding-top:4px;">
-  Greyhawk Campaign Manager · <a href="https://shiftedmake.com" style="color:#8a2010;text-decoration:none;">SHiftEDmake</a> — van Droom naar Werkelijkheid
+  Greyhawk Campaign Manager v3.0 · <a href="https://shiftedmake.com" style="color:#8a2010;text-decoration:none;">SHiftEDmake</a>
 </div>
 </div>
 </body>

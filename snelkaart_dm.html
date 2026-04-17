@@ -28,104 +28,94 @@ strong{color:#8a2010;}
 <div class="card">
 <button class="btn" onclick="window.print()">🖨️ Afdrukken (A4)</button>
 <h1>Greyhawk — DM Snelkaart</h1>
-<div class="sub">VERTROUWELIJK — Versie 1.7 — Bewaar naast je scherm</div>
+<div class="sub">VERTROUWELIJK — v3.0</div>
 
 <div class="cols">
 <div>
-<h2>Sessie aanmaken</h2>
+<h2>Accounts &amp; Karakters</h2>
 <table>
-<tr><td>1.</td><td>Tab <span class="em">Sessies</span> → <span class="em">+ Nieuwe sessie</span></td></tr>
-<tr><td>2.</td><td>Naam + datum + locatie invullen</td></tr>
-<tr><td>3.</td><td>Karakters aanvinken die meedoen</td></tr>
-<tr><td>4.</td><td>Status: Gepland → Actief → Afgesloten</td></tr>
+<tr><td>👤 Nieuwe speler</td><td>Tab Mijn Karakters → naam + tijdelijk ww</td></tr>
+<tr><td>+ Nieuw Karakter</td><td>Type: Speler (kies eigenaar) of NPC</td></tr>
+<tr><td>NPC types</td><td>Monster, Undead, Beast, Dragon, Companion...</td></tr>
 </table>
 
-<h2>Gevecht starten</h2>
+<h2>Sessie workflow</h2>
 <table>
-<tr><td>1.</td><td>Open sessie → <span class="em">⚔️ Start gevecht</span></td></tr>
-<tr><td>2.</td><td>Spelers vullen zelf initiative in (d6+DEX)</td></tr>
-<tr><td>3.</td><td><span class="em">🎲 Gooi init voor DM-karakters</span></td></tr>
-<tr><td>4.</td><td><span class="em">↕ Sorteer</span> (laagst = eerst)</td></tr>
-<tr><td>5.</td><td>Per karakter: <span class="em">📋 Actie</span> → wat doet het + resultaat</td></tr>
-<tr><td>6.</td><td><span class="em">Ronde X →</span> voor volgende ronde</td></tr>
-<tr><td>7.</td><td><span class="em">✓ Einde gevecht</span></td></tr>
+<tr><td>1. Aanmaken</td><td>+ Nieuwe sessie → deelnemers → Gepland</td></tr>
+<tr><td>2. ▶ Activeren</td><td>Spelers zien sessie nu</td></tr>
+<tr><td>3. + Actie</td><td>Gevecht/verkenning/sociaal + init toggle</td></tr>
+<tr><td>4. ✓ Afsluiten</td><td>Sessie = alleen-lezen</td></tr>
 </table>
 
-<h2>Tijdens gevecht</h2>
+<h2>Gevechtsronde</h2>
+<div class="box">
+1. <strong>Ronde X →</strong> = init reset<br>
+2. Spelers rollen eigen init (🎲 d20)<br>
+3. <strong>🎲 DM init</strong> = alle DM-chars in 1 klik<br>
+4. "✓ Ronde loopt!" = actielog verschijnt<br>
+5. Speler typt actie, DM vult resultaat aan<br>
+6. ☐ Uitgesteld / ☐ +Aanval<br>
+7. Herhaal
+</div>
+
+<h2>Status per karakter</h2>
 <table>
-<tr><td>HP aanpassen</td><td>Typ direct in HP-veld</td></tr>
-<tr><td>Status</td><td>Dropdown: Actief/Bewusteloos/Dood/Gevlucht</td></tr>
-<tr><td>+ Vijand</td><td>Naam + aantal + HP → aparte entries</td></tr>
-<tr><td>🎮 Overnemen</td><td>Klik 🎮 → "DM" of andere spelernaam</td></tr>
+<tr><td>Actief</td><td>Normaal</td></tr>
+<tr><td>KO</td><td>Bewusteloos — oranje</td></tr>
+<tr><td>Dood</td><td>💀 — donkerrood, half transparant</td></tr>
+<tr><td>Weg</td><td>Gevlucht — grijs</td></tr>
+<tr><td><strong>Verborgen</strong></td><td>Onzichtbaar voor spelers — paars</td></tr>
 </table>
 
 <h2>XP toekennen</h2>
 <table>
-<tr><td>1.</td><td>Open sessie → <span class="em">⭐ XP</span> per karakter</td></tr>
-<tr><td>2.</td><td>Bedrag + reden → automatisch in karakter + logboek</td></tr>
-</table>
-
-<h2>Dobbelstenen &amp; chat</h2>
-<table>
-<tr><td>🎲 Rollen</td><td>In sessie: "🎲 Gooi". Iedereen ziet. 🔒=privé (jij ziet ALLES)</td></tr>
-<tr><td>💬 Chat</td><td>In sessie: iedereen/fluister/groep. <strong>Jij ziet ALLES</strong></td></tr>
-</table>
-
-<h2>Wachtwoord resetten</h2>
-<table>
-<tr><td>1.</td><td><span class="em">🔑 Reset</span> rechtsboven</td></tr>
-<tr><td>2.</td><td>Kies speler → tijdelijk wachtwoord</td></tr>
-<tr><td>3.</td><td>Speler wordt verplicht nieuw wachtwoord te kiezen</td></tr>
+<tr><td>1.</td><td>In sessie → ⭐ XP per karakter</td></tr>
+<tr><td>2.</td><td>Bedrag + reden → auto in karakter XP + log</td></tr>
 </table>
 </div>
 
 <div>
-<h2>DM Dashboard</h2>
+<h2>Permissions</h2>
 <table>
-<tr><td>Alle karakters</td><td>Tab <span class="em">DM Dashboard</span> — overzicht + HP-balken</td></tr>
-<tr><td>Privé notities</td><td>Onderaan elk karakter → 🔒 onzichtbaar voor speler</td></tr>
-<tr><td>Sessie-notities</td><td>Idem → voor XP-berekening</td></tr>
+<tr><td>HP aanpassen</td><td>Alleen DM</td></tr>
+<tr><td>Status dropdown</td><td>Alleen DM</td></tr>
+<tr><td>Verborgen chars</td><td>Alleen DM ziet</td></tr>
+<tr><td>Init wijzigen</td><td>Speler: eigen, 1x. DM: alles</td></tr>
+<tr><td>Geplande sessies</td><td>Alleen DM</td></tr>
+<tr><td>Deelnemerslijst</td><td>Alleen DM</td></tr>
 </table>
 
-<h2>Encyclopedie beheren</h2>
+<h2>Dobbelstenen &amp; Chat</h2>
 <table>
-<tr><td>Bewerken</td><td>✏ knop → pas aan → Opslaan</td></tr>
-<tr><td>Toevoegen</td><td>Formulier onderaan + 🖼 afbeelding</td></tr>
-<tr><td>Verwijderen</td><td>✏ → Verwijderen</td></tr>
-<tr><td>Bulk import</td><td><span class="em">📥 Importeren</span> → CSV/JSON/MD</td></tr>
-</table>
-<div class="box">
-<strong>Snel 100 monsters:</strong> vraag AI: <em>"50 AD&amp;D monsters als JSON-array"</em> → plak in 📥 JSON import
-</div>
-
-<h2>Kaart</h2>
-<table>
-<tr><td>Speelveld</td><td>Tab Kaart → Mythic Table link</td></tr>
-<tr><td>Eigen kaart</td><td>DM kan JPG/PNG uploaden of URL plakken</td></tr>
-<tr><td>VTT link</td><td>Aanpasbaar in DM-paneel op Kaart tab</td></tr>
+<tr><td>🎲 Rollen</td><td>In sessie. DM ziet ALLES incl. 🔒 privé</td></tr>
+<tr><td>💬 Chat</td><td>DM ziet ALLE berichten incl. fluisteringen</td></tr>
 </table>
 
-<h2>Alle tabs</h2>
+<h2>Encyclopedie</h2>
 <table>
-<tr><td>Karakters</td><td>Alle karakters (speler: eigen / DM: alle)</td></tr>
-<tr><td>Sheet</td><td>Character sheet met click-to-edit</td></tr>
-<tr><td>Sessies</td><td>Sessies + gevechten + logboeken</td></tr>
-<tr><td>Encyclopedie</td><td>Wapens, spreuken, items, monsters, goden, ...</td></tr>
-<tr><td>Kaart</td><td>Mythic Table + DM kaart + referentie</td></tr>
-<tr><td>Tools</td><td>Dobbelstenen, THAC0, XP-tabel</td></tr>
-<tr><td>DM Dashboard</td><td>Alle karakters overzicht (DM only)</td></tr>
+<tr><td>Bewerken</td><td>✏ per entry → opslaan</td></tr>
+<tr><td>Toevoegen</td><td>Formulier + 🖼 afbeelding</td></tr>
+<tr><td>Bulk import</td><td>📥 CSV/JSON/MD</td></tr>
 </table>
 
-<h2>Export/Import</h2>
+<h2>Export</h2>
 <table>
-<tr><td>📤 Export</td><td>JSON / Markdown / PDF / CSV</td></tr>
-<tr><td>📥 Import</td><td>CSV / JSON / Markdown</td></tr>
+<tr><td>📤 Sessie</td><td>ALLES: acties, rondes, logs, dice, chat</td></tr>
+<tr><td>📤 Karakter</td><td>JSON/MD/PDF met alle details</td></tr>
+<tr><td>📤 Encyclopedie</td><td>CSV/JSON/MD/PDF per categorie</td></tr>
+</table>
+
+<h2>Reset &amp; Tools</h2>
+<table>
+<tr><td>DB reset</td><td>sql/99_reset_game_data.sql in Supabase</td></tr>
+<tr><td>🔑 Reset ww</td><td>Rechtsboven → kies speler</td></tr>
+<tr><td>? Help</td><td>Links naar alle handleidingen</td></tr>
+<tr><td>★ Features</td><td>Overzicht alle functies</td></tr>
 </table>
 </div>
 </div>
-
 <div style="text-align:center;font-size:9px;color:#7a5030;margin-top:6px;border-top:1px solid #4a3a7a;padding-top:3px;">
-  Greyhawk Campaign Manager · <a href="https://shiftedmake.com" style="color:#4a3a7a;text-decoration:none;">SHiftEDmake</a>
+  Greyhawk Campaign Manager v3.0 · <a href="https://shiftedmake.com" style="color:#4a3a7a;text-decoration:none;">SHiftEDmake</a>
 </div>
 </div>
 </body>
