@@ -1707,9 +1707,10 @@ async function openSession(id){
       const statusLabel={active:'Actief',dead:'Dood',unconscious:'KO',fled:'Weg',hidden:'Verborgen'}[p.status]||'';
       const statusBg={active:'',dead:'rgba(80,0,0,.12)',unconscious:'rgba(180,120,0,.1)',fled:'rgba(100,100,100,.08)',hidden:'rgba(74,58,122,.1)'}[p.status]||'';
       const statusBorder={active:isNpc?'var(--rust2)':'var(--blue2)',dead:'#600',unconscious:'#a80',fled:'#888',hidden:'var(--dm-border)'}[p.status]||'var(--card-border)';
-      // Initiative: only own char editable, locked after filling, never in completed
-      const initLocked=p.initiative_roll!=null&&!isDM;
-      const canEditInit=!isCompleted&&((isOwner&&!initLocked)||isDM);
+      // Initiative: only own chars, locked after filling, never in completed
+      const initLocked=p.initiative_roll!=null&&!isDM; // once filled, player can't change
+      const isControlledByMe=isOwner||(p.controlled_by===CU.username);
+      const canEditInit=!isCompleted&&((isControlledByMe&&!initLocked)||isDM);
       // HP: DM only, never in completed sessions
       const canEditHp=isDM&&!isCompleted;
       return`<div style="display:grid;grid-template-columns:${hasInit?'60px ':''}50px 1fr auto;gap:6px;align-items:center;padding:6px 8px;margin-bottom:3px;border-radius:4px;background:${statusBg||(isNpc?'rgba(138,32,16,.04)':'rgba(196,160,96,.04)')};${isDead?'opacity:.5;':''}border-left:4px solid ${statusBorder};">
@@ -1739,6 +1740,19 @@ async function openSession(id){
         </div>
       </div>`;
     }).join('');
+
+    // Initiative status check
+    if(hasInit&&act.combat_round>0){
+      const activeParticipants=(actParts||[]).filter(p=>p.status==='active');
+      const filledInit=activeParticipants.filter(p=>p.initiative_roll!=null);
+      const allFilled=filledInit.length>=activeParticipants.length&&activeParticipants.length>0;
+      const waiting=activeParticipants.length-filledInit.length;
+      if(allFilled){
+        html+=`<div style="text-align:center;padding:8px;background:rgba(42,122,42,.1);border:1px solid var(--green2);border-radius:4px;margin-top:6px;font-family:'Cinzel',serif;font-size:13px;color:var(--green2);">✓ Alle initiatives ingevuld — ronde ${act.combat_round} is gestart!</div>`;
+      }else{
+        html+=`<div style="text-align:center;padding:8px;background:rgba(196,160,96,.1);border:1px solid var(--gold);border-radius:4px;margin-top:6px;font-size:13px;color:var(--ink3);">⏳ Wachten op initiative: nog ${waiting} deelnemer${waiting>1?'s':''} moeten invullen</div>`;
+      }
+    }
 
     // Action log for this action
     let actLogs=null;try{const r=await sb.from('action_log').select('*').eq('action_id',act.id).order('created_at',{ascending:false}).limit(10);actLogs=r.data;}catch(e){}
@@ -2009,8 +2023,12 @@ async function completeAction(actionId,sessionId){
 }
 
 async function nextActionRound(actionId,sessionId,current){
+  // Reset all initiative rolls for the new round
+  await sb.from('action_participants').update({initiative_roll:null}).eq('action_id',actionId);
   await sb.from('session_actions').update({combat_round:current+1}).eq('id',actionId);
-  toast(`Ronde ${current+1}`);openSession(sessionId);
+  // Touch session updated_at so player auto-refresh triggers
+  await sb.from('sessions').update({updated_at:new Date().toISOString()}).eq('id',sessionId);
+  toast(`Ronde ${current+1} — initiative velden gereset`);openSession(sessionId);
 }
 
 async function saveActionInit(actionId,charId,val){
@@ -2019,6 +2037,8 @@ async function saveActionInit(actionId,charId,val){
 
 async function saveActionInitAndSort(actionId,charId,val,sessionId){
   await sb.from('action_participants').update({initiative_roll:parseInt(val)||null}).eq('action_id',actionId).eq('character_id',charId);
+  // Touch session updated_at so other players' auto-refresh triggers
+  await sb.from('sessions').update({updated_at:new Date().toISOString()}).eq('id',sessionId);
   // Auto-sort: refresh the session to reorder
   openSession(sessionId);
 }
@@ -2091,12 +2111,10 @@ function startSessionPoll(sessionId){
       const logHtml=await loadDiceLog(sessionId);
       const el=document.getElementById('session-dice-log');if(el)el.innerHTML=logHtml;
       await loadChat(sessionId);
-      // For players: check if session state changed (new round, combat started, etc.)
-      if(!CU.is_dm){
-        const{data:freshSession}=await sb.from('sessions').select('updated_at').eq('id',sessionId).single();
-        if(freshSession&&currentSession&&freshSession.updated_at!==currentSession.updated_at){
-          openSession(sessionId); // full refresh
-        }
+      // Check if session state changed (new round, initiative filled, etc.)
+      const{data:freshSession}=await sb.from('sessions').select('updated_at').eq('id',sessionId).single();
+      if(freshSession&&currentSession&&freshSession.updated_at!==currentSession.updated_at){
+        openSession(sessionId); // full refresh
       }
     }catch(e){}
   },5000);
