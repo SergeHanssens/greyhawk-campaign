@@ -302,28 +302,44 @@ async function createChar(){
   loadChars();openChar(data.id);
 }
 
+function renderCharCard(c){
+  const pct=c.hp_max?Math.round((c.hp_current/c.hp_max)*100):100;
+  const hpClass=pct>50?'hp-good':pct>25?'hp-med':'hp-low';
+  const initials=(c.name||'?').substring(0,2).toUpperCase();
+  const isNpc=c.race==='NPC'||c.class==='NPC'||c.race==='Monster'||c.class==='Enemy';
+  return`<div class="char-card ${c.is_active===false?'char-inactive':''}" onclick="openChar('${c.id}')">
+    <div class="char-card-banner" style="${isNpc?'background:linear-gradient(135deg,#3a1008,#6a2010);':''}">
+      ${c.avatar_url?`<img src="${c.avatar_url}" alt="${c.name}">`:`<div class="char-initials">${initials}</div>`}
+    </div>
+    <div class="char-card-body">
+      <div class="char-card-name">${c.name}${c.is_active===false?' <span class="badge badge-inactive">Inactief</span>':''}${isNpc?' <span style="font-size:10px;color:var(--rust2);">[NPC]</span>':''}</div>
+      <div class="char-card-meta">${c.race||''} ${c.class||''} — Level ${c.level||1}</div>
+      <div class="char-card-stats">HP: ${c.hp_current||0}/${c.hp_max||0} · AC: ${c.ac||'—'} · THAC0: ${c.thac0||'—'}</div>
+      <div class="hp-bar"><div class="hp-fill ${hpClass}" style="width:${pct}%"></div></div>
+    </div>
+  </div>`;
+}
+
 async function loadChars(){
   let q=sb.from('characters').select('*');
   if(!CU.is_dm)q=q.eq('player_id',CU.id);
   const{data}=await q.order('is_active',{ascending:false}).order('created_at');
   const grid=document.getElementById('chars-grid');
   if(!data?.length){grid.innerHTML=`<div class="new-char-card" onclick="openNewChar()"><div class="new-char-card-inner"><span class="plus">+</span><span>Nieuw karakter</span></div></div>`;return;}
-  grid.innerHTML=data.map(c=>{
-    const pct=c.hp_max?Math.round((c.hp_current/c.hp_max)*100):100;
-    const hpClass=pct>50?'hp-good':pct>25?'hp-med':'hp-low';
-    const initials=(c.name||'?').substring(0,2).toUpperCase();
-    return`<div class="char-card ${c.is_active===false?'char-inactive':''}" onclick="openChar('${c.id}')">
-      <div class="char-card-banner">
-        ${c.avatar_url?`<img src="${c.avatar_url}" alt="${c.name}">`:`<div class="char-initials">${initials}</div>`}
-      </div>
-      <div class="char-card-body">
-        <div class="char-card-name">${c.name}${c.is_active===false?' <span class="badge badge-inactive">Inactief</span>':''}</div>
-        <div class="char-card-meta">${c.race||''} ${c.class||''} — Level ${c.level||1}</div>
-        <div class="char-card-stats">HP: ${c.hp_current||0}/${c.hp_max||0} · AC: ${c.ac||'—'} · THAC0: ${c.thac0||'—'}</div>
-        <div class="hp-bar"><div class="hp-fill ${hpClass}" style="width:${pct}%"></div></div>
-      </div>
-    </div>`;
-  }).join('')+`<div class="new-char-card" onclick="openNewChar()"><div class="new-char-card-inner"><span class="plus">+</span><span>Nieuw karakter</span></div></div>`;
+  const playerChars=data.filter(c=>c.race!=='NPC'&&c.class!=='NPC'&&c.race!=='Monster'&&c.class!=='Enemy');
+  const npcChars=data.filter(c=>c.race==='NPC'||c.class==='NPC'||c.race==='Monster'||c.class==='Enemy');
+  let html='';
+  if(playerChars.length){
+    html+=`<div style="font-family:'Cinzel',serif;font-size:12px;color:var(--gold);letter-spacing:1px;margin-bottom:8px;">SPELER KARAKTERS</div>`;
+    html+=`<div class="char-grid" style="margin-bottom:20px;">${playerChars.map(renderCharCard).join('')}<div class="new-char-card" onclick="openNewChar()"><div class="new-char-card-inner"><span class="plus">+</span><span>Nieuw karakter</span></div></div></div>`;
+  }else{
+    html+=`<div class="char-grid" style="margin-bottom:20px;"><div class="new-char-card" onclick="openNewChar()"><div class="new-char-card-inner"><span class="plus">+</span><span>Nieuw karakter</span></div></div></div>`;
+  }
+  if(npcChars.length){
+    html+=`<div style="font-family:'Cinzel',serif;font-size:12px;color:var(--rust);letter-spacing:1px;margin-bottom:8px;">NPC KARAKTERS</div>`;
+    html+=`<div class="char-grid">${npcChars.map(renderCharCard).join('')}</div>`;
+  }
+  grid.innerHTML=html;
 }
 
 async function openChar(id){
@@ -1527,12 +1543,25 @@ async function openSession(id){
         <span style="display:inline-block;padding:3px 10px;border-radius:3px;background:${statusColor};color:#fff;font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;">${statusLabel}</span>
       </div>
       ${s.summary?`<div style="font-size:13px;color:var(--ink);margin-top:6px;">${s.summary.replace(/\n/g,'<br>')}</div>`:''}
+      ${isDM?`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:12px;color:var(--ink3);">Status:</span>
+        ${s.status==='planned'?`<button class="btn btn-success btn-sm" onclick="activateSession('${s.id}')">▶ Activeren</button>`:''}
+        ${s.status==='active'?`<button class="btn btn-ghost btn-sm" onclick="completeSession('${s.id}')">✓ Sessie afsluiten</button>`:''}
+        ${s.status==='completed'?`<span style="font-size:12px;color:var(--ink3);font-style:italic;">Afgesloten — klik onderaan "✏ Bewerken" om aan te passen</span>`:''}
+      </div>`:''}
     </div>`;
 
-  if(isDM){
+  const isCompleted=s.status==='completed';
+
+  if(isDM&&!isCompleted){
     html+=`<div class="dm-panel" style="margin-bottom:16px;">
       <div class="dm-panel-title">🔒 DM-notities <small style="font-size:10px;opacity:.7;">(Onzichtbaar voor spelers)</small></div>
       <textarea class="dm-textarea" onblur="saveSessionDMNotes('${s.id}',this.value)" style="min-height:60px;">${s.dm_notes||''}</textarea>
+    </div>`;
+  }else if(isDM&&isCompleted&&s.dm_notes){
+    html+=`<div class="dm-panel" style="margin-bottom:16px;opacity:.7;">
+      <div class="dm-panel-title">🔒 DM-notities <small>(alleen-lezen)</small></div>
+      <div style="padding:8px;font-size:13px;color:var(--dm-text);white-space:pre-wrap;">${s.dm_notes}</div>
     </div>`;
   }
 
@@ -1541,7 +1570,7 @@ async function openSession(id){
   const npcs=sorted.filter(p=>p.is_enemy&&p.characters);
   html+=`<div class="card" style="margin-bottom:16px;">
     <div class="card-header">Deelnemers
-      ${isDM?`<button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="addNpcToSession('${s.id}','')">+ NPC</button>`:''}
+      ${isDM&&!isCompleted?`<button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="addNpcToSession('${s.id}','')">+ NPC</button>`:''}
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
       ${players.map(p=>{const c=p.characters;return`<div onclick="openChar('${c.id}')" style="cursor:pointer;padding:6px 12px;border-radius:4px;border:1px solid var(--blue2);background:rgba(26,58,106,.06);font-size:13px;display:flex;align-items:center;gap:6px;" title="Klik om character sheet te openen">
@@ -1566,11 +1595,11 @@ async function openSession(id){
   html+=`<div style="margin-bottom:16px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
       <div style="font-family:'Cinzel',serif;font-size:14px;color:var(--rust);font-weight:600;">Acties</div>
-      ${isDM?`<button class="btn btn-primary btn-sm" onclick="createSessionAction('${s.id}')">+ Nieuwe actie</button>`:''}
+      ${isDM&&!isCompleted?`<button class="btn btn-primary btn-sm" onclick="createSessionAction('${s.id}')">+ Nieuwe actie</button>`:''}
     </div>`;
 
   if(!activeActions.length&&!completedActions.length){
-    html+=`<div style="padding:16px;text-align:center;color:var(--ink3);font-style:italic;font-size:13px;border:1px dashed var(--card-border);border-radius:4px;">${isDM?'Nog geen acties. Klik "+ Nieuwe actie" om te beginnen (bv. gevecht, verkenning, herbergbezoek).':'De DM heeft nog geen acties gestart.'}</div>`;
+    html+=`<div style="padding:16px;text-align:center;color:var(--ink3);font-style:italic;font-size:13px;border:1px dashed var(--card-border);border-radius:4px;">${isDM&&!isCompleted?'Nog geen acties. Klik "+ Nieuwe actie" om te beginnen (bv. gevecht, verkenning, herbergbezoek).':'Geen acties.'}</div>`;
   }
 
   // Render each active action
@@ -1650,102 +1679,7 @@ async function openSession(id){
   }
   html+=`</div>`; // end actions section
 
-  // ===== LEGACY COMBAT SECTION (keep for backward compat) =====
-  // Only show if there are no actions yet (transition period)
-  if(!actions||!actions.length){
-  // ===== COMBAT SECTION =====
-  const combatActive=s.combat_active;
-  const combatRound=s.combat_round||0;
-  html+=`<div style="border:2px solid ${combatActive?'var(--rust)':'var(--card-border)'};border-radius:8px;padding:16px;margin-bottom:16px;background:${combatActive?'rgba(138,32,16,.03)':'rgba(196,160,96,.03)'};">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-      <div style="font-family:'Cinzel',serif;font-size:16px;font-weight:600;color:${combatActive?'var(--rust)':'var(--ink3)'};">
-        ⚔️ Gevecht ${combatActive?`— Ronde ${combatRound}`:'(niet actief)'}
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        ${isDM?`
-          ${!combatActive?`<button class="btn btn-primary btn-sm" onclick="startCombat('${s.id}')">⚔️ Start gevecht</button>`:`
-            <button class="btn btn-success btn-sm" onclick="nextCombatRound('${s.id}',${combatRound})">Ronde ${combatRound+1} →</button>
-            <button class="btn btn-ghost btn-sm" onclick="endCombat('${s.id}')">✓ Einde gevecht</button>`}
-          <button class="btn btn-ghost btn-sm" onclick="addEnemyToSession('${s.id}')">+ Vijand</button>
-        `:''}
-      </div>
-    </div>`;
-
-  // Participant combat cards
-  html+=sorted.map(p=>{
-    const c=p.characters;if(!c)return '';
-    const log=logByChar[c.id]||{};
-    const canEdit=isDM||c.player_id===CU.id;
-    const isOwner=c.player_id===CU.id;
-    const isEnemy=p.is_enemy;
-    const ctrl=p.controlled_by||'owner';
-    const ctrlLabel=ctrl==='owner'?c.player_name||'Speler':ctrl==='DM'?'DM':ctrl;
-    const initials=(c.name||'?').substring(0,2).toUpperCase();
-    const combatHp=p.hp_combat!=null?p.hp_combat:c.hp_current;
-    const isDead=p.status==='dead'||p.status==='unconscious';
-    const statusIcons={active:'',dead:'💀',fled:'🏃',unconscious:'😵'};
-    const hasContent=log.player_notes||log.encounters||log.npcs_met||log.loot_found;
-
-    return`<div class="card" style="margin-bottom:8px;${isDead?'opacity:.4;':''}${isEnemy?'border-left:4px solid var(--rust2);':'border-left:4px solid var(--blue2);'}">
-      <div style="display:grid;grid-template-columns:${combatActive?'45px ':' '}50px 1fr auto;gap:8px;align-items:center;">
-        ${combatActive?`<div style="text-align:center;">
-          <div style="font-family:'Cinzel',serif;font-size:8px;color:var(--ink3);letter-spacing:.5px;margin-bottom:2px;">INIT</div>
-          ${(isOwner||isDM)?`<input type="number" value="${p.initiative_roll||''}" min="1" max="20" placeholder="?" style="width:42px;font-size:18px;font-family:'Cinzel',serif;font-weight:600;text-align:center;border:2px solid var(--gold);border-radius:4px;padding:4px;color:var(--rust);background:rgba(196,160,96,.1);" onchange="saveInitiative('${s.id}','${c.id}',this.value)" title="Initiative: gooi d6 + DEX modifier">`:
-          `<div style="font-family:'Cinzel',serif;font-size:20px;font-weight:600;color:var(--rust);">${p.initiative_roll||'?'}</div>`}
-        </div>`:''}
-        <div>
-          ${c.avatar_url?`<img src="${c.avatar_url}" style="width:44px;height:44px;border-radius:4px;object-fit:cover;">`:`<div style="width:44px;height:44px;border-radius:4px;background:${isEnemy?'var(--rust)':'var(--blue)'};color:#fdf5e0;font-family:'Cinzel',serif;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;">${initials}</div>`}
-        </div>
-        <div style="flex:1;">
-          <div style="font-family:'Cinzel',serif;font-weight:600;color:${isEnemy?'var(--rust2)':'var(--rust)'};">
-            ${statusIcons[p.status]||''}${c.name} ${isEnemy?'<span style="font-size:10px;color:var(--rust2);">[VIJAND]</span>':''}
-          </div>
-          <div style="font-size:12px;color:var(--ink3);display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-            <span>${c.race||''} ${c.class||''}</span>
-            <span>HP: ${isDM||isOwner?`<input type="number" value="${combatHp||0}" style="width:40px;font-size:12px;border:1px solid var(--card-border);border-radius:2px;padding:1px 3px;text-align:center;" onchange="saveCombatHp('${s.id}','${c.id}',this.value)">/${c.hp_max||'?'}`:
-              `${combatHp||0}/${c.hp_max||'?'}`}</span>
-            <span>AC: ${c.ac||'?'}</span>
-            ${c.thac0?`<span>THAC0: ${c.thac0}</span>`:''}
-            <span style="font-size:11px;">🎮 ${isDM?`<span onclick="changeControl('${s.id}','${c.id}','${ctrlLabel.replace(/'/g,"&#39;")}')" style="cursor:pointer;text-decoration:underline dotted;">${ctrlLabel}</span>`:ctrlLabel}</span>
-            ${p.extra_attacks?`<span style="color:var(--green2);font-size:11px;">+${p.extra_attacks} extra aanval${p.extra_attacks>1?'len':''}</span>`:''}
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
-          ${canEdit?`<button class="btn btn-ghost btn-xs" onclick="openSessionLog('${s.id}','${c.id}','${c.name.replace(/'/g,"&#39;")}')">${hasContent?'✏ Log':'+ Log'}</button>`:''}
-          ${isDM?`<button class="btn btn-ghost btn-xs" onclick="openAwardXp('${s.id}','${c.id}','${c.name.replace(/'/g,"&#39;")}',${p.xp_awarded||0})">⭐ XP</button>`:''}
-          ${isDM&&combatActive?`<button class="btn btn-ghost btn-xs" onclick="declareAction('${s.id}','${c.id}','${c.name.replace(/'/g,"&#39;")}',${combatRound})">📋 Actie</button>`:''}
-          ${isDM?`<select style="font-size:10px;border:1px solid var(--card-border);border-radius:2px;padding:1px;" onchange="setParticipantStatus('${s.id}','${c.id}',this.value)">
-            <option value="active" ${p.status==='active'||!p.status?'selected':''}>Actief</option>
-            <option value="unconscious" ${p.status==='unconscious'?'selected':''}>Bewusteloos</option>
-            <option value="dead" ${p.status==='dead'?'selected':''}>Dood</option>
-            <option value="fled" ${p.status==='fled'?'selected':''}>Gevlucht</option>
-          </select>`:''}
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  // DM: roll initiative for all enemies button
-  if(isDM&&combatActive){
-    html+=`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
-      <button class="btn btn-success btn-sm" onclick="rollDMInitiative('${s.id}')">🎲 Gooi init voor DM-karakters</button>
-      <button class="btn btn-ghost btn-sm" onclick="sortByInitiative('${s.id}')">↕ Sorteer op initiative</button>
-    </div>`;
-  }
-  // Actions log for current round (legacy combat)
-  if(combatActive&&combatRound>0){
-    let{data:cActions}=await sb.from('combat_actions').select('*').eq('session_id',s.id).eq('round_number',combatRound).order('created_at');
-    if(cActions&&cActions.length){
-      html+=`<div class="card" style="margin-bottom:16px;">
-        <div class="card-header">📋 Acties — Ronde ${combatRound}</div>
-        ${cActions.map(a=>`<div style="padding:4px 0;border-bottom:1px dotted rgba(196,160,96,.2);font-size:13px;">
-          <strong>${a.enemy_name||'Onbekend'}</strong> <span style="font-size:11px;color:var(--blue2);">[${a.action_type||'?'}]</span>: ${a.description||'—'} ${a.result?`→ <em style="color:var(--green2);">${a.result}</em>`:''}
-        </div>`).join('')}
-      </div>`;
-    }
-  }
-  html+=`</div>`; // end combat section
-  } // end legacy combat if-block (no actions)
+  // Legacy combat section removed — replaced by Actions system above
 
   // Dice roll section
   html+=`<div class="card" style="margin-bottom:16px;">
@@ -2062,6 +1996,30 @@ function startSessionPoll(sessionId){
   },5000);
 }
 function stopSessionPoll(){if(sessionPollTimer){clearInterval(sessionPollTimer);sessionPollTimer=null;}}
+
+async function activateSession(sessionId){
+  // Check if there's already an active session
+  const{data:activeSessions}=await sb.from('sessions').select('id,name').eq('status','active');
+  if(activeSessions&&activeSessions.length){
+    const names=activeSessions.map(s=>s.name).join(', ');
+    const choice=confirm(`⚠ Er is al een actieve sessie: "${names}"\n\nWil je die eerst afsluiten en deze activeren?\n\nOK = vorige afsluiten + deze activeren\nAnnuleren = ga terug om de vorige sessie aan te passen`);
+    if(!choice)return;
+    // Close all active sessions
+    for(const as of activeSessions){
+      await sb.from('sessions').update({status:'completed',updated_at:new Date().toISOString()}).eq('id',as.id);
+    }
+  }
+  await sb.from('sessions').update({status:'active',updated_at:new Date().toISOString()}).eq('id',sessionId);
+  toast('▶ Sessie geactiveerd');openSession(sessionId);
+}
+
+async function completeSession(sessionId){
+  if(!confirm('Sessie afsluiten? Na afsluiting wordt de sessie alleen-lezen (tenzij je op "Bewerken" klikt).'))return;
+  await sb.from('sessions').update({status:'completed',updated_at:new Date().toISOString()}).eq('id',sessionId);
+  // Also complete all active actions
+  await sb.from('session_actions').update({status:'completed',completed_at:new Date().toISOString()}).eq('session_id',sessionId).eq('status','active');
+  toast('✓ Sessie afgesloten');openSession(sessionId);
+}
 
 async function saveSessionDMNotes(id,val){
   await sb.from('sessions').update({dm_notes:val,updated_at:new Date().toISOString()}).eq('id',id);
