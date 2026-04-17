@@ -6,7 +6,7 @@
 <title>Greyhawk — Handleiding voor Spelers</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
-:root{--parch:#fdf5e0;--ink:#2a1a0a;--ink2:#4a3010;--ink3:#7a5030;--border:#8a6030;--rust:#8a2010;--rust2:#c03020;--blue:#1a3a6a;--blue2:#2a5a9a;--divider:#c4a060;--gold:#c4a060;}
+:root{--parch:#fdf5e0;--ink:#2a1a0a;--ink3:#7a5030;--border:#8a6030;--rust:#8a2010;--blue2:#2a5a9a;--divider:#c4a060;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#1a1208;font-family:'Crimson Text',serif;padding:20px;}
 .page{max-width:820px;margin:0 auto;background:var(--parch);border:2px solid var(--border);border-radius:6px;padding:36px;position:relative;}
@@ -21,9 +21,7 @@ p{font-size:14px;color:var(--ink);line-height:1.75;margin-bottom:10px;}
 .box.warn{background:rgba(138,32,16,.06);border-color:rgba(138,32,16,.25);}
 .step{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;}
 .n{background:var(--rust);color:#fdf5e0;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:12px;font-weight:600;flex-shrink:0;margin-top:1px;}
-.sc{flex:1;}
-.sc strong{display:block;font-size:14px;color:var(--ink);margin-bottom:3px;}
-.sc p{margin:0;font-size:13px;}
+.sc{flex:1;}.sc strong{display:block;font-size:14px;color:var(--ink);margin-bottom:3px;}.sc p{margin:0;font-size:13px;}
 code{background:rgba(26,58,106,.1);border:1px solid rgba(26,58,106,.2);border-radius:3px;padding:1px 6px;font-family:monospace;font-size:12px;color:var(--blue2);}
 table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;}
 th{background:rgba(196,160,96,.15);padding:7px 10px;text-align:left;font-family:'Cinzel',serif;font-size:10px;color:var(--ink3);letter-spacing:.5px;border-bottom:1px solid var(--divider);}
@@ -38,87 +36,74 @@ td{padding:7px 10px;border-bottom:1px dotted rgba(196,160,96,.3);}
 <button class="btn" onclick="window.print()">🖨️ Afdrukken / PDF opslaan</button>
 
 <h1>Greyhawk Campaign Manager</h1>
-<div class="sub">Handleiding voor Spelers — AD&amp;D Campagne · greyhawk-frostbraid.netlify.app</div>
+<div class="sub">Handleiding voor Spelers — versie 1.7</div>
 
-<h2>1. Account aanmaken & inloggen</h2>
-<div class="step"><div class="n">1</div><div class="sc"><strong>Ga naar de app</strong><p>De DM geeft je de link. Klik op <strong>Nieuw account aanmaken</strong>.</p></div></div>
-<div class="step"><div class="n">2</div><div class="sc"><strong>Kies een gebruikersnaam en wachtwoord</strong><p>Min. 6 tekens voor wachtwoord. Laat het <strong>DM Code</strong> veld leeg — dat is enkel voor de DM.</p></div></div>
-<div class="step"><div class="n">3</div><div class="sc"><strong>Log in</strong><p>Gebruikersnaam + wachtwoord → Betreed de Campagne.</p></div></div>
-<div class="box warn"><strong>Onthoud je wachtwoord!</strong> Er is geen e-mail reset. Als je het vergeet, vraagt de DM een tijdelijk wachtwoord voor je in. Je wordt dan bij de volgende login verplicht een nieuw wachtwoord te kiezen.</div>
+<h2>1. Account aanmaken &amp; inloggen</h2>
+<div class="step"><div class="n">1</div><div class="sc"><strong>Ga naar de app</strong><p>De DM geeft je de link (bv. <code>sergehanssens.github.io/greyhawk-campaign</code>). Klik op <strong>Nieuw account aanmaken</strong>.</p></div></div>
+<div class="step"><div class="n">2</div><div class="sc"><strong>Kies gebruikersnaam + wachtwoord</strong><p>Min. 6 tekens. Laat het <strong>DM Code</strong> veld leeg — dat is enkel voor de DM.</p></div></div>
+<div class="step"><div class="n">3</div><div class="sc"><strong>Log in</strong><p>Gebruikersnaam + wachtwoord → je bent binnen.</p></div></div>
+<div class="box warn"><strong>Onthoud je wachtwoord!</strong> Er is geen e-mail reset. Als je het vergeet, vraag aan de DM om een tijdelijk wachtwoord in te stellen. Bij volgende login word je verplicht een nieuw wachtwoord te kiezen.</div>
 
-<h2>2. Nieuw karakter aanmaken</h2>
-<div class="step"><div class="n">1</div><div class="sc"><strong>Klik "+ Nieuw Karakter"</strong><p>Op de Karakters pagina, rechtsboven.</p></div></div>
-<div class="step"><div class="n">2</div><div class="sc"><strong>Kies je Ras</strong><p>Het ras bepaalt welke klassen beschikbaar zijn én geeft speciale bonussen. Klik <strong>?</strong> voor uitleg.</p></div></div>
-<div class="step"><div class="n">3</div><div class="sc"><strong>Kies je Klasse</strong><p>Past automatisch aan op je ras. Klik <strong>?</strong> voor uitleg per klasse.</p></div></div>
-<div class="step"><div class="n">4</div><div class="sc"><strong>Kies Gezindheid en Geslacht</strong><p>Gezindheid = je moreel kompas. Klik <strong>?</strong> voor de 9 mogelijke gezindheden.</p></div></div>
-<div class="step"><div class="n">5</div><div class="sc"><strong>Klik "Karakter Aanmaken"</strong><p>Je ziet meteen de character sheet.</p></div></div>
+<h2>2. Karakter aanmaken</h2>
+<div class="step"><div class="n">1</div><div class="sc"><strong>Klik "+ Nieuw Karakter"</strong><p>Op de Karakters pagina.</p></div></div>
+<div class="step"><div class="n">2</div><div class="sc"><strong>Kies je Ras</strong><p>Bepaalt beschikbare klassen + speciale bonussen. Klik <strong>?</strong> voor uitleg.</p></div></div>
+<div class="step"><div class="n">3</div><div class="sc"><strong>Kies je Klasse</strong><p>Past automatisch aan op je ras.</p></div></div>
+<div class="step"><div class="n">4</div><div class="sc"><strong>Gezindheid &amp; Geslacht</strong><p>Gezindheid = moreel kompas. Klik <strong>?</strong> voor uitleg.</p></div></div>
+<div class="step"><div class="n">5</div><div class="sc"><strong>Klik "Karakter Aanmaken"</strong></div></div>
 
-<h3>Of: scan een handgeschreven karakterblad 📷</h3>
-<p>Heb je al een papieren karakterblad? Klik <strong>📷 Scan karakterblad</strong> rechtsboven op de Karakters pagina, kies een foto, en klik <strong>🔍 Inlezen met Claude</strong>. De app vult automatisch zoveel mogelijk velden in. Controleer en pas aan, klik dan <strong>✓ Karakter aanmaken</strong>.</p>
-<div class="box warn"><strong>Vereist Netlify hosting:</strong> Werkt alleen als de DM de app op Netlify heeft gedeployed (niet op gewone GitHub Pages). Vraag aan de DM of dit voor jullie campagne beschikbaar is.</div>
-
-<h2>3. Character Sheet invullen</h2>
-<h3>Velden bewerken</h3>
-<p>Klik op een waarde met een <strong>stippellijn eronder</strong> → typ het nieuwe getal → druk <strong>Enter</strong> of klik ergens anders. Wordt automatisch opgeslagen (je ziet rechts onderaan een bevestiging).</p>
-
+<h2>3. Character Sheet bewerken</h2>
+<p>Klik op een waarde met <strong>stippellijn eronder</strong> → typ → druk <strong>Enter</strong>. Wordt automatisch opgeslagen.</p>
 <table>
-<tr><th>Veld</th><th>Wat invullen</th><th>Hulp</th></tr>
-<tr><td><strong>STR, DEX, INT...</strong></td><td>Gooi 3d6 per statistiek met de DM</td><td>Klik <strong>?</strong> naast Ability Scores</td></tr>
-<tr><td><strong>HP (max)</strong></td><td>Gooi je klasse-dobbelsteen (Fighter = d10)</td><td>Klik <strong>?</strong> naast HP</td></tr>
-<tr><td><strong>THAC0</strong></td><td>Staat in je klassetabel (Fighter lv1 = 20)</td><td>Klik <strong>?</strong> naast THAC0</td></tr>
-<tr><td><strong>AC</strong></td><td>10 min pantserbonus min DEX bonus</td><td>Klik <strong>?</strong> naast AC</td></tr>
-<tr><td><strong>Saving Throws</strong></td><td>DM helpt met de tabel per klasse/level</td><td>Klik <strong>?</strong> naast Saving Throws</td></tr>
-<tr><td><strong>XP</strong></td><td>DM kent toe na elke sessie</td><td>Klik <strong>?</strong> naast XP</td></tr>
+<tr><th>Veld</th><th>Wat invullen</th></tr>
+<tr><td>STR, DEX, INT, WIS, CON, CHA</td><td>Gooi 3d6 per statistiek met de DM</td></tr>
+<tr><td>HP (max)</td><td>Gooi je klasse-dobbelsteen (Fighter=d10, M-U=d4)</td></tr>
+<tr><td>THAC0</td><td>Uit klassetabel (Fighter lv1 = 20)</td></tr>
+<tr><td>AC</td><td>10 − pantserbonus − DEX bonus</td></tr>
+<tr><td>Saving Throws</td><td>DM helpt met tabel per klasse/level</td></tr>
+<tr><td>XP</td><td>DM kent toe na elke sessie</td></tr>
 </table>
+<p><strong>Profielfoto:</strong> klik 📷 op je karakterblad → kies foto (max 2MB).</p>
 
-<h3>Profielfoto toevoegen</h3>
-<p>Klik het <strong>📷</strong> icoontje op je karakterblad → kies een foto (max 2MB). Wordt opgeslagen in de database.</p>
+<h2>4. Wapens, Items, Vaardigheden &amp; Spreuken</h2>
+<p>Klik <strong>"+ wapen toevoegen"</strong> (of item/vaardigheid/spreuk) → zoek in de Greyhawk database → klik op een resultaat om het formulier in te vullen → <strong>Toevoegen</strong>.</p>
+<div class="box blue"><strong>Spreuken:</strong> "Bereid vandaag" = klaar voor gebruik. "Spellbook" = je kent het maar moet het nog bereiden. Na gebruik: weg tot volgende rust.</div>
 
-<h2>4. Wapens, Items, Vaardigheden & Spreuken</h2>
-<div class="step"><div class="n">1</div><div class="sc"><strong>Klik "+ wapen toevoegen" (of item/vaardigheid/spreuk)</strong><p>Er opent een venster met een zoekbalk en een formulier.</p></div></div>
-<div class="step"><div class="n">2</div><div class="sc"><strong>Zoek in de Greyhawk database</strong><p>Typ de naam → je ziet direct statistieken. Klik op een item om het formulier in te vullen.</p></div></div>
-<div class="step"><div class="n">3</div><div class="sc"><strong>Wapens: filter op type</strong><p>Gebruik het dropdown "Filter type" om te kiezen tussen Sword, Axe, Bow, Dagger... zodat je sneller vindt wat je zoekt.</p></div></div>
-<div class="step"><div class="n">4</div><div class="sc"><strong>Pas aan indien nodig & klik "+ Toevoegen"</strong><p>Magische bonus? Vul in bij "Magische bonus" (bv. <code>+1/+2</code>).</p></div></div>
-<div class="box blue"><strong>Spreuken:</strong> "Bereid vandaag" = spreuk die je die dag kan gebruiken. "Spellbook/geweten" = je kent de spreuk maar hebt hem vandaag niet bereid. Eenmaal gebruikt: weg tot volgende rust!</div>
+<h2>5. Sessies &amp; gevechten ⚔️</h2>
+<p>De DM maakt sessies aan. Jij vindt ze onder tab <strong>Sessies</strong>.</p>
+<h3>Sessielogboek</h3>
+<p>Klik op een sessie → <strong>+ Log aanvullen</strong> → vul in: ontmoetingen, NPCs, loot, notities. Alles wordt bewaard per sessie. Hoe meer je noteert, hoe beter de DM XP kan toekennen.</p>
+<h3>Gevecht — initiative</h3>
+<p>Als de DM een gevecht start, zie je een <strong>initiative-veld</strong> naast je karakter. Gooi zelf een d6, tel je DEX modifier erbij, en vul het resultaat in. Laagste initiative = eerste beurt (AD&amp;D regel).</p>
+<p>De DM ziet alle initiatives en beheert de rondes. Jij ziet wie aan de beurt is.</p>
 
-<h2>5. Sessies & eigen sessielogboek 📅</h2>
-<p>De DM plant sessies en kiest wie eraan deelneemt. Jij vindt ze onder tab <strong>Sessies</strong>.</p>
-<div class="step"><div class="n">1</div><div class="sc"><strong>Klik op een sessie</strong><p>Je ziet datum, locatie, samenvatting door de DM, en de lijst van karakters die meededen.</p></div></div>
-<div class="step"><div class="n">2</div><div class="sc"><strong>Klik "+ Log aanvullen"</strong> bij jouw karakter<p>Vier velden: <strong>⚔ Ontmoetingen</strong> (tegen wie gevochten), <strong>💬 NPCs</strong> (wie gesproken), <strong>💰 Loot</strong> (wat opgepakt), <strong>📝 Notities</strong> (alles wat nuttig kan zijn voor later).</p></div></div>
-<div class="step"><div class="n">3</div><div class="sc"><strong>Opslaan</strong><p>Je log blijft bewaard per sessie — je kan later nog aanvullen. De DM baseert zich op jouw log om XP toe te kennen!</p></div></div>
-<div class="box blue"><strong>Tip:</strong> noteer alles wat belangrijk lijkt. Namen van NPCs, plaatsen, geruchten, rare voorwerpen — details die vandaag triviaal lijken kunnen volgende maand cruciaal zijn in het verhaal.</div>
+<h2>6. Logboek</h2>
+<p>Bij elke login na een DM-wijziging zie je automatisch wat er veranderd is. Klik <strong>📋 Logboek</strong> voor volledig overzicht.</p>
 
-<h2>6. Logboek & DM-wijzigingen</h2>
-<p>Elke keer je je karakter opent <strong>na een DM-wijziging</strong>, zie je automatisch wat er veranderd is. Klik <strong>📋 Logboek</strong> voor een volledig overzicht van alle wijzigingen (wie, wat, wanneer).</p>
+<h2>7. Encyclopedie</h2>
+<p>Tab <strong>Encyclopedie</strong>: ~100 wapens, ~460 spreuken, ~100 items, ~240 monsters, ~60 vaardigheden, 16 goden, 7 rassen, 13 klassen. Klik <strong>info</strong> voor details.</p>
 
-<h2>6. Encyclopedie</h2>
-<p>De tab <strong>Encyclopedie</strong> bevat de volledige Greyhawk database:</p>
-<div class="box">
-Wapens (80+) · Spreuken (250+) · Items (150+) · Rassen (10) · Klassen (15) · Vaardigheden (80+) · Monsters (170+)
-</div>
-<p>Klik op <strong>info</strong> naast elk item voor de volledige beschrijving. Gebruik de zoekbalk of het type-filter bij wapens.</p>
+<h2>8. Kaart &amp; Mythic Table</h2>
+<p>Tab <strong>Kaart</strong>: link naar <strong>Mythic Table</strong> (het online speelveld waar je tokens verplaatst, kaart bekijkt, dobbelstenen gooit). Plus Greyhawk referentiekaarten.</p>
 
-<h2>7. PDF & Wachtwoord</h2>
-<p><strong>PDF opslaan:</strong> Klik <strong>📄 PDF</strong> bovenaan je karakterblad → nieuw venster → Afdrukken / PDF opslaan.</p>
-<p><strong>Wachtwoord wijzigen:</strong> Klik <strong>🔑 Wachtwoord</strong> bovenaan de app (altijd bereikbaar).</p>
+<h2>9. Tools</h2>
+<p><strong>🎲 Dobbelstenen:</strong> typ <code>3d6+2</code> of klik d4/d6/d8/d10/d12/d20. Handig voor snel rollen.</p>
+<p><strong>🎯 THAC0 Calculator:</strong> voer je THAC0, vijand AC en bonussen in → toont welke d20 worp je nodig hebt.</p>
 
-<h2>8. Karakter inactief of verwijderd?</h2>
-<p>De DM kan een karakter op <strong>inactief</strong> zetten (tijdelijk verborgen, maar bewaard) of permanent <strong>verwijderen</strong>. Verwijderen is definitief — er komt altijd een bevestigingsvraag.</p>
-
-<h2>9. Export & feature-overzicht</h2>
-<p><strong>📤 Export</strong> op je karakterblad: kies tussen <strong>JSON</strong> (volledige backup), <strong>Markdown</strong> (leesbaar dossier) of <strong>PDF</strong> (afdrukbaar). Ook beschikbaar op sessiedetails en encyclopedie-pagina.</p>
-<p><strong>★ Features</strong> rechtsboven: complete overzicht van alle functies in de app.</p>
+<h2>10. Export &amp; overige</h2>
+<p><strong>📤 Export:</strong> karakter als JSON/Markdown/PDF. Sessie als JSON/Markdown/PDF. Encyclopedie als CSV/JSON/Markdown/PDF.</p>
+<p><strong>📄 PDF:</strong> klik op je karakterblad → 📄 PDF → afdrukken.</p>
+<p><strong>🔑 Wachtwoord wijzigen:</strong> rechtsboven in de app.</p>
+<p><strong>★ Features:</strong> rechtsboven → volledig overzicht van alle functies.</p>
 
 <div class="ornament">⸻ ✦ ⸻</div>
 <div class="box">
 <strong>Aanvalsvolgorde in een gevecht:</strong><br>
-1. DM zegt welke vijand je aanvalt<br>
-2. Gooi een <strong>D20</strong> — aanvalsrol<br>
-3. Tel bonussen op (STR, magische bonus)<br>
-4. Als D20 + bonussen ≥ THAC0 − vijand AC → RAAK!<br>
-5. Gooi <strong>schadevijand dobbelsteen</strong> (staat bij wapen, bv. D8)<br>
-6. Tel schadebonussen op<br><br>
-Klik <strong>🎲 Dobbelstenen gids</strong> in het Saving Throws blok voor meer uitleg.
+1. DM start gevecht in de sessie → jij vult je initiative in<br>
+2. Wacht tot je aan de beurt bent (laagste initiative = eerst)<br>
+3. Vertel de DM wat je doet (aanval, spreuk, verdedigen, vluchten)<br>
+4. Bij aanval: gooi <strong>D20</strong> + bonussen ≥ THAC0 − vijand AC → RAAK!<br>
+5. Gooi <strong>schadevijand dobbelsteen</strong> (staat bij je wapen)<br>
+6. DM past HP aan
 </div>
 <div style="margin-top:20px;text-align:center;font-size:11px;color:#7a5030;border-top:1px solid #c4a060;padding-top:10px;">
   Ontwikkeld door <a href="https://shiftedmake.com" style="color:#7a1c1c;text-decoration:none;font-weight:600;">SHiftEDmake</a> — van Droom naar Werkelijkheid

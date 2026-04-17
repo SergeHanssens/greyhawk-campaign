@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greyhawk — DM Testgids</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Text',serif;padding:20px;color:#2a1a0a;background:#0e0820;}
+.page{max-width:820px;margin:0 auto;background:#fdf5e0;border:2px solid #4a3a7a;border-radius:6px;padding:30px;}
+h1{font-family:'Cinzel',serif;font-size:24px;color:#4a3a7a;text-align:center;margin-bottom:4px;}
+.sub{text-align:center;font-style:italic;color:#7a5030;font-size:13px;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #4a3a7a;}
+h2{font-family:'Cinzel',serif;font-size:16px;color:#4a3a7a;margin:20px 0 8px;padding-bottom:4px;border-bottom:1px solid rgba(74,58,122,.3);}
+p{font-size:14px;line-height:1.7;margin-bottom:8px;}
+.test{background:rgba(74,58,122,.06);border:1px solid rgba(74,58,122,.25);border-radius:4px;padding:14px 16px;margin:8px 0 16px;}
+.test h3{font-family:'Cinzel',serif;font-size:13px;color:#4a3a7a;margin:0 0 8px;}
+.test ol{margin:0 0 0 20px;font-size:13px;line-height:1.8;}
+.test li{margin-bottom:4px;}
+.check{color:#2a7a2a;font-weight:600;}
+.fail{color:#c03020;font-weight:600;}
+.tip{background:rgba(196,160,96,.1);border:1px solid #c4a060;border-radius:3px;padding:8px 12px;font-size:12px;margin:6px 0;}
+.btn{font-family:'Cinzel',serif;font-size:12px;padding:8px 20px;border-radius:4px;cursor:pointer;border:2px solid #4a3a7a;background:#4a3a7a;color:#e0d0f0;margin-bottom:16px;}
+@media print{.btn{display:none;}.page{border:none;padding:15px;}}
+</style>
+</head>
+<body>
+<div class="page">
+<button class="btn" onclick="window.print()">🖨️ Afdrukken</button>
+
+<h1>DM Testgids</h1>
+<div class="sub">Stap-voor-stap alles testen voor je de spelers uitnodigt — verwachte tijd: 30 minuten</div>
+
+<p>Dit document leidt je door <strong>elke functie</strong> van de Greyhawk Campaign Manager. Test alles in volgorde. Als iets niet werkt, noteer welke stap en welke foutmelding je krijgt.</p>
+
+<h2>Stap 1 — Inloggen als DM (2 min)</h2>
+<div class="test">
+<h3>Test 1.1: Inloggen</h3>
+<ol>
+<li>Ga naar de app-link</li>
+<li>Log in met je DM-account</li>
+<li><span class="check">✓ Verwacht:</span> "Dungeon Master" badge rechtsboven + extra knoppen (🔑 Reset) + tab "DM Dashboard"</li>
+</ol>
+</div>
+
+<h2>Stap 2 — Karakter aanmaken (5 min)</h2>
+<div class="test">
+<h3>Test 2.1: Nieuw karakter</h3>
+<ol>
+<li>Tab <strong>Karakters</strong> → klik <strong>+ Nieuw Karakter</strong></li>
+<li>Naam: "Testridder", Ras: Human, Klasse: Fighter, Gezindheid: Lawful Good</li>
+<li>Klik <strong>Karakter Aanmaken</strong></li>
+<li><span class="check">✓ Verwacht:</span> Character sheet opent met alle velden</li>
+</ol>
+</div>
+<div class="test">
+<h3>Test 2.2: Velden bewerken</h3>
+<ol>
+<li>Klik op het HP getal (stippellijn) → typ <strong>45</strong> → druk Enter</li>
+<li>Doe hetzelfde voor STR (typ 16), DEX (14), THAC0 (17)</li>
+<li><span class="check">✓ Verwacht:</span> groen "✓ Auto-opslaan" bevestiging, waarden bijgewerkt</li>
+</ol>
+</div>
+<div class="test">
+<h3>Test 2.3: Wapen toevoegen</h3>
+<ol>
+<li>Klik <strong>+ wapen toevoegen</strong></li>
+<li>Typ "long" in de zoekbalk → "Long Sword" verschijnt</li>
+<li>Klik op Long Sword → formulier vult zich in</li>
+<li>Klik <strong>+ Toevoegen aan karakter</strong></li>
+<li><span class="check">✓ Verwacht:</span> Long Sword verschijnt in de wapenlijst op de sheet</li>
+</ol>
+</div>
+<div class="test">
+<h3>Test 2.4: Profielfoto</h3>
+<ol>
+<li>Klik het 📷 icoontje linksboven op de character sheet</li>
+<li>Kies een afbeelding (max 2MB)</li>
+<li><span class="check">✓ Verwacht:</span> foto verschijnt als avatar</li>
+</ol>
+</div>
+
+<h2>Stap 3 — DM Dashboard (2 min)</h2>
+<div class="test">
+<h3>Test 3.1: Overzicht</h3>
+<ol>
+<li>Klik tab <strong>DM Dashboard</strong></li>
+<li><span class="check">✓ Verwacht:</span> alle karakters zichtbaar met HP-balken</li>
+</ol>
+</div>
+<div class="test">
+<h3>Test 3.2: Privé notities</h3>
+<ol>
+<li>Open een karakter vanuit DM Dashboard</li>
+<li>Scroll naar beneden → paars kader "🔒 DM Privé Notities"</li>
+<li>Typ iets → klik ergens anders</li>
+<li><span class="check">✓ Verwacht:</span> "✓ DM notities opgeslagen" melding. Spelers zien dit NIET.</li>
+</ol>
+</div>
+
+<h2>Stap 4 — Sessie aanmaken + gevecht (10 min)</h2>
+<div class="test">
+<h3>Test 4.1: Nieuwe sessie</h3>
+<ol>
+<li>Tab <strong>Sessies</strong> → klik <strong>+ Nieuwe sessie</strong></li>
+<li>Naam: "Testsessie", Datum: vandaag, Status: Actief</li>
+<li>Vink minstens 2 karakters aan</li>
+<li>Klik <strong>✓ Opslaan</strong></li>
+<li><span class="check">✓ Verwacht:</span> sessie verschijnt in de lijst, klik erop om te openen</li>
+</ol>
+</div>
+<div class="test">
+<h3>Test 4.2: Gevecht starten</h3>
+<ol>
+<li>Open de testsessie → klik <strong>⚔️ Start gevecht</strong></li>
+<li><span class="check">✓ Verwacht:</span> rood kader verschijnt met "Ronde 1" + initiative-velden per karakter</li>
+<li>Typ bij het eerste karakter initiative <strong>3</strong>, bij het tweede <strong>5</strong></li>
+</ol>
+</div>
+<div class="test">
+<h3>Test 4.3: Vijand toevoegen</h3>
+<ol>
+<li>Klik <strong>+ Vijand</strong> → naam: "Goblin", aantal: 3, HP: 7</li>
+<li><span class="check">✓ Verwacht:</span> "Goblin #1", "Goblin #2", "Goblin #3" verschijnen als rode entries</li>
+</ol>
+</div>
+<div class="test">
+<h3>Test 4.4: DM initiative rollen</h3>
+<ol>
+<li>Klik <strong>🎲 Gooi init voor DM-karakters</strong></li>
+<li><span class="check">✓ Verwacht:</span> goblins krijgen een initatiefgetal</li>
+<li>Klik <strong>↕ Sorteer</strong> → laagste initiative bovenaan</li>
+</ol>
+</div>
+<div class="test">
+<h3>Test 4.5: Actie vastleggen</h3>
+<ol>
+<li>Klik <strong>📋 Actie</strong> bij het eerste karakter</li>
+<li>Typ: "Aanval op Goblin #1 met Long Sword" → Resultaat: "Raak! 6 dmg"</li>
+<li><span class="check">✓ Verwacht:</span> actie verschijnt in "Acties — Ronde 1"</li>
+</ol>
+</div>
+<div class="test">
+<h3>Test 4.6: HP aanpassen + status</h3>
+<ol>
+<li>Bij Goblin #1: verander HP naar <strong>1</strong></li>
+<li>Verander status dropdown naar <strong>Dood</strong></li>
+<li><span class="check">✓ Verwacht:</span> Goblin #1 wordt uitgevaagd met 💀</li>
+</ol>
+</div>
+<div class="test">
+<h3>Test 4.7: Volgende ronde + einde</h3>
+<ol>
+<li>Klik <strong>Ronde 2 →</strong></li>
+<li><span class="check">✓ Verwacht:</span> "Ronde 2" verschijnt</li>
+<li>Klik <strong>✓ Einde gevecht</strong></li>
+</ol>
+</div>
+
+<h2>Stap 5 — XP toekennen (2 min)</h2>
+<div class="test">
+<h3>Test 5.1: XP</h3>
+<ol>
+<li>Open de testsessie → klik <strong>⭐ XP</strong> bij een karakter</li>
+<li>Bedrag: 100, Reden: "3 goblins verslagen"</li>
+<li>Klik <strong>✓ Toekennen</strong></li>
+<li><span class="check">✓ Verwacht:</span> karakter toont "+100 XP deze sessie" + totale XP is bijgewerkt</li>
+</ol>
+</div>
+
+<h2>Stap 6 — Encyclopedie (3 min)</h2>
+<div class="test">
+<h3>Test 6.1: Zoeken</h3>
+<ol>
+<li>Tab <strong>Encyclopedie</strong> → klik <strong>Monsters</strong></li>
+<li>Zoek "dragon" in de zoekbalk</li>
+<li>Klik <strong>info</strong> naast een resultaat</li>
+<li><span class="check">✓ Verwacht:</span> popup met naam, stats, beschrijving + afbeelding (als beschikbaar)</li>
+</ol>
+</div>
+<div class="test">
+<h3>Test 6.2: Item bewerken (DM)</h3>
+<ol>
+<li>Klik ✏ naast een wapen</li>
+<li>Wijzig de beschrijving → klik <strong>Opslaan</strong></li>
+<li><span class="check">✓ Verwacht:</span> "✓ Opgeslagen" melding, tabel geüpdatet</li>
+</ol>
+</div>
+
+<h2>Stap 7 — Kaart + Tools (2 min)</h2>
+<div class="test">
+<h3>Test 7.1: Kaart</h3>
+<ol>
+<li>Tab <strong>Kaart</strong> → klik <strong>🎮 Open Mythic Table</strong></li>
+<li><span class="check">✓ Verwacht:</span> Mythic Table opent in nieuw tabblad</li>
+</ol>
+</div>
+<div class="test">
+<h3>Test 7.2: Dobbelstenen</h3>
+<ol>
+<li>Tab <strong>Tools</strong> → klik <strong>d20</strong></li>
+<li><span class="check">✓ Verwacht:</span> resultaat (1-20) verschijnt groot + in geschiedenis</li>
+<li>Typ <strong>3d6+2</strong> in het invoerveld → klik 🎲 Gooi!</li>
+<li><span class="check">✓ Verwacht:</span> resultaat met aparte worpen (bv. [4, 2, 5] = 13)</li>
+</ol>
+</div>
+<div class="test">
+<h3>Test 7.3: THAC0 calculator</h3>
+<ol>
+<li>THAC0: 17, Vijand AC: 5, Bonussen: 2</li>
+<li><span class="check">✓ Verwacht:</span> "Je hebt 10+ nodig"</li>
+</ol>
+</div>
+
+<h2>Stap 8 — Wachtwoord reset (2 min)</h2>
+<div class="test">
+<h3>Test 8.1: Reset voor speler</h3>
+<ol>
+<li>Klik <strong>🔑 Reset</strong> rechtsboven</li>
+<li>Kies een speler → stel tijdelijk wachtwoord in (bv. "Test123")</li>
+<li><span class="check">✓ Verwacht:</span> bevestiging. Speler wordt bij volgende login verplicht nieuw wachtwoord te kiezen.</li>
+</ol>
+</div>
+
+<h2>Stap 9 — Export (2 min)</h2>
+<div class="test">
+<h3>Test 9.1: Karakter exporteren</h3>
+<ol>
+<li>Open een karakter → klik <strong>📤 Export</strong></li>
+<li>Kies <strong>PDF</strong> → een nieuw venster opent met printbaar karakterblad</li>
+<li>Kies <strong>JSON</strong> → een .json bestand wordt gedownload</li>
+<li><span class="check">✓ Verwacht:</span> beide werken zonder foutmeldingen</li>
+</ol>
+</div>
+
+<div class="ornament" style="text-align:center;color:#c4a060;font-size:18px;margin:20px 0;letter-spacing:8px;">⸻ ✦ ⸻</div>
+
+<h2>Alles getest? ✓</h2>
+<p>Als alle tests hierboven werken, is de app klaar voor de spelers. Stuur hen:</p>
+<div class="test" style="background:rgba(42,122,42,.06);border-color:rgba(42,122,42,.25);">
+<ol>
+<li>De <strong>app-link</strong>: <code>sergehanssens.github.io/greyhawk-campaign</code></li>
+<li>De <strong>snelkaart voor spelers</strong> (printbaar A4): <code>/snelkaart_speler.html</code></li>
+<li>Zeg dat ze een account moeten aanmaken (DM Code = <strong>leeg laten</strong>)</li>
+<li>Ze kunnen meteen hun karakter aanmaken en invullen</li>
+</ol>
+</div>
+
+<div class="tip"><strong>Opruimen na testen:</strong> verwijder testkarakters en testsessies via de app (🗑 Verwijderen).</div>
+
+<div style="margin-top:16px;text-align:center;font-size:11px;color:#7a5030;border-top:1px solid #4a3a7a;padding-top:8px;">
+  Greyhawk Campaign Manager v1.7 · <a href="https://shiftedmake.com" style="color:#4a3a7a;text-decoration:none;font-weight:600;">SHiftEDmake</a> — van Droom naar Werkelijkheid
+</div>
+</div>
+</body>
+</html>

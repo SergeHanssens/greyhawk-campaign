@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greyhawk — Snelkaart DM (A4)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Text',serif;padding:10px;color:#2a1a0a;font-size:11px;line-height:1.45;}
+.card{border:2px solid #4a3a7a;border-radius:4px;padding:14px 18px;max-width:210mm;margin:0 auto;}
+h1{font-family:'Cinzel',serif;font-size:18px;color:#4a3a7a;text-align:center;margin-bottom:2px;}
+.sub{text-align:center;font-size:10px;color:#7a5030;margin-bottom:8px;padding-bottom:6px;border-bottom:1.5px solid #4a3a7a;}
+h2{font-family:'Cinzel',serif;font-size:10px;color:#4a3a7a;margin:6px 0 2px;padding:2px 0;border-bottom:1px dotted rgba(74,58,122,.3);text-transform:uppercase;letter-spacing:1px;}
+table{width:100%;border-collapse:collapse;margin:2px 0 4px;font-size:10.5px;}
+td{padding:1.5px 5px;vertical-align:top;}
+td:first-child{font-weight:600;white-space:nowrap;width:38%;}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.box{background:rgba(74,58,122,.06);border:1px solid rgba(74,58,122,.25);border-radius:3px;padding:5px 7px;margin:2px 0;font-size:10.5px;}
+.em{color:#4a3a7a;font-weight:600;}
+strong{color:#8a2010;}
+@media print{body{padding:0;}.card{border:none;padding:8px;}}
+.btn{font-family:'Cinzel',serif;font-size:11px;padding:5px 14px;border-radius:3px;cursor:pointer;border:1px solid #4a3a7a;background:#4a3a7a;color:#e0d0f0;margin-bottom:6px;}
+@media print{.btn{display:none;}}
+</style>
+</head>
+<body>
+<div class="card">
+<button class="btn" onclick="window.print()">🖨️ Afdrukken (A4)</button>
+<h1>Greyhawk — DM Snelkaart</h1>
+<div class="sub">VERTROUWELIJK — Versie 1.7 — Bewaar naast je scherm</div>
+
+<div class="cols">
+<div>
+<h2>Sessie aanmaken</h2>
+<table>
+<tr><td>1.</td><td>Tab <span class="em">Sessies</span> → <span class="em">+ Nieuwe sessie</span></td></tr>
+<tr><td>2.</td><td>Naam + datum + locatie invullen</td></tr>
+<tr><td>3.</td><td>Karakters aanvinken die meedoen</td></tr>
+<tr><td>4.</td><td>Status: Gepland → Actief → Afgesloten</td></tr>
+</table>
+
+<h2>Gevecht starten</h2>
+<table>
+<tr><td>1.</td><td>Open sessie → <span class="em">⚔️ Start gevecht</span></td></tr>
+<tr><td>2.</td><td>Spelers vullen zelf initiative in (d6+DEX)</td></tr>
+<tr><td>3.</td><td><span class="em">🎲 Gooi init voor DM-karakters</span></td></tr>
+<tr><td>4.</td><td><span class="em">↕ Sorteer</span> (laagst = eerst)</td></tr>
+<tr><td>5.</td><td>Per karakter: <span class="em">📋 Actie</span> → wat doet het + resultaat</td></tr>
+<tr><td>6.</td><td><span class="em">Ronde X →</span> voor volgende ronde</td></tr>
+<tr><td>7.</td><td><span class="em">✓ Einde gevecht</span></td></tr>
+</table>
+
+<h2>Tijdens gevecht</h2>
+<table>
+<tr><td>HP aanpassen</td><td>Typ direct in HP-veld</td></tr>
+<tr><td>Status</td><td>Dropdown: Actief/Bewusteloos/Dood/Gevlucht</td></tr>
+<tr><td>+ Vijand</td><td>Naam + aantal + HP → aparte entries</td></tr>
+<tr><td>🎮 Overnemen</td><td>Klik 🎮 → "DM" of andere spelernaam</td></tr>
+</table>
+
+<h2>XP toekennen</h2>
+<table>
+<tr><td>1.</td><td>Open sessie → <span class="em">⭐ XP</span> per karakter</td></tr>
+<tr><td>2.</td><td>Bedrag + reden → automatisch in karakter + logboek</td></tr>
+</table>
+
+<h2>Wachtwoord resetten</h2>
+<table>
+<tr><td>1.</td><td><span class="em">🔑 Reset</span> rechtsboven</td></tr>
+<tr><td>2.</td><td>Kies speler → tijdelijk wachtwoord</td></tr>
+<tr><td>3.</td><td>Speler wordt verplicht nieuw wachtwoord te kiezen</td></tr>
+</table>
+</div>
+
+<div>
+<h2>DM Dashboard</h2>
+<table>
+<tr><td>Alle karakters</td><td>Tab <span class="em">DM Dashboard</span> — overzicht + HP-balken</td></tr>
+<tr><td>Privé notities</td><td>Onderaan elk karakter → 🔒 onzichtbaar voor speler</td></tr>
+<tr><td>Sessie-notities</td><td>Idem → voor XP-berekening</td></tr>
+</table>
+
+<h2>Encyclopedie beheren</h2>
+<table>
+<tr><td>Bewerken</td><td>✏ knop → pas aan → Opslaan</td></tr>
+<tr><td>Toevoegen</td><td>Formulier onderaan + 🖼 afbeelding</td></tr>
+<tr><td>Verwijderen</td><td>✏ → Verwijderen</td></tr>
+<tr><td>Bulk import</td><td><span class="em">📥 Importeren</span> → CSV/JSON/MD</td></tr>
+</table>
+<div class="box">
+<strong>Snel 100 monsters:</strong> vraag AI: <em>"50 AD&amp;D monsters als JSON-array"</em> → plak in 📥 JSON import
+</div>
+
+<h2>Kaart</h2>
+<table>
+<tr><td>Speelveld</td><td>Tab Kaart → Mythic Table link</td></tr>
+<tr><td>Eigen kaart</td><td>DM kan JPG/PNG uploaden of URL plakken</td></tr>
+<tr><td>VTT link</td><td>Aanpasbaar in DM-paneel op Kaart tab</td></tr>
+</table>
+
+<h2>Alle tabs</h2>
+<table>
+<tr><td>Karakters</td><td>Alle karakters (speler: eigen / DM: alle)</td></tr>
+<tr><td>Sheet</td><td>Character sheet met click-to-edit</td></tr>
+<tr><td>Sessies</td><td>Sessies + gevechten + logboeken</td></tr>
+<tr><td>Encyclopedie</td><td>Wapens, spreuken, items, monsters, goden, ...</td></tr>
+<tr><td>Kaart</td><td>Mythic Table + DM kaart + referentie</td></tr>
+<tr><td>Tools</td><td>Dobbelstenen, THAC0, XP-tabel</td></tr>
+<tr><td>DM Dashboard</td><td>Alle karakters overzicht (DM only)</td></tr>
+</table>
+
+<h2>Export/Import</h2>
+<table>
+<tr><td>📤 Export</td><td>JSON / Markdown / PDF / CSV</td></tr>
+<tr><td>📥 Import</td><td>CSV / JSON / Markdown</td></tr>
+</table>
+</div>
+</div>
+
+<div style="text-align:center;font-size:9px;color:#7a5030;margin-top:6px;border-top:1px solid #4a3a7a;padding-top:3px;">
+  Greyhawk Campaign Manager · <a href="https://shiftedmake.com" style="color:#4a3a7a;text-decoration:none;">SHiftEDmake</a>
+</div>
+</div>
+</body>
+</html>

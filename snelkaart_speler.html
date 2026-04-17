@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greyhawk — Snelkaart Speler (A4)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Text',serif;padding:10px;color:#2a1a0a;font-size:12px;line-height:1.5;}
+.card{border:2px solid #c4a060;border-radius:4px;padding:16px 20px;max-width:210mm;margin:0 auto;}
+h1{font-family:'Cinzel',serif;font-size:18px;color:#8a2010;text-align:center;margin-bottom:2px;}
+.sub{text-align:center;font-size:10px;color:#7a5030;margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid #c4a060;}
+h2{font-family:'Cinzel',serif;font-size:11px;color:#8a2010;margin:8px 0 3px;padding:2px 0;border-bottom:1px dotted #c4a060;text-transform:uppercase;letter-spacing:1px;}
+table{width:100%;border-collapse:collapse;margin:2px 0 6px;font-size:11px;}
+td{padding:2px 6px;vertical-align:top;}
+td:first-child{font-weight:600;white-space:nowrap;width:35%;}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.box{background:rgba(196,160,96,.1);border:1px solid #c4a060;border-radius:3px;padding:6px 8px;margin:3px 0;font-size:11px;}
+.em{color:#2a5a9a;font-weight:600;}
+strong{color:#8a2010;}
+@media print{body{padding:0;}.card{border:none;padding:10px;}}
+.btn{font-family:'Cinzel',serif;font-size:11px;padding:6px 16px;border-radius:3px;cursor:pointer;border:1px solid #c4a060;background:#8a2010;color:#fdf5e0;margin-bottom:8px;}
+@media print{.btn{display:none;}}
+</style>
+</head>
+<body>
+<div class="card">
+<button class="btn" onclick="window.print()">🖨️ Afdrukken (A4)</button>
+<h1>Greyhawk Campaign Manager</h1>
+<div class="sub">SNELKAART SPELER — bewaar dit naast je scherm</div>
+
+<div class="cols">
+<div>
+<h2>Eerste keer</h2>
+<table>
+<tr><td>1. Account</td><td>Registreer op de app-link van de DM. DM Code = leeg laten.</td></tr>
+<tr><td>2. Karakter</td><td>Klik <span class="em">+ Nieuw Karakter</span>. Kies ras → klasse → gezindheid.</td></tr>
+<tr><td>3. Stats</td><td>Klik op elk getal met stippellijn → typ → Enter. Alles slaat automatisch op.</td></tr>
+<tr><td>4. Foto</td><td>📷 icoontje op je character sheet. Max 2MB.</td></tr>
+</table>
+
+<h2>Karakter bewerken</h2>
+<table>
+<tr><td>Waarde wijzigen</td><td>Klik op stippellijn-getal → typ → Enter</td></tr>
+<tr><td>Wapen toevoegen</td><td>"+ wapen toevoegen" → zoek → klik → Toevoegen</td></tr>
+<tr><td>Item/skill/spell</td><td>Idem via de + knoppen</td></tr>
+<tr><td>PDF exporteren</td><td>📄 PDF knop op character sheet</td></tr>
+<tr><td>Alle export</td><td>📤 Export → kies JSON/MD/PDF</td></tr>
+</table>
+
+<h2>Sessie &amp; gevecht</h2>
+<table>
+<tr><td>Sessie bekijken</td><td>Tab <span class="em">Sessies</span> → klik op sessie</td></tr>
+<tr><td>Log invullen</td><td>"+ Log" → ontmoetingen, NPCs, loot, notities</td></tr>
+<tr><td>Initiative</td><td>Bij gevecht: vul je d6 + DEX mod in het veld</td></tr>
+</table>
+</div>
+
+<div>
+<h2>Aanval doen (AD&amp;D)</h2>
+<div class="box">
+1. Gooi <strong>D20</strong><br>
+2. Tel bonussen op (STR, magie)<br>
+3. <strong>D20 + bonus ≥ THAC0 − vijand AC</strong> → RAAK!<br>
+4. Gooi <strong>schade-dobbelsteen</strong> (staat bij wapen)<br>
+5. Tel schadebonussen op
+</div>
+
+<h2>Tabs overzicht</h2>
+<table>
+<tr><td><span class="em">Karakters</span></td><td>Jouw karakters beheren</td></tr>
+<tr><td><span class="em">Character Sheet</span></td><td>Alle details van gekozen karakter</td></tr>
+<tr><td><span class="em">Sessies</span></td><td>Campagne-sessies + gevechten + log</td></tr>
+<tr><td><span class="em">Encyclopedie</span></td><td>Wapens, spreuken, monsters, goden, ...</td></tr>
+<tr><td><span class="em">Kaart</span></td><td>Mythic Table + referentiekaarten</td></tr>
+<tr><td><span class="em">Tools</span></td><td>Dobbelstenen, THAC0 calculator, XP tabel</td></tr>
+</table>
+
+<h2>Knoppen rechtsboven</h2>
+<table>
+<tr><td>★ Features</td><td>Alles wat de app kan</td></tr>
+<tr><td>? Help</td><td>Snelle uitleg per sectie</td></tr>
+<tr><td>🔑 Wachtwoord</td><td>Wijzig je wachtwoord</td></tr>
+</table>
+
+<h2>Wachtwoord vergeten?</h2>
+<div class="box">Vraag aan de DM om een tijdelijk wachtwoord in te stellen. Bij volgende login word je verplicht een nieuw te kiezen.</div>
+</div>
+</div>
+
+<div style="text-align:center;font-size:9px;color:#7a5030;margin-top:8px;border-top:1px solid #c4a060;padding-top:4px;">
+  Greyhawk Campaign Manager · <a href="https://shiftedmake.com" style="color:#8a2010;text-decoration:none;">SHiftEDmake</a> — van Droom naar Werkelijkheid
+</div>
+</div>
+</body>
+</html>
