@@ -1627,12 +1627,13 @@ async function openSession(id){
     </div>`;
   }
 
-  // ===== CHARACTER LIST =====
+  // ===== CHARACTER LIST (DM only — players see chars in actions) =====
+  if(isDM){
   const players=sorted.filter(p=>!p.is_enemy&&p.characters);
   const npcs=sorted.filter(p=>p.is_enemy&&p.characters);
   html+=`<div class="card" style="margin-bottom:16px;">
-    <div class="card-header">Deelnemers
-      ${isDM&&!isCompleted?`<button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="addNpcToSession('${s.id}','')">+ Karakter</button>`:''}
+    <div class="card-header">Deelnemers (DM overzicht)
+      ${!isCompleted?`<button class="btn btn-ghost btn-sm" style="margin-left:auto;" onclick="addNpcToSession('${s.id}','')">+ Karakter</button>`:''}
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
       ${players.map(p=>{const c=p.characters;return`<div onclick="openChar('${c.id}')" style="cursor:pointer;padding:6px 12px;border-radius:4px;border:1px solid var(--blue2);background:rgba(26,58,106,.06);font-size:13px;display:flex;align-items:center;gap:6px;" title="Klik om character sheet te openen">
@@ -1647,6 +1648,7 @@ async function openSession(id){
       </div>`;}).join('')}
     </div>
   </div>`;
+  } // end DM-only participant list
 
   // ===== ACTIONS (activiteiten) =====
   let actions=null;
@@ -1705,11 +1707,11 @@ async function openSession(id){
       const statusLabel={active:'Actief',dead:'Dood',unconscious:'KO',fled:'Weg',hidden:'Verborgen'}[p.status]||'';
       const statusBg={active:'',dead:'rgba(80,0,0,.12)',unconscious:'rgba(180,120,0,.1)',fled:'rgba(100,100,100,.08)',hidden:'rgba(74,58,122,.1)'}[p.status]||'';
       const statusBorder={active:isNpc?'var(--rust2)':'var(--blue2)',dead:'#600',unconscious:'#a80',fled:'#888',hidden:'var(--dm-border)'}[p.status]||'var(--card-border)';
-      // Initiative: only own char editable, locked after filling
+      // Initiative: only own char editable, locked after filling, never in completed
       const initLocked=p.initiative_roll!=null&&!isDM;
-      const canEditInit=(isOwner&&!initLocked)||isDM;
-      // HP: only own char editable (or DM)
-      const canEditHp=isDM||isOwner;
+      const canEditInit=!isCompleted&&((isOwner&&!initLocked)||isDM);
+      // HP: DM only, never in completed sessions
+      const canEditHp=isDM&&!isCompleted;
       return`<div style="display:grid;grid-template-columns:${hasInit?'60px ':''}50px 1fr auto;gap:6px;align-items:center;padding:6px 8px;margin-bottom:3px;border-radius:4px;background:${statusBg||(isNpc?'rgba(138,32,16,.04)':'rgba(196,160,96,.04)')};${isDead?'opacity:.5;':''}border-left:4px solid ${statusBorder};">
         ${hasInit?`<div style="text-align:center;">
           <div style="font-family:'Cinzel',serif;font-size:8px;color:var(--ink3);">INIT</div>
@@ -1724,9 +1726,9 @@ async function openSession(id){
           <div style="font-size:11px;color:var(--ink3);">HP: ${canEditHp?`<input type="number" value="${combatHp||0}" style="width:35px;font-size:11px;border:1px solid var(--card-border);border-radius:2px;padding:1px 3px;text-align:center;" onclick="event.stopPropagation()" onchange="saveActionHp('${act.id}','${c.id}',this.value)">`:combatHp||0}/${c.hp_max||'?'} · AC ${c.ac||'?'}${c.thac0?' · T'+c.thac0:''} <span style="font-size:10px;padding:2px 5px;border-radius:2px;background:${statusBg||'rgba(42,122,42,.1)'};color:${statusBorder};">${statusLabel}</span></div>
         </div>
         <div style="display:flex;gap:3px;flex-wrap:wrap;">
-          ${(isDM||isOwner)?`<button class="btn btn-ghost btn-xs" onclick="showSessionRollDialog('${s.id}')" title="🎲">🎲</button>`:''}
-          ${isDM?`<button class="btn btn-ghost btn-xs" onclick="logActionEntry('${act.id}','${c.id}','${c.name.replace(/'/g,"&#39;")}',${act.combat_round||0})">📋</button>`:''}
-          ${isDM?`<select style="font-size:9px;border:1px solid var(--card-border);border-radius:2px;padding:1px;width:65px;" onchange="setActionParticipantStatus('${act.id}','${c.id}',this.value)">
+          ${!isCompleted&&(isDM||isOwner)?`<button class="btn btn-ghost btn-xs" onclick="showSessionRollDialog('${s.id}')" title="🎲">🎲</button>`:''}
+          ${!isCompleted&&isDM?`<button class="btn btn-ghost btn-xs" onclick="logActionEntry('${act.id}','${c.id}','${c.name.replace(/'/g,"&#39;")}',${act.combat_round||0})">📋</button>`:''}
+          ${!isCompleted&&isDM?`<select style="font-size:9px;border:1px solid var(--card-border);border-radius:2px;padding:1px;width:65px;" onchange="setActionParticipantStatus('${act.id}','${c.id}',this.value)">
             <option value="active" ${p.status==='active'?'selected':''}>Actief</option>
             <option value="unconscious" ${p.status==='unconscious'?'selected':''}>KO</option>
             <option value="dead" ${p.status==='dead'?'selected':''}>Dood</option>
@@ -1770,14 +1772,14 @@ async function openSession(id){
   html+=`<div class="card" style="margin-bottom:16px;">
     <div class="card-header">💬 Chat</div>
     <div id="session-chat-log" style="max-height:300px;overflow-y:auto;border:1px solid var(--card-border);border-radius:4px;padding:8px;background:#fff;margin-bottom:8px;">Laden...</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+    ${!isCompleted?`<div style="display:flex;gap:6px;flex-wrap:wrap;">
       <select id="chat-channel" style="padding:6px;border:1.5px solid var(--card-border);border-radius:4px;font-size:12px;min-width:160px;">
         <option value="all">💬 Iedereen</option>
       </select>
       <input type="text" id="chat-input" placeholder="Typ je bericht..." style="flex:1;min-width:150px;padding:6px 10px;border:1.5px solid var(--card-border);border-radius:4px;font-size:13px;" onkeydown="if(event.key==='Enter')sendChat('${s.id}')">
       <button class="btn btn-primary btn-sm" onclick="sendChat('${s.id}')">Verstuur</button>
     </div>
-    <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-style:italic;">🔒 = alleen zichtbaar voor geselecteerde ontvanger(s) + DM. Chat vernieuwd elke 5 sec.</div>
+    <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-style:italic;">🔒 = alleen zichtbaar voor geselecteerde ontvanger(s) + DM. Chat vernieuwd elke 5 sec.</div>`:''}
   </div>`;
 
   // Bottom controls
@@ -2083,13 +2085,19 @@ let sessionPollTimer=null;
 function startSessionPoll(sessionId){
   stopSessionPoll();
   sessionPollTimer=setInterval(async()=>{
-    // Only refresh if the session modal is still open
     if(!document.getElementById('sd-modal')?.classList.contains('open'))return;
-    // Silently reload dice log + chat (lightest refresh)
     try{
+      // Refresh dice log + chat
       const logHtml=await loadDiceLog(sessionId);
       const el=document.getElementById('session-dice-log');if(el)el.innerHTML=logHtml;
       await loadChat(sessionId);
+      // For players: check if session state changed (new round, combat started, etc.)
+      if(!CU.is_dm){
+        const{data:freshSession}=await sb.from('sessions').select('updated_at').eq('id',sessionId).single();
+        if(freshSession&&currentSession&&freshSession.updated_at!==currentSession.updated_at){
+          openSession(sessionId); // full refresh
+        }
+      }
     }catch(e){}
   },5000);
 }
