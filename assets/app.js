@@ -171,6 +171,7 @@ function showPage(p){
   if(p==='dm')loadDMDash();
   if(p==='sessions')loadSessions();
   if(p==='tools')calcThac0();
+  if(p==='map')loadMapSettings();
 }
 function efKey(e,el){if(e.key==='Enter'){e.preventDefault();el.blur();}}
 
@@ -879,6 +880,19 @@ function filterEnc(){
   renderEnc(data);
 }
 
+// Default RPG icons from game-icons.net (CC BY 3.0 — Lorc, Delapouite, et al.)
+// Used as fallback thumbnails when entry has no custom image_url
+const DEFAULT_ICONS={
+  weapons:'https://game-icons.net/icons/ffffff/000000/1x1/lorc/crossed-swords.svg',
+  spells:'https://game-icons.net/icons/ffffff/000000/1x1/lorc/spell-book.svg',
+  items:'https://game-icons.net/icons/ffffff/000000/1x1/lorc/knapsack.svg',
+  monsters:'https://game-icons.net/icons/ffffff/000000/1x1/lorc/dragon-head.svg',
+  races:'https://game-icons.net/icons/ffffff/000000/1x1/delapouite/person.svg',
+  classes:'https://game-icons.net/icons/ffffff/000000/1x1/lorc/shield.svg',
+  skills:'https://game-icons.net/icons/ffffff/000000/1x1/lorc/skills.svg',
+  deities:'https://game-icons.net/icons/ffffff/000000/1x1/lorc/ankh.svg',
+};
+
 // Cache per ID for fast info-popup lookup with image
 let encRowCache={};
 
@@ -891,7 +905,7 @@ function renderEnc(data){
   document.getElementById('enc-content').innerHTML=`<div style="overflow-x:auto;"><table class="db-table">
     <thead><tr><th style="width:50px;">Foto</th>${c.map(col=>`<th>${col}</th>`).join('')}${isDM?'<th>Actie</th>':''}</tr></thead>
     <tbody>${data.map(row=>`<tr>
-      <td>${row.image_url?`<img src="${row.image_url}" alt="${row.name||''}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--card-border);cursor:pointer;" onclick="showInfoFromCache('${encCurrentTable}',${row.id})">`:'<div style="width:40px;height:40px;border-radius:4px;background:rgba(196,160,96,.15);display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:18px;">🖼</div>'}</td>
+      <td><img src="${row.image_url||DEFAULT_ICONS[encCurrentTable]||''}" alt="${row.name||''}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--card-border);cursor:pointer;background:rgba(196,160,96,.15);" onclick="showInfoFromCache('${encCurrentTable}',${row.id})" onerror="this.style.display='none'"></td>
       ${c.map((col,i)=>i===0?`<td><strong>${row[col]||''}</strong> <span class="info-pill" onclick="showInfoFromCache('${encCurrentTable}',${row.id})">info</span></td>`:`<td>${row[col]!=null?row[col]:''}</td>`).join('')}
       ${isDM?`<td><button class="btn btn-xs btn-ghost" onclick="openDBEdit('${encCurrentTable}',${row.id})">✏</button></td>`:''}
     </tr>`).join('')}
@@ -1988,6 +2002,46 @@ async function doImport(){
   toast(`✓ ${ok} rijen toegevoegd aan ${t}`);
   if(ok>0)loadEnc(t);
   setTimeout(()=>closeM('imp-modal'),1200);
+}
+
+// =====================================================================
+// MAP / VTT MANAGEMENT
+// =====================================================================
+async function loadMapSettings(){
+  try{
+    const{data}=await sb.from('app_settings').select('*');
+    if(!data)return;
+    const settings={};data.forEach(r=>settings[r.key]=r.value);
+    const vttLink=document.querySelector('a[href*="mythictable"]');
+    if(vttLink&&settings.vtt_url)vttLink.href=settings.vtt_url;
+    const vttInput=document.getElementById('vtt-url');
+    if(vttInput)vttInput.value=settings.vtt_url||'';
+    const mapDisplay=document.getElementById('dm-map-display');
+    if(mapDisplay&&settings.dm_map_url){
+      mapDisplay.innerHTML=`<img src="${settings.dm_map_url}" alt="Campagne Kaart" style="max-width:100%;display:block;margin:0 auto;border-radius:4px;">`;
+    }
+  }catch(e){/* app_settings table may not exist yet */}
+}
+async function saveVttUrl(){
+  const url=document.getElementById('vtt-url').value.trim();
+  await sb.from('app_settings').upsert({key:'vtt_url',value:url,updated_at:new Date().toISOString()},{onConflict:'key'});
+  const vttLink=document.querySelector('a[href*="mythictable"]');
+  if(vttLink&&url)vttLink.href=url;
+  toast('✓ VTT link opgeslagen');
+}
+async function uploadDMMap(input){
+  const f=input.files?.[0];if(!f)return;
+  if(f.size>5*1024*1024){toast('Max 5MB',false);input.value='';return;}
+  const dataUrl=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(f);});
+  await sb.from('app_settings').upsert({key:'dm_map_url',value:dataUrl,updated_at:new Date().toISOString()},{onConflict:'key'});
+  document.getElementById('dm-map-display').innerHTML=`<img src="${dataUrl}" alt="Campagne Kaart" style="max-width:100%;display:block;margin:0 auto;border-radius:4px;">`;
+  toast('✓ Kaart geüpload');
+}
+async function setDMMapUrl(){
+  const url=document.getElementById('dm-map-url').value.trim();if(!url)return;
+  await sb.from('app_settings').upsert({key:'dm_map_url',value:url,updated_at:new Date().toISOString()},{onConflict:'key'});
+  document.getElementById('dm-map-display').innerHTML=`<img src="${url}" alt="Campagne Kaart" style="max-width:100%;display:block;margin:0 auto;border-radius:4px;">`;
+  toast('✓ Kaart URL opgeslagen');
 }
 
 // =====================================================================

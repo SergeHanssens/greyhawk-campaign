@@ -251,22 +251,64 @@
     </div>
   </div>
 
-  <!-- MAP -->
+  <!-- MAP & VTT -->
   <div class="page" id="page-map">
-    <div class="card">
-      <div class="card-header">🗺️ Kaart van de Flanaess (Greyhawk)</div>
-      <p style="font-size:13px;color:var(--ink3);margin-bottom:12px;">Officiële Greyhawk-kaart door <a href="https://www.annabmeyer.com/" target="_blank" style="color:var(--blue2);">Anna B. Meyer</a> (CC BY 4.0). Klik voor volledig scherm. Gebruik muis-scroll om in te zoomen.</p>
-      <div id="map-container" style="position:relative;overflow:hidden;border:2px solid var(--card-border);border-radius:6px;background:#1a1a10;cursor:grab;min-height:500px;">
-        <img id="map-img" src="https://www.annabmeyer.com/wp-content/uploads/2024/01/Flanaess-598CY-2000px-1.jpg"
-             alt="Flanaess 598 CY" style="width:100%;display:block;user-select:none;" draggable="false"
-             onerror="this.parentElement.innerHTML='<div style=\'padding:60px;text-align:center;color:var(--gold);\'>Kaart kon niet geladen worden.<br><a href=\'https://www.annabmeyer.com/greyhawk-maps/online-map-1/\' target=\'_blank\' style=\'color:var(--blue3);\'>Open de online kaart direct →</a></div>';">
+    <!-- MYTHIC TABLE / VTT -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">⚔️ Virtual Tabletop — Mythic Table</div>
+      <p style="font-size:13px;color:var(--ink);margin-bottom:10px;">Jullie DM gebruikt <strong>Mythic Table</strong> voor het speelveld: kaart met fog-of-war, tokens verplaatsen, en dobbelstenen rollen. Klik om de sessie te openen.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <a href="https://fp.mythictable.com/play/69cbef67e01772a8ad6db8dc/debug" target="_blank" class="btn btn-primary btn-sm" style="font-size:14px;padding:10px 20px;">🎮 Open Mythic Table → Speelveld</a>
+        <a href="https://www.mythictable.com/" target="_blank" class="btn btn-ghost btn-sm">ℹ️ Over Mythic Table</a>
       </div>
-      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-        <a href="https://www.annabmeyer.com/greyhawk-maps/online-map-1/" target="_blank" class="btn btn-ghost btn-sm">🌐 Interactieve online kaart</a>
-        <a href="https://www.annabmeyer.com/greyhawk-maps/downloadable-greyhawk-maps/" target="_blank" class="btn btn-ghost btn-sm">📥 Downloadbare kaarten</a>
+      <div style="font-size:12px;color:var(--ink3);background:rgba(196,160,96,.08);padding:10px;border-radius:4px;">
+        <strong>Wat je daar kan:</strong> kaart bekijken, je token verplaatsen, fog-of-war (DM toont/verbergt delen), dobbelstenen rollen (meerdere tegelijk), en chat.<br>
+        <strong>Wie beheert:</strong> de DM (Bart) — hij tekent de kaarten en regelt de zichtbaarheid.
+      </div>
+    </div>
+
+    <!-- DM EIGEN KAART UPLOAD -->
+    <div class="card dm-only" style="display:none;margin-bottom:16px;">
+      <div class="card-header">🗺️ DM Kaart Beheer</div>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Upload een eigen kaart (max 5MB). Wordt als base64 in de database opgeslagen en getoond voor alle spelers hieronder.</p>
+      <div class="fg" style="margin-bottom:10px;">
+        <label>Mythic Table link aanpassen</label>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="vtt-url" placeholder="https://fp.mythictable.com/play/..." style="flex:1;">
+          <button class="btn btn-ghost btn-sm" onclick="saveVttUrl()">💾</button>
+        </div>
+      </div>
+      <div class="fg" style="margin-bottom:10px;">
+        <label>Eigen kaart uploaden (JPG/PNG, max 5MB)</label>
+        <input type="file" id="dm-map-upload" accept="image/*" onchange="uploadDMMap(this)">
+      </div>
+      <div class="fg">
+        <label>Of kaart-URL plakken</label>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="dm-map-url" placeholder="https://..." style="flex:1;">
+          <button class="btn btn-ghost btn-sm" onclick="setDMMapUrl()">💾</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOM DM MAP DISPLAY -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">🗺️ Campagne Kaart</div>
+      <div id="dm-map-display" style="border:2px solid var(--card-border);border-radius:6px;background:#1a1a10;min-height:200px;overflow:auto;text-align:center;">
+        <div style="padding:40px;color:var(--gold);font-style:italic;">Nog geen kaart geüpload door de DM.</div>
+      </div>
+    </div>
+
+    <!-- GREYHAWK REFERENCE MAPS -->
+    <div class="card">
+      <div class="card-header">🌍 Greyhawk Referentiekaarten (extern)</div>
+      <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Kaarten door <a href="https://www.annabmeyer.com/" target="_blank" style="color:var(--blue2);">Anna B. Meyer</a> (CC BY 4.0) — de meest gedetailleerde Greyhawk kaarten die bestaan.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="https://www.annabmeyer.com/greyhawk-maps/online-map-1/" target="_blank" class="btn btn-primary btn-sm">🌐 Interactieve Flanaess kaart</a>
+        <a href="https://www.annabmeyer.com/greyhawk-maps/downloadable-greyhawk-maps/" target="_blank" class="btn btn-ghost btn-sm">📥 Downloadbare kaarten (ZIP)</a>
         <a href="https://www.annabmeyer.com/heraldry/" target="_blank" class="btn btn-ghost btn-sm">🛡️ 470+ heraldry schilden</a>
       </div>
-      <div style="margin-top:8px;font-size:10px;color:var(--ink3);font-style:italic;">Kaart © Anna B. Meyer, gebruikt onder CC BY 4.0 licentie. <a href="https://www.annabmeyer.com/" target="_blank" style="color:var(--ink3);">annabmeyer.com</a></div>
+      <div style="margin-top:8px;font-size:10px;color:var(--ink3);font-style:italic;">Kaart © Anna B. Meyer, CC BY 4.0. <a href="https://www.annabmeyer.com/" target="_blank" style="color:var(--ink3);">annabmeyer.com</a></div>
     </div>
   </div>
 
