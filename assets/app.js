@@ -2212,54 +2212,200 @@ async function rollSessionDice(sessionId,notation,purpose,isPrivate,charName){
   return result;
 }
 
+let srdSessionId=null;
+let srdRollHistory=[];
+
 async function showSessionRollDialog(sessionId){
-  const charName=CC?.name||'';
+  srdSessionId=sessionId;
+  srdRollHistory=[];
+  // Load session participants for character dropdown
+  const{data:parts}=await sb.from('session_participants').select('character_id,characters(id,name,player_id,player_name)').eq('session_id',sessionId);
+  const myChars=(parts||[]).filter(p=>p.characters&&(CU.is_dm||p.characters.player_id===CU.id)).map(p=>p.characters);
+  const defaultPrivate=CU.is_dm;
   const h=`
-    <div class="fg-row col2">
-      <div class="fg"><label>Formule <span class="req">*</span></label><input type="text" id="srd-notation" value="1d20" placeholder="bv. 1d20, 3d6+2"></div>
-      <div class="fg"><label>Waarvoor</label><input type="text" id="srd-purpose" placeholder="bv. Aanval, Save vs Spell"></div>
+    <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--ink3);letter-spacing:1px;margin-bottom:6px;">AANTAL & SOORT DOBBELSTEEN</div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:4px;">
+        <button class="btn btn-ghost btn-sm" onclick="srdAdjustQty(-1)" style="padding:4px 10px;font-size:16px;">−</button>
+        <input type="number" id="srd-qty" value="1" min="1" max="20" style="width:50px;text-align:center;font-size:18px;font-family:'Cinzel',serif;font-weight:600;border:2px solid var(--card-border);border-radius:4px;padding:4px;">
+        <button class="btn btn-ghost btn-sm" onclick="srdAdjustQty(1)" style="padding:4px 10px;font-size:16px;">+</button>
+      </div>
+      <span style="font-size:16px;color:var(--ink3);">×</span>
+      <div id="srd-die-buttons" style="display:flex;gap:4px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm srd-die-btn" data-die="4" onclick="srdSelectDie(4)">d4</button>
+        <button class="btn btn-ghost btn-sm srd-die-btn" data-die="6" onclick="srdSelectDie(6)">d6</button>
+        <button class="btn btn-ghost btn-sm srd-die-btn" data-die="8" onclick="srdSelectDie(8)">d8</button>
+        <button class="btn btn-ghost btn-sm srd-die-btn" data-die="10" onclick="srdSelectDie(10)">d10</button>
+        <button class="btn btn-ghost btn-sm srd-die-btn" data-die="12" onclick="srdSelectDie(12)">d12</button>
+        <button class="btn btn-primary btn-sm srd-die-btn active" data-die="20" onclick="srdSelectDie(20)" style="background:var(--rust);">d20</button>
+        <button class="btn btn-ghost btn-sm srd-die-btn" data-die="100" onclick="srdSelectDie(100)">d100</button>
+      </div>
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('srd-notation').value='1d20'">d20</button>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('srd-notation').value='1d6'">d6</button>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('srd-notation').value='1d8'">d8</button>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('srd-notation').value='1d10'">d10</button>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('srd-notation').value='3d6'">3d6</button>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('srd-notation').value='2d8+2'">2d8+2</button>
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('srd-notation').value='1d100'">d100</button>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+      <span style="font-size:12px;color:var(--ink3);">Bonus:</span>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <button class="btn btn-ghost btn-sm" onclick="srdAdjustBonus(-1)" style="padding:2px 8px;">−</button>
+        <input type="number" id="srd-bonus" value="0" style="width:50px;text-align:center;font-size:14px;border:1.5px solid var(--card-border);border-radius:4px;padding:3px;">
+        <button class="btn btn-ghost btn-sm" onclick="srdAdjustBonus(1)" style="padding:2px 8px;">+</button>
+      </div>
+      <span style="font-size:12px;color:var(--ink3);margin-left:8px;">Formule:</span>
+      <span id="srd-formula" style="font-family:'Cinzel',serif;font-size:16px;font-weight:600;color:var(--rust);">1d20</span>
     </div>
-    <div class="fg"><label>Karakter</label><input type="text" id="srd-char" value="${charName.replace(/"/g,'&quot;')}" placeholder="optioneel"></div>
-    <div class="fg">
+    <input type="hidden" id="srd-die" value="20">
+
+    <div class="fg-row col2" style="margin-bottom:8px;">
+      <div class="fg"><label>Waarvoor</label><input type="text" id="srd-purpose" placeholder="bv. Aanval, Save vs Spell, Initiative"></div>
+      <div class="fg"><label>Karakter</label>
+        <select id="srd-char" style="width:100%;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;">
+          ${myChars.map(c=>`<option value="${c.name.replace(/"/g,'&quot;')}">${c.name}</option>`).join('')}
+          ${myChars.length===0?'<option value="">—</option>':''}
+        </select>
+      </div>
+    </div>
+
+    <div class="fg" style="margin-bottom:10px;">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-        <input type="checkbox" id="srd-private" style="width:18px;height:18px;">
+        <input type="checkbox" id="srd-private" style="width:18px;height:18px;" ${defaultPrivate?'checked':''}>
         <span>🔒 <strong>Privé worp</strong> — alleen jij en de DM zien het resultaat</span>
       </label>
     </div>
-    <div id="srd-result" style="text-align:center;margin:10px 0;min-height:40px;"></div>
-    <div style="text-align:right;display:flex;gap:6px;justify-content:flex-end;">
-      <button class="btn btn-ghost btn-sm" onclick="closeM('srd-modal')">Sluiten</button>
-      <button class="btn btn-primary btn-sm" onclick="executeSessionRoll('${sessionId}')">🎲 Gooi!</button>
+
+    <div style="text-align:center;margin-bottom:10px;">
+      <button class="btn btn-primary" onclick="executeSessionRoll()" style="font-size:16px;padding:10px 30px;">🎲 Gooi!</button>
+    </div>
+
+    <div id="srd-result-table"></div>
+
+    <div style="text-align:right;margin-top:10px;">
+      <button class="btn btn-ghost btn-sm" onclick="closeM('xp-modal')">Sluiten</button>
     </div>`;
-  // Reuse xp-modal body for simplicity
   document.getElementById('xp-body').innerHTML=h;
   document.querySelector('#xp-modal h2').textContent='🎲 Dobbelsteen gooien';
+  srdUpdateFormula();
   openM('xp-modal');
 }
 
-async function executeSessionRoll(sessionId){
-  const notation=document.getElementById('srd-notation').value.trim();
+function srdAdjustQty(d){
+  const el=document.getElementById('srd-qty');
+  el.value=Math.max(1,Math.min(20,(parseInt(el.value)||1)+d));
+  srdUpdateFormula();
+}
+function srdAdjustBonus(d){
+  const el=document.getElementById('srd-bonus');
+  el.value=(parseInt(el.value)||0)+d;
+  srdUpdateFormula();
+}
+function srdSelectDie(sides){
+  document.getElementById('srd-die').value=sides;
+  document.querySelectorAll('.srd-die-btn').forEach(b=>{
+    b.style.background=parseInt(b.dataset.die)===sides?'var(--rust)':'';
+    b.style.color=parseInt(b.dataset.die)===sides?'#fdf5e0':'';
+  });
+  srdUpdateFormula();
+}
+function srdUpdateFormula(){
+  const qty=parseInt(document.getElementById('srd-qty')?.value)||1;
+  const die=parseInt(document.getElementById('srd-die')?.value)||20;
+  const bonus=parseInt(document.getElementById('srd-bonus')?.value)||0;
+  const f=`${qty}d${die}${bonus>0?'+'+bonus:bonus<0?''+bonus:''}`;
+  const el=document.getElementById('srd-formula');
+  if(el)el.textContent=f;
+}
+
+async function executeSessionRoll(){
+  const qty=parseInt(document.getElementById('srd-qty').value)||1;
+  const die=parseInt(document.getElementById('srd-die').value)||20;
+  const bonus=parseInt(document.getElementById('srd-bonus').value)||0;
+  const notation=`${qty}d${die}${bonus>0?'+'+bonus:bonus<0?''+bonus:''}`;
   const purpose=document.getElementById('srd-purpose').value.trim();
   const charName=document.getElementById('srd-char').value.trim();
   const isPrivate=document.getElementById('srd-private').checked;
-  if(!notation){toast('Vul een formule in',false);return;}
-  const result=await rollSessionDice(sessionId,notation,purpose,isPrivate,charName);
+  const result=parseDice(notation);
   if(!result){toast('Ongeldige formule',false);return;}
-  const diceStr=result.rolls.map(r=>r.dice?`[${r.dice.join(', ')}]`:r.expr).join(' + ');
-  const privLabel=isPrivate?'<span style="color:var(--dm-text);font-size:11px;"> 🔒 privé</span>':'';
-  document.getElementById('srd-result').innerHTML=`
-    <div style="font-family:'Cinzel',serif;font-size:36px;font-weight:600;color:var(--rust);">${result.total}</div>
-    <div style="font-size:13px;color:var(--ink3);">${notation} → ${diceStr}${privLabel}</div>
-    ${purpose?`<div style="font-size:12px;color:var(--ink3);font-style:italic;">${purpose}</div>`:''}`;
+
+  // Save to DB
+  const diceStr=result.rolls.map(r=>r.dice?`[${r.dice.join(',')}]`:r.expr).join('+');
+  await sb.from('dice_rolls').insert({
+    session_id:srdSessionId,player_id:CU.id,player_name:CU.username,
+    character_name:charName||null,notation,dice_detail:diceStr,
+    total:result.total,purpose:purpose||null,is_private:!!isPrivate,
+    combat_round:currentSession?.combat_round||null
+  });
+
+  // Build per-die results for this roll
+  const rollRows=[];
+  result.rolls.forEach(r=>{
+    if(r.dice){
+      r.dice.forEach((val,i)=>{
+        rollRows.push({label:`Worp ${i+1} (d${die})`,value:val});
+      });
+    }else if(r.value!==undefined){
+      rollRows.push({label:'Bonus',value:r.value});
+    }
+  });
+
+  // Add to history
+  srdRollHistory.push({notation,total:result.total,rows:rollRows,purpose,charName,isPrivate});
+
+  // Render table
+  renderSrdResultTable();
+
+  // Reset private to default
+  const defaultPrivate=CU.is_dm;
+  document.getElementById('srd-private').checked=defaultPrivate;
+}
+
+function renderSrdResultTable(){
+  const el=document.getElementById('srd-result-table');
+  if(!el||!srdRollHistory.length){if(el)el.innerHTML='';return;}
+  let html=`<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;">
+    <thead><tr>
+      <th style="text-align:left;padding:4px 8px;border-bottom:1.5px solid var(--divider);font-family:'Cinzel',serif;font-size:10px;color:var(--ink3);">Worp</th>
+      <th style="text-align:center;padding:4px 8px;border-bottom:1.5px solid var(--divider);font-family:'Cinzel',serif;font-size:10px;color:var(--ink3);">Resultaat</th>
+      <th style="text-align:left;padding:4px 8px;border-bottom:1.5px solid var(--divider);font-family:'Cinzel',serif;font-size:10px;color:var(--ink3);">Info</th>
+    </tr></thead><tbody>`;
+
+  srdRollHistory.forEach((roll,ri)=>{
+    // If only 1 die and no bonus, show single row
+    if(roll.rows.length===1){
+      html+=`<tr style="background:rgba(196,160,96,.06);">
+        <td style="padding:4px 8px;font-weight:600;">${roll.notation}</td>
+        <td style="padding:4px 8px;text-align:center;font-family:'Cinzel',serif;font-size:20px;font-weight:600;color:var(--rust);">${roll.total}</td>
+        <td style="padding:4px 8px;font-size:12px;color:var(--ink3);">${roll.purpose||''}${roll.charName?' ('+roll.charName+')':''}${roll.isPrivate?' 🔒':''}</td>
+      </tr>`;
+    }else{
+      // Multiple dice: show each + total
+      roll.rows.forEach((r,i)=>{
+        html+=`<tr>
+          <td style="padding:2px 8px;font-size:12px;color:var(--ink3);padding-left:16px;">${r.label}</td>
+          <td style="padding:2px 8px;text-align:center;font-size:14px;">${r.value}</td>
+          <td style="padding:2px 8px;font-size:11px;color:var(--ink3);">${i===0?(roll.purpose||''):''}</td>
+        </tr>`;
+      });
+      html+=`<tr style="background:rgba(196,160,96,.1);border-top:1.5px solid var(--divider);">
+        <td style="padding:4px 8px;font-weight:600;">${roll.notation} TOTAAL</td>
+        <td style="padding:4px 8px;text-align:center;font-family:'Cinzel',serif;font-size:20px;font-weight:600;color:var(--rust);">${roll.total}</td>
+        <td style="padding:4px 8px;font-size:12px;color:var(--ink3);">${roll.charName||''}${roll.isPrivate?' 🔒':''}</td>
+      </tr>`;
+    }
+    // Separator between different roll sets
+    if(ri<srdRollHistory.length-1){
+      html+=`<tr><td colspan="3" style="border-bottom:2px solid var(--divider);padding:0;"></td></tr>`;
+    }
+  });
+
+  // Grand total if multiple rolls
+  if(srdRollHistory.length>1){
+    const grandTotal=srdRollHistory.reduce((s,r)=>s+r.total,0);
+    html+=`<tr style="background:rgba(138,32,16,.08);border-top:2px solid var(--rust);">
+      <td style="padding:6px 8px;font-family:'Cinzel',serif;font-weight:600;color:var(--rust);">TOTAAL ALLE WORPEN</td>
+      <td style="padding:6px 8px;text-align:center;font-family:'Cinzel',serif;font-size:24px;font-weight:600;color:var(--rust);">${grandTotal}</td>
+      <td style="padding:6px 8px;font-size:11px;color:var(--ink3);">${srdRollHistory.length} worpen</td>
+    </tr>`;
+  }
+
+  html+=`</tbody></table>`;
+  el.innerHTML=html;
 }
 
 async function loadDiceLog(sessionId){
