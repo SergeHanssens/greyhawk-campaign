@@ -1558,7 +1558,8 @@ async function openSession(id){
   </div>`;
 
   // ===== ACTIONS (activiteiten) =====
-  let{data:actions}=await sb.from('session_actions').select('*').eq('session_id',s.id).order('created_at',{ascending:true});
+  let actions=null;
+  try{const r=await sb.from('session_actions').select('*').eq('session_id',s.id).order('created_at',{ascending:true});actions=r.data;}catch(e){}
   const activeActions=(actions||[]).filter(a=>a.status==='active');
   const completedActions=(actions||[]).filter(a=>a.status==='completed');
 
@@ -1574,7 +1575,8 @@ async function openSession(id){
 
   // Render each active action
   for(const act of activeActions){
-    const{data:actParts}=await sb.from('action_participants').select('*,characters(id,name,race,class,player_id,player_name,hp_current,hp_max,ac,thac0,avatar_url,dex)').eq('action_id',act.id);
+    let actParts=null;
+    try{const r=await sb.from('action_participants').select('*,characters(id,name,race,class,player_id,player_name,hp_current,hp_max,ac,thac0,avatar_url,dex)').eq('action_id',act.id);actParts=r.data;}catch(e){}
     const isCombat=act.action_type==='combat';
     const typeIcons={combat:'⚔️',exploration:'🗺',social:'💬',travel:'🏃',rest:'🏕',other:'📝'};
     const typeLabels={combat:'Gevecht',exploration:'Verkenning',social:'Sociaal',travel:'Rondtrekken',rest:'Rust',other:'Anders'};
@@ -1631,7 +1633,7 @@ async function openSession(id){
     }).join('');
 
     // Action log for this action
-    const{data:actLogs}=await sb.from('action_log').select('*').eq('action_id',act.id).order('created_at',{ascending:false}).limit(10);
+    let actLogs=null;try{const r=await sb.from('action_log').select('*').eq('action_id',act.id).order('created_at',{ascending:false}).limit(10);actLogs=r.data;}catch(e){}
     if(actLogs&&actLogs.length){
       html+=`<div style="margin-top:8px;border-top:1px dotted var(--divider);padding-top:6px;font-size:12px;">
         ${actLogs.map(l=>`<div style="padding:2px 0;color:var(--ink3);"><strong>${l.character_name||'?'}</strong> [${l.action_type||'?'}]: ${l.description||''} ${l.result?`→ <em style="color:var(--green2);">${l.result}</em>`:''}</div>`).join('')}
