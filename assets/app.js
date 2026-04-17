@@ -273,31 +273,84 @@ function updateClasses(){
   document.getElementById('nc-class').innerHTML=cls.map(c=>`<option>${c}</option>`).join('');
 }
 
-function openNewChar(){
+// DM: Create player account
+function openCreatePlayer(){
+  if(!CU.is_dm){toast('Alleen DM',false);return;}
+  document.querySelector('#xp-modal h2').textContent='👤 Nieuwe speler aanmaken';
+  document.getElementById('xp-body').innerHTML=`
+    <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Maak een account aan voor een speler. Geef het tijdelijke wachtwoord mondeling of privé door — de speler wordt bij eerste login verplicht een eigen wachtwoord te kiezen.</p>
+    <div class="fg"><label>Gebruikersnaam <span class="req">*</span></label><input type="text" id="cp-user" placeholder="bv. bart"></div>
+    <div class="fg"><label>Tijdelijk wachtwoord <span class="req">*</span> <small>Min. 4 tekens</small></label><input type="text" id="cp-pass" placeholder="bv. Welkom123"></div>
+    <div class="err" id="cp-err"></div>
+    <div style="text-align:right;margin-top:10px;display:flex;gap:6px;justify-content:flex-end;">
+      <button class="btn btn-ghost btn-sm" onclick="closeM('xp-modal')">Annuleren</button>
+      <button class="btn btn-primary btn-sm" onclick="submitCreatePlayer()">✓ Aanmaken</button>
+    </div>`;
+  openM('xp-modal');
+}
+
+async function submitCreatePlayer(){
+  const user=document.getElementById('cp-user').value.trim();
+  const pass=document.getElementById('cp-pass').value.trim();
+  if(!user){document.getElementById('cp-err').textContent='Gebruikersnaam is verplicht.';return;}
+  if(pass.length<4){document.getElementById('cp-err').textContent='Wachtwoord min. 4 tekens.';return;}
+  const{error}=await sb.from('players').insert({
+    username:user,password_hash:btoa(pass),
+    is_dm:false,must_change_password:true,
+    temp_password_hash:btoa(pass)
+  });
+  if(error){document.getElementById('cp-err').textContent=error.message.includes('unique')?'Naam al in gebruik.':'Fout: '+error.message;return;}
+  closeM('xp-modal');toast(`✓ Speler "${user}" aangemaakt. Tijdelijk wachtwoord: ${pass}`);
+}
+
+function updateCharTypeUI(){
+  const isNpc=document.getElementById('nc-type').value==='npc';
+  document.getElementById('nc-owner-wrap').style.display=isNpc?'none':'block';
+  // For NPC: hide race restrictions, allow free class entry
+  if(isNpc){
+    document.getElementById('nc-race').innerHTML='<option>Human</option><option>NPC</option><option>Monster</option><option>Undead</option><option>Beast</option><option>Demon</option><option>Devil</option><option>Dragon</option><option>Giant</option><option>Construct</option><option>Other</option>';
+    document.getElementById('nc-class').innerHTML='<option>NPC</option><option>Enemy</option><option>Companion</option><option>Merchant</option><option>Guard</option><option>Noble</option><option>Commoner</option><option>Other</option>';
+  }else{
+    document.getElementById('nc-race').innerHTML='<option>Human</option><option>Dwarf</option><option>Elf</option><option>Gnome</option><option>Half-Elf</option><option>Halfling</option><option>Half-Orc</option>';
+    updateClasses();
+  }
+}
+
+async function openNewChar(){
+  if(!CU.is_dm){toast('Alleen de DM kan karakters aanmaken.',false);return;}
   document.getElementById('nc-name').value='';
   document.getElementById('nc-player').value='';
+  document.getElementById('nc-type').value='player';
   document.getElementById('nc-race').value='Human';
   document.getElementById('nc-align').value='True Neutral';
   document.getElementById('nc-sex').value='Male';
   document.getElementById('nc-err').textContent='';
+  // Load players list for owner dropdown
+  const{data:players}=await sb.from('players').select('id,username').order('username');
+  document.getElementById('nc-owner').innerHTML=(players||[]).map(p=>`<option value="${p.id}">${p.username}</option>`).join('');
+  updateCharTypeUI();
   updateClasses();
   openM('nc-modal');
 }
 
 async function createChar(){
+  if(!CU.is_dm){toast('Alleen DM',false);return;}
   const name=document.getElementById('nc-name').value.trim();
   if(!name){document.getElementById('nc-err').textContent='Naam is verplicht.';return;}
+  const isNpc=document.getElementById('nc-type').value==='npc';
+  const ownerId=isNpc?CU.id:document.getElementById('nc-owner').value;
+  const race=document.getElementById('nc-race').value;
+  const cls=document.getElementById('nc-class').value;
   const{data,error}=await sb.from('characters').insert({
-    player_id:CU.id,name,
-    player_name:document.getElementById('nc-player').value,
-    race:document.getElementById('nc-race').value,
-    class:document.getElementById('nc-class').value,
+    player_id:ownerId,name,
+    player_name:isNpc?'':document.getElementById('nc-player').value,
+    race,class:cls,
     alignment:document.getElementById('nc-align').value,
     sex:document.getElementById('nc-sex').value,
     level:1,hp_current:10,hp_max:10,ac:'10',thac0:20,xp:0,is_active:true
   }).select().single();
   if(error){document.getElementById('nc-err').textContent='Fout: '+error.message;return;}
-  await logChange(data.id,'Karakter aangemaakt','system');
+  await logChange(data.id,'Karakter aangemaakt door DM','system');
   closeM('nc-modal');toast('Karakter '+name+' aangemaakt!');
   loadChars();openChar(data.id);
 }
@@ -325,18 +378,17 @@ async function loadChars(){
   if(!CU.is_dm)q=q.eq('player_id',CU.id);
   const{data}=await q.order('is_active',{ascending:false}).order('created_at');
   const grid=document.getElementById('chars-grid');
-  if(!data?.length){grid.innerHTML=`<div class="new-char-card" onclick="openNewChar()"><div class="new-char-card-inner"><span class="plus">+</span><span>Nieuw karakter</span></div></div>`;return;}
-  const playerChars=data.filter(c=>c.race!=='NPC'&&c.class!=='NPC'&&c.race!=='Monster'&&c.class!=='Enemy');
-  const npcChars=data.filter(c=>c.race==='NPC'||c.class==='NPC'||c.race==='Monster'||c.class==='Enemy');
+  const isDM=CU.is_dm;
+  const addBtn=isDM?`<div class="new-char-card" onclick="openNewChar()"><div class="new-char-card-inner"><span class="plus">+</span><span>Nieuw karakter</span></div></div>`:'';
+  if(!data?.length){grid.innerHTML=isDM?addBtn:`<div style="padding:30px;text-align:center;color:var(--ink3);font-style:italic;">Je hebt nog geen karakter. Vraag aan de DM om er een aan te maken.</div>`;return;}
+  const isNpcChar=c=>c.race==='NPC'||c.class==='NPC'||c.race==='Monster'||c.class==='Enemy'||c.class==='Companion'||c.class==='Guard'||c.class==='Merchant'||c.class==='Noble'||c.class==='Commoner';
+  const playerChars=data.filter(c=>!isNpcChar(c));
+  const npcChars=data.filter(isNpcChar);
   let html='';
-  if(playerChars.length){
-    html+=`<div style="font-family:'Cinzel',serif;font-size:12px;color:var(--gold);letter-spacing:1px;margin-bottom:8px;">SPELER KARAKTERS</div>`;
-    html+=`<div class="char-grid" style="margin-bottom:20px;">${playerChars.map(renderCharCard).join('')}<div class="new-char-card" onclick="openNewChar()"><div class="new-char-card-inner"><span class="plus">+</span><span>Nieuw karakter</span></div></div></div>`;
-  }else{
-    html+=`<div class="char-grid" style="margin-bottom:20px;"><div class="new-char-card" onclick="openNewChar()"><div class="new-char-card-inner"><span class="plus">+</span><span>Nieuw karakter</span></div></div></div>`;
-  }
-  if(npcChars.length){
-    html+=`<div style="font-family:'Cinzel',serif;font-size:12px;color:var(--rust);letter-spacing:1px;margin-bottom:8px;">NPC KARAKTERS</div>`;
+  html+=`<div style="font-family:'Cinzel',serif;font-size:12px;color:var(--gold);letter-spacing:1px;margin-bottom:8px;">⚔ SPELER KARAKTERS (${playerChars.length})</div>`;
+  html+=`<div class="char-grid" style="margin-bottom:24px;">${playerChars.map(renderCharCard).join('')}${addBtn}</div>`;
+  if(npcChars.length||isDM){
+    html+=`<div style="font-family:'Cinzel',serif;font-size:12px;color:var(--rust);letter-spacing:1px;margin-bottom:8px;">🏰 NPC's & MONSTERS (${npcChars.length})</div>`;
     html+=`<div class="char-grid">${npcChars.map(renderCharCard).join('')}</div>`;
   }
   grid.innerHTML=html;

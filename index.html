@@ -28,8 +28,12 @@
     <div id="le" class="err"></div>
     <br>
     <button class="btn btn-primary btn-block" onclick="doLogin()">Betreed de Campagne</button>
-    <br><br>
-    <button class="btn btn-ghost btn-sm" onclick="openM('reg-modal')">Nieuw account aanmaken</button>
+    <div style="margin-top:16px;text-align:center;font-size:12px;color:var(--ink3);font-style:italic;">
+      Geen account? Vraag aan de DM om er een voor je aan te maken.
+    </div>
+    <div style="margin-top:10px;text-align:center;">
+      <button class="btn btn-ghost btn-sm" onclick="openM('reg-modal')" style="font-size:10px;opacity:.5;">DM: eerste account aanmaken</button>
+    </div>
   </div>
 </div>
 
@@ -53,12 +57,23 @@
   <button class="btn btn-primary" onclick="doRegister()">Account aanmaken</button>
 </div></div>
 
-<!-- New Character -->
+<!-- New Character (DM only) -->
 <div class="modal-overlay" id="nc-modal">
-<div class="modal"><h2>Nieuw Karakter <button class="modal-close" onclick="closeM('nc-modal')">✕</button></h2>
+<div class="modal"><h2>Nieuw Karakter (DM) <button class="modal-close" onclick="closeM('nc-modal')">✕</button></h2>
+  <div class="fg-row col2">
+    <div class="fg"><label>Type <span class="req">*</span></label>
+      <select id="nc-type" onchange="updateCharTypeUI()">
+        <option value="player">🧙 Speler-karakter</option>
+        <option value="npc">🏰 NPC (monster, vijand, compaan, ...)</option>
+      </select>
+    </div>
+    <div class="fg" id="nc-owner-wrap"><label>Eigenaar (speler) <span class="req">*</span></label>
+      <select id="nc-owner"></select>
+    </div>
+  </div>
   <div class="fg-row col2">
     <div class="fg"><label>Karakternaam <span class="req">*</span></label><input type="text" id="nc-name"></div>
-    <div class="fg"><label>Jouw naam (speler)</label><input type="text" id="nc-player"></div>
+    <div class="fg"><label>Spelernaam <small>(optioneel)</small></label><input type="text" id="nc-player"></div>
   </div>
   <div class="fg-row col2">
     <div class="fg"><label>Ras <span class="req">*</span> <button class="help-btn" onclick="showHelp('ras')">?</button></label>
@@ -193,9 +208,10 @@
   <div class="page active" id="page-characters">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
       <h2 style="font-family:'Cinzel',serif;font-size:22px;color:var(--gold2);">Mijn Karakters</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-ghost btn-sm" onclick="openScanModal()" title="Foto van handgeschreven karakterblad inlezen">📷 Scan karakterblad</button>
-        <button class="btn btn-primary btn-sm" onclick="openNewChar()">+ Nieuw Karakter</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" class="dm-only" style="display:none;">
+        <button class="btn btn-ghost btn-sm dm-only" style="display:none;" onclick="openCreatePlayer()">👤 Nieuwe speler</button>
+        <button class="btn btn-ghost btn-sm dm-only" style="display:none;" onclick="openScanModal()" title="Foto van handgeschreven karakterblad inlezen">📷 Scan karakterblad</button>
+        <button class="btn btn-primary btn-sm dm-only" style="display:none;" onclick="openNewChar()">+ Nieuw Karakter</button>
       </div>
     </div>
     <div class="char-grid" id="chars-grid"><div style="padding:40px;text-align:center;color:var(--gold);font-style:italic;">Laden...</div></div>
