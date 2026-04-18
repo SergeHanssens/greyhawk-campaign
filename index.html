@@ -211,6 +211,7 @@
       <div class="dm-only" style="display:none;">
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="btn btn-ghost btn-sm" onclick="openCreatePlayer()">👤 Nieuwe speler</button>
+          <button class="btn btn-ghost btn-sm" onclick="openCharImport()">📥 Importeren</button>
           <button class="btn btn-primary btn-sm" onclick="openNewChar()">+ Nieuw Karakter</button>
         </div>
       </div>
@@ -284,36 +285,29 @@
       </div>
     </div>
 
-    <!-- DM EIGEN KAART UPLOAD -->
+    <!-- DM KAART UPLOAD -->
     <div class="card dm-only" style="display:none;margin-bottom:16px;">
-      <div class="card-header">🗺️ DM Kaart Beheer</div>
-      <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Upload een eigen kaart (max 5MB). Wordt als base64 in de database opgeslagen en getoond voor alle spelers hieronder.</p>
-      <div class="fg" style="margin-bottom:10px;">
-        <label>Mythic Table link aanpassen</label>
+      <div class="card-header">🗺️ Kaart uploaden (DM)</div>
+      <div class="fg-row col2">
+        <div class="fg"><label>Naam kaart <span class="req">*</span></label><input type="text" id="map-upload-name" placeholder="bv. Grot van de Draak"></div>
+        <div class="fg"><label>Beschrijving</label><input type="text" id="map-upload-desc" placeholder="optioneel"></div>
+      </div>
+      <div class="fg"><label>Bestand (JPG/PNG, max 5MB)</label><input type="file" id="map-upload-file" accept="image/*"></div>
+      <div class="fg"><label>Of externe URL</label><input type="text" id="map-upload-url" placeholder="https://..."></div>
+      <button class="btn btn-primary btn-sm" onclick="uploadMap()">📤 Kaart uploaden</button>
+      <div style="margin-top:10px;border-top:1px solid var(--divider);padding-top:10px;">
+        <label>Mythic Table link</label>
         <div style="display:flex;gap:6px;">
           <input type="text" id="vtt-url" placeholder="https://fp.mythictable.com/play/..." style="flex:1;">
           <button class="btn btn-ghost btn-sm" onclick="saveVttUrl()">💾</button>
         </div>
       </div>
-      <div class="fg" style="margin-bottom:10px;">
-        <label>Eigen kaart uploaden (JPG/PNG, max 5MB)</label>
-        <input type="file" id="dm-map-upload" accept="image/*" onchange="uploadDMMap(this)">
-      </div>
-      <div class="fg">
-        <label>Of kaart-URL plakken</label>
-        <div style="display:flex;gap:6px;">
-          <input type="text" id="dm-map-url" placeholder="https://..." style="flex:1;">
-          <button class="btn btn-ghost btn-sm" onclick="setDMMapUrl()">💾</button>
-        </div>
-      </div>
     </div>
 
-    <!-- CUSTOM DM MAP DISPLAY -->
+    <!-- MAPS LIST -->
     <div class="card" style="margin-bottom:16px;">
-      <div class="card-header">🗺️ Campagne Kaart</div>
-      <div id="dm-map-display" style="border:2px solid var(--card-border);border-radius:6px;background:#1a1a10;min-height:200px;overflow:auto;text-align:center;">
-        <div style="padding:40px;color:var(--gold);font-style:italic;">Nog geen kaart geüpload door de DM.</div>
-      </div>
+      <div class="card-header">🗺️ Campagne Kaarten</div>
+      <div id="maps-list"><div style="padding:20px;text-align:center;color:var(--ink3);font-style:italic;">Laden...</div></div>
     </div>
 
     <!-- GREYHAWK REFERENCE MAPS -->

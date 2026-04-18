@@ -178,7 +178,7 @@ function showPage(p){
   if(p==='dm')loadDMDash();
   if(p==='sessions')loadSessions();
   if(p==='tools')calcThac0();
-  if(p==='map')loadMapSettings();
+  if(p==='map'){loadMapSettings();loadMaps();}
 }
 function efKey(e,el){if(e.key==='Enter'){e.preventDefault();el.blur();}}
 
@@ -274,6 +274,155 @@ function updateClasses(){
 }
 
 // DM: Create player account
+// =====================================================================
+// CHARACTER IMPORT (CSV/JSON → karakter + wapens + items + skills)
+// =====================================================================
+function openCharImport(){
+  if(!CU.is_dm){toast('Alleen DM',false);return;}
+  document.querySelector('#xp-modal h2').textContent='📥 Karakter importeren';
+  document.getElementById('xp-body').innerHTML=`
+    <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Importeer een karakter uit CSV of JSON. Het karakter + wapens + items + skills worden in één keer aangemaakt. Onbekende items/wapens/spreuken worden gedetecteerd.</p>
+    <div class="fg"><label>Formaat</label>
+      <select id="ci-format">
+        <option value="json">JSON (aanbevolen — volledig karakter-pakket)</option>
+        <option value="csv">CSV (karakter-rij)</option>
+      </select>
+    </div>
+    <div class="fg"><label>Eigenaar (speler)</label>
+      <select id="ci-owner"></select>
+    </div>
+    <div class="fg"><label>Bestand uploaden</label>
+      <input type="file" id="ci-file" accept=".json,.csv,.txt">
+    </div>
+    <div class="fg"><label>Of plak inhoud</label>
+      <textarea id="ci-text" rows="8" style="width:100%;font-family:monospace;font-size:11px;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;" placeholder='JSON voorbeeld:
+{
+  "name": "Blorf Foghorn",
+  "race": "Dwarf",
+  "class": "Fighter",
+  ...
+  "weapons": [{"weapon_name": "Battle Axe", ...}],
+  "items": [{"item_name": "Plate Mail", ...}],
+  "skills": [{"skill_name": "Riding", ...}]
+}'></textarea>
+    </div>
+    <div id="ci-status" style="font-size:13px;color:var(--ink3);"></div>
+    <div class="err" id="ci-err"></div>
+    <div style="text-align:right;margin-top:10px;display:flex;gap:6px;justify-content:flex-end;">
+      <button class="btn btn-ghost btn-sm" onclick="closeM('xp-modal')">Annuleren</button>
+      <button class="btn btn-primary btn-sm" onclick="doCharImport()">📥 Importeren</button>
+    </div>`;
+  // Load players
+  sb.from('players').select('id,username').order('username').then(({data})=>{
+    document.getElementById('ci-owner').innerHTML=(data||[]).map(p=>`<option value="${p.id}">${p.username}</option>`).join('');
+  });
+  openM('xp-modal');
+}
+
+async function doCharImport(){
+  const fmt=document.getElementById('ci-format').value;
+  const ownerId=document.getElementById('ci-owner').value;
+  let text=document.getElementById('ci-text').value;
+  const f=document.getElementById('ci-file').files?.[0];
+  if(f&&!text)text=await f.text();
+  if(!text){document.getElementById('ci-err').textContent='Geen data.';return;}
+
+  let charData,weapons=[],items=[],skills=[],spells=[];
+  try{
+    if(fmt==='json'){
+      const pkg=JSON.parse(text);
+      // Support both flat {name,race,...,weapons:[]} and wrapped {character:{},weapons:[]}
+      charData=pkg.character||pkg;
+      weapons=pkg.weapons||charData.weapons||[];
+      items=pkg.items||charData.items||[];
+      skills=pkg.skills||charData.skills||[];
+      spells=pkg.spells||charData.spells||[];
+      // Remove sub-arrays from charData
+      delete charData.weapons;delete charData.items;delete charData.skills;delete charData.spells;
+    }else{
+      // CSV: parse first data row
+      const rows=parseCSV(text);
+      if(rows.length<2)throw new Error('CSV moet header + minstens 1 rij hebben.');
+      const header=rows[0].map(h=>h.trim());
+      const vals=rows[1];
+      charData={};header.forEach((h,i)=>{if(vals[i]!==undefined&&vals[i]!=='')charData[h]=vals[i];});
+    }
+  }catch(e){document.getElementById('ci-err').textContent='Parse fout: '+e.message;return;}
+
+  if(!charData.name){document.getElementById('ci-err').textContent='Veld "name" is verplicht.';return;}
+  document.getElementById('ci-status').textContent='Karakter aanmaken...';
+
+  // Map fields to DB columns
+  const numFields=['level','hp_current','hp_max','thac0','xp','xp_next','str','dex','int','wis','con','cha','comeliness','sv_pd','sv_rsw','sv_pp','sv_bw','sv_spell','sv_poison','pp','gp','sp','cp'];
+  const charObj={player_id:ownerId,is_active:true};
+  const allowedFields=['name','player_name','race','class','alignment','sex','level','hp_current','hp_max','ac','thac0','xp','xp_next','str','str_mod','dex','dex_mod','int','int_mod','wis','wis_mod','con','con_mod','cha','cha_mod','comeliness','sv_pd','sv_rsw','sv_pp','sv_bw','sv_spell','sv_poison','pp','gp','sp','cp','notes'];
+  allowedFields.forEach(k=>{
+    if(charData[k]!==undefined&&charData[k]!==''){
+      charObj[k]=numFields.includes(k)?parseInt(charData[k])||0:charData[k];
+    }
+  });
+
+  const{data:newChar,error}=await sb.from('characters').insert(charObj).select().single();
+  if(error){document.getElementById('ci-err').textContent='Fout: '+error.message;return;}
+  const cid=newChar.id;
+
+  // Insert weapons
+  for(const w of weapons){
+    if(w.weapon_name)await sb.from('character_weapons').insert({character_id:cid,weapon_name:w.weapon_name,attacks_per_round:w.attacks_per_round||null,damage:w.damage||null,speed_factor:parseInt(w.speed_factor)||null,notes:w.notes||null});
+  }
+  // Insert items
+  for(const i of items){
+    if(i.item_name)await sb.from('character_items').insert({character_id:cid,item_name:i.item_name,category:i.category||'item',quantity:parseInt(i.quantity)||1,notes:i.notes||null});
+  }
+  // Insert skills
+  for(const s of skills){
+    if(s.skill_name)await sb.from('character_skills').insert({character_id:cid,skill_name:s.skill_name,skill_type:s.skill_type||'Non-Weapon',stat_modifier:s.stat_modifier||null,notes:s.notes||null});
+  }
+  // Insert spells
+  for(const s of spells){
+    if(s.spell_name)await sb.from('character_spells').insert({character_id:cid,spell_name:s.spell_name,spell_level:parseInt(s.spell_level)||1,spell_class:s.spell_class||null,prepared:!!s.prepared,notes:s.notes||null});
+  }
+
+  // Check for unknown items/weapons/spells in encyclopedie
+  const unknowns=[];
+  for(const w of weapons){
+    if(!w.weapon_name)continue;
+    const{data}=await sb.from('weapons').select('id').ilike('name',w.weapon_name.replace(/\+.*/,'').trim()).limit(1);
+    if(!data?.length)unknowns.push({type:'wapen',name:w.weapon_name});
+  }
+  for(const i of items){
+    if(!i.item_name)continue;
+    const{data}=await sb.from('items').select('id').ilike('name',i.item_name.replace(/\+.*/,'').trim()).limit(1);
+    if(!data?.length)unknowns.push({type:'item',name:i.item_name});
+  }
+  for(const s of spells){
+    if(!s.spell_name)continue;
+    const{data}=await sb.from('spells').select('id').ilike('name',s.spell_name).limit(1);
+    if(!data?.length)unknowns.push({type:'spreuk',name:s.spell_name});
+  }
+
+  // Log import
+  try{await sb.from('character_imports').insert({character_id:cid,character_name:charData.name,imported_by:CU.id,unknown_items:unknowns});}catch(e){}
+  await logChange(cid,'Karakter geïmporteerd','system');
+
+  // Show result
+  let resultHtml=`<div style="color:var(--green2);font-weight:600;margin-bottom:8px;">✓ ${charData.name} aangemaakt!</div>
+    <div style="font-size:13px;">Wapens: ${weapons.length} · Items: ${items.length} · Skills: ${skills.length} · Spreuken: ${spells.length}</div>`;
+  if(unknowns.length){
+    resultHtml+=`<div style="margin-top:10px;padding:10px;background:rgba(196,160,96,.15);border:1px solid var(--gold);border-radius:4px;">
+      <div style="font-family:'Cinzel',serif;font-size:12px;color:var(--rust);margin-bottom:6px;">⚠ ${unknowns.length} onbekende items in encyclopedie:</div>
+      <ul style="font-size:12px;margin:0 0 0 16px;">
+        ${unknowns.map(u=>`<li><strong>[${u.type}]</strong> ${u.name} — <em style="color:var(--ink3);">niet gevonden in database, overweeg toevoegen via Encyclopedie</em></li>`).join('')}
+      </ul>
+    </div>`;
+  }
+  resultHtml+=`<div style="text-align:right;margin-top:10px;"><button class="btn btn-primary btn-sm" onclick="closeM('xp-modal');openChar('${cid}')">Karakter openen</button></div>`;
+  document.getElementById('ci-status').textContent='';
+  document.getElementById('ci-err').textContent='';
+  document.getElementById('xp-body').innerHTML=resultHtml;
+  loadChars();
+}
+
 function openCreatePlayer(){
   if(!CU.is_dm){toast('Alleen DM',false);return;}
   document.querySelector('#xp-modal h2').textContent='👤 Nieuwe speler aanmaken';
@@ -3263,6 +3412,144 @@ function startChatPoll(sessionId){
   chatPollTimer=setInterval(()=>loadChat(sessionId),5000); // elke 5 sec
 }
 function stopChatPoll(){if(chatPollTimer){clearInterval(chatPollTimer);chatPollTimer=null;}}
+
+// =====================================================================
+// MAPS MANAGEMENT (upload, per-character visibility, zoom)
+// =====================================================================
+async function loadMaps(){
+  const isDM=CU.is_dm;
+  let maps=[];
+  try{const{data}=await sb.from('maps').select('*').order('created_at',{ascending:false});maps=data||[];}catch(e){}
+
+  // Filter for players: only maps they can see
+  if(!isDM){
+    const{data:myChars}=await sb.from('characters').select('id').eq('player_id',CU.id);
+    const myCharIds=(myChars||[]).map(c=>c.id);
+    maps=maps.filter(m=>{
+      if(m.visibility==='all')return true;
+      if(m.visibility==='selected'&&m.visible_to){
+        return m.visible_to.some(cid=>myCharIds.includes(cid));
+      }
+      return false;
+    });
+  }
+
+  const el=document.getElementById('maps-list');
+  if(!el)return;
+  if(!maps.length){el.innerHTML=`<div style="padding:16px;text-align:center;color:var(--ink3);font-style:italic;">${isDM?'Nog geen kaarten. Upload er een hieronder.':'Geen kaarten beschikbaar.'}</div>`;return;}
+
+  el.innerHTML=maps.map(m=>{
+    const visLabel={dm_only:'🔒 Alleen DM',all:'🌍 Iedereen',selected:'👥 Geselecteerde karakters'}[m.visibility]||m.visibility;
+    const imgSrc=m.image_data||m.image_url||'';
+    return`<div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div>
+          <strong style="font-family:'Cinzel',serif;font-size:14px;color:var(--rust);">${m.name}</strong>
+          ${m.description?`<div style="font-size:12px;color:var(--ink3);">${m.description}</div>`:''}
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <span style="font-size:10px;color:var(--ink3);">${visLabel}</span>
+          ${isDM?`<button class="btn btn-ghost btn-xs" onclick="editMapVisibility('${m.id}','${m.name.replace(/'/g,"\\'")}')">👁</button>
+          <button class="btn btn-danger btn-xs" onclick="deleteMap('${m.id}')">✕</button>`:''}
+        </div>
+      </div>
+      ${imgSrc?`<div style="border:2px solid var(--card-border);border-radius:6px;overflow:hidden;cursor:zoom-in;position:relative;" onclick="zoomMap('${m.id}')">
+        <img id="map-img-${m.id}" src="${imgSrc}" alt="${m.name}" style="width:100%;display:block;max-height:400px;object-fit:contain;">
+      </div>`:'<div style="padding:20px;text-align:center;color:var(--ink3);">Geen afbeelding</div>'}
+    </div>`;
+  }).join('');
+}
+
+function zoomMap(mapId){
+  const img=document.getElementById('map-img-'+mapId);
+  if(!img)return;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Kaart</title>
+  <style>body{margin:0;background:#1a1208;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;overflow:auto;}
+  img{max-width:none;cursor:zoom-in;transition:transform .2s;}
+  .zoomed{transform:scale(2);cursor:zoom-out;transform-origin:top left;}
+  .controls{position:fixed;top:10px;right:10px;display:flex;gap:6px;z-index:10;}
+  .controls button{padding:8px 14px;background:#fdf5e0;border:1px solid #c4a060;border-radius:4px;cursor:pointer;font-size:14px;}</style></head><body>
+  <div class="controls">
+    <button onclick="zoom(0.5)">−</button>
+    <button onclick="zoom(2)">+</button>
+    <button onclick="zoom(1)">100%</button>
+  </div>
+  <img id="zimg" src="${img.src}" onclick="this.classList.toggle('zoomed')">
+  <script>
+  let scale=1;
+  function zoom(factor){if(factor<1.5)scale=factor;else scale*=factor;
+    document.getElementById('zimg').style.transform='scale('+scale+')';
+    document.getElementById('zimg').style.transformOrigin='top left';}
+  </script></body></html>`);
+  w.document.close();
+}
+
+async function uploadMap(){
+  if(!CU.is_dm)return;
+  const name=document.getElementById('map-upload-name').value.trim();
+  if(!name){toast('Geef de kaart een naam',false);return;}
+  const file=document.getElementById('map-upload-file').files?.[0];
+  const url=document.getElementById('map-upload-url').value.trim();
+  let imgData=null,imgUrl=null;
+  if(file){
+    if(file.size>5*1024*1024){toast('Max 5MB',false);return;}
+    imgData=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(file);});
+  }else if(url){
+    imgUrl=url;
+  }else{toast('Upload een bestand of plak een URL',false);return;}
+
+  const desc=document.getElementById('map-upload-desc').value.trim();
+  await sb.from('maps').insert({name,description:desc||null,image_data:imgData,image_url:imgUrl,visibility:'dm_only',uploaded_by:CU.id});
+  toast('✓ Kaart geüpload');
+  document.getElementById('map-upload-name').value='';
+  document.getElementById('map-upload-desc').value='';
+  document.getElementById('map-upload-file').value='';
+  document.getElementById('map-upload-url').value='';
+  loadMaps();
+}
+
+async function editMapVisibility(mapId,mapName){
+  if(!CU.is_dm)return;
+  const{data:map}=await sb.from('maps').select('*').eq('id',mapId).single();
+  if(!map)return;
+  const{data:chars}=await sb.from('characters').select('id,name,race,class,player_name').order('name');
+  const currentVisible=new Set(map.visible_to||[]);
+
+  document.querySelector('#xp-modal h2').textContent='👁 Zichtbaarheid — '+mapName;
+  document.getElementById('xp-body').innerHTML=`
+    <div class="fg"><label>Wie mag deze kaart zien?</label>
+      <select id="mv-vis" onchange="document.getElementById('mv-chars').style.display=this.value==='selected'?'block':'none'">
+        <option value="dm_only" ${map.visibility==='dm_only'?'selected':''}>🔒 Alleen DM</option>
+        <option value="all" ${map.visibility==='all'?'selected':''}>🌍 Iedereen</option>
+        <option value="selected" ${map.visibility==='selected'?'selected':''}>👥 Geselecteerde karakters</option>
+      </select>
+    </div>
+    <div id="mv-chars" style="display:${map.visibility==='selected'?'block':'none'};max-height:200px;overflow-y:auto;border:1px solid var(--card-border);border-radius:4px;padding:6px;margin-bottom:10px;">
+      ${(chars||[]).map(c=>`<label style="display:flex;gap:8px;align-items:center;padding:4px;cursor:pointer;">
+        <input type="checkbox" class="mv-char-cb" value="${c.id}" ${currentVisible.has(c.id)?'checked':''} style="width:16px;height:16px;">
+        <span>${c.name} <span style="color:var(--ink3);font-size:11px;">${c.player_name||'NPC'}</span></span>
+      </label>`).join('')}
+    </div>
+    <div style="text-align:right;display:flex;gap:6px;justify-content:flex-end;">
+      <button class="btn btn-ghost btn-sm" onclick="closeM('xp-modal')">Annuleren</button>
+      <button class="btn btn-primary btn-sm" onclick="saveMapVisibility('${mapId}')">✓ Opslaan</button>
+    </div>`;
+  openM('xp-modal');
+}
+
+async function saveMapVisibility(mapId){
+  const vis=document.getElementById('mv-vis').value;
+  const selected=[...document.querySelectorAll('.mv-char-cb:checked')].map(el=>el.value);
+  await sb.from('maps').update({visibility:vis,visible_to:vis==='selected'?selected:null}).eq('id',mapId);
+  closeM('xp-modal');toast('✓ Zichtbaarheid bijgewerkt');loadMaps();
+}
+
+async function deleteMap(mapId){
+  if(!confirm('Kaart permanent verwijderen?'))return;
+  await sb.from('maps').delete().eq('id',mapId);
+  toast('✓ Kaart verwijderd');loadMaps();
+}
 
 // MAP / VTT MANAGEMENT
 // =====================================================================

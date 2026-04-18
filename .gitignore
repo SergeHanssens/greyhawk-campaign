@@ -27,3 +27,6 @@ yarn.lock
 # Claude Code workspace
 .claude/
 *.csv
+
+# Campaign-specifieke data (niet op GitHub, alleen in Supabase)
+frostbraid/
