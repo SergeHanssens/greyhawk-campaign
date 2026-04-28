@@ -187,7 +187,8 @@
     <div class="topbar-right">
       <span class="topbar-user" id="t-user"></span>
       <span class="dm-badge" id="t-dm" style="display:none">Dungeon Master</span>
-      <button class="btn btn-ghost btn-sm dm-only" id="t-dmreset" style="display:none" onclick="openDMReset()">🔑 Reset</button>
+      <span class="dm-badge" id="t-admin" style="display:none;background:linear-gradient(135deg,#1a4a2a,#2a7a3a);color:#c0f0c0;border-color:#4a8a4a;">Admin</span>
+      <button class="btn btn-ghost btn-sm admin-or-dm" id="t-dmreset" style="display:none" onclick="openDMReset()">🔑 Reset</button>
       <button class="btn btn-ghost btn-sm" onclick="openM('cpw-modal')">🔑 Wachtwoord</button>
       <button class="btn btn-ghost btn-sm" onclick="showFeatureOverview()">★ Features</button>
       <button class="btn btn-ghost btn-sm" onclick="showAppHelp()">? Help</button>
@@ -208,12 +209,11 @@
   <div class="page active" id="page-characters">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
       <h2 style="font-family:'Cinzel',serif;font-size:22px;color:var(--gold2);margin:0;">Mijn Karakters</h2>
-      <div class="dm-only" style="display:none;">
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="btn btn-ghost btn-sm" onclick="openCreatePlayer()">👤 Nieuwe speler</button>
-          <button class="btn btn-ghost btn-sm" onclick="openCharImport()">📥 Importeren</button>
-          <button class="btn btn-primary btn-sm" onclick="openNewChar()">+ Nieuw Karakter</button>
-        </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm admin-or-dm" style="display:none;" onclick="openCreatePlayer()">👤 Nieuwe speler</button>
+        <button class="btn btn-ghost btn-sm admin-or-dm" style="display:none;" onclick="openCharImport()">📥 Importeren</button>
+        <button class="btn btn-ghost btn-sm dm-only" style="display:none;" onclick="openScanModal()">📷 Scan</button>
+        <button class="btn btn-primary btn-sm dm-only" style="display:none;" onclick="openNewChar()">+ Nieuw Karakter</button>
       </div>
     </div>
     <div id="chars-grid"><div style="padding:40px;text-align:center;color:var(--gold);font-style:italic;">Laden...</div></div>

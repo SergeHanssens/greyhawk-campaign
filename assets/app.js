@@ -202,6 +202,16 @@ async function doLogin(){
     document.getElementById('t-dmreset').style.display='inline';
     document.querySelectorAll('.dm-only').forEach(e=>e.style.display='block');
   }
+  if(CU.is_admin){
+    // Admin krijgt content-management rechten zonder DM-privileges
+    const adminBadge=document.getElementById('t-admin');
+    if(adminBadge)adminBadge.style.display='inline';
+    document.querySelectorAll('.admin-or-dm').forEach(e=>e.style.display='block');
+  }
+  if(CU.is_dm||CU.is_admin){
+    document.getElementById('t-dmreset').style.display='inline';
+    document.querySelectorAll('.admin-or-dm').forEach(e=>e.style.display='block');
+  }
   loadChars();
   if(data.must_change_password){
     document.getElementById('cpw-title').textContent='Verplicht: Wachtwoord Wijzigen';
@@ -278,7 +288,7 @@ function updateClasses(){
 // CHARACTER IMPORT (CSV/JSON → karakter + wapens + items + skills)
 // =====================================================================
 function openCharImport(){
-  if(!CU.is_dm){toast('Alleen DM',false);return;}
+  if(!CU.is_dm&&!CU.is_admin){toast('Alleen DM/Admin',false);return;}
   document.querySelector('#xp-modal h2').textContent='📥 Karakter importeren';
   document.getElementById('xp-body').innerHTML=`
     <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Importeer een karakter uit CSV of JSON. Het karakter + wapens + items + skills worden in één keer aangemaakt. Onbekende items/wapens/spreuken worden gedetecteerd.</p>
@@ -433,7 +443,7 @@ async function _doCharImportInner(){
 }
 
 function openCreatePlayer(){
-  if(!CU.is_dm){toast('Alleen DM',false);return;}
+  if(!CU.is_dm&&!CU.is_admin){toast('Alleen DM/Admin',false);return;}
   document.querySelector('#xp-modal h2').textContent='👤 Nieuwe speler aanmaken';
   document.getElementById('xp-body').innerHTML=`
     <p style="font-size:13px;color:var(--ink3);margin-bottom:10px;">Maak een account aan voor een speler. Geef het tijdelijke wachtwoord mondeling of privé door — de speler wordt bij eerste login verplicht een eigen wachtwoord te kiezen.</p>
@@ -1125,7 +1135,7 @@ async function loadEnc(table,event){
     ts.innerHTML='<option value="">Alle types</option>'+(types||[]).map(t=>`<option>${t.name}</option>`).join('');
   }else{fb.style.display='none';}
   renderEnc(encAllData);
-  if(CU?.is_dm){document.getElementById('enc-add-card').style.display='block';renderEncAddForm(table);}
+  if(CU?.is_dm||CU?.is_admin){document.getElementById('enc-add-card').style.display='block';renderEncAddForm(table);}
 }
 
 function filterEnc(){
@@ -1157,7 +1167,7 @@ function renderEnc(data){
   if(!data.length){document.getElementById('enc-content').innerHTML='<div style="padding:30px;text-align:center;color:var(--ink3);font-style:italic;">Geen resultaten gevonden.</div>';return;}
   const cols={weapons:['name','weapon_type','damage','speed_factor','type','description'],spells:['name','level','class','range','duration','description'],items:['name','category','cost','description'],races:['name','description'],classes:['name','hit_die','primary_stat','description'],skills:['name','type','base_stat','description'],monsters:['name','ac','hp_dice','thac0','damage','alignment','description'],deities:['name','title','alignment','domains','symbol','description']};
   const c=cols[encCurrentTable]||['name','description'];
-  const isDM=CU?.is_dm;
+  const isDM=CU?.is_dm||CU?.is_admin;
   encRowCache={};data.forEach(r=>{encRowCache[r.id]=r;});
   document.getElementById('enc-content').innerHTML=`<div style="overflow-x:auto;"><table class="db-table">
     <thead><tr><th style="width:50px;">Foto</th>${c.map(col=>`<th>${col}</th>`).join('')}${isDM?'<th>Actie</th>':''}</tr></thead>
@@ -1566,7 +1576,7 @@ const CSV_FIELDS={
 const CSV_NUMERIC={spells:['level'],weapons:['speed_factor'],items:['weight'],monsters:['ac','thac0','move']};
 
 function openCsvImport(){
-  if(!CU?.is_dm){toast('Alleen voor DM',false);return;}
+  if(!CU?.is_dm&&!CU?.is_admin){toast('Alleen DM/Admin',false);return;}
   const t=encCurrentTable||'weapons';
   document.getElementById('csv-table-name').textContent=t;
   document.getElementById('csv-table-name2').textContent=t;
@@ -2992,7 +3002,7 @@ function exportSessionPdf(p){
 // UNIVERSELE IMPORT (CSV / JSON / MD)
 // =====================================================================
 function openImportModal(table){
-  if(!CU?.is_dm){toast('Alleen voor DM',false);return;}
+  if(!CU?.is_dm&&!CU?.is_admin){toast('Alleen DM/Admin',false);return;}
   document.getElementById('imp-table-name').textContent=table;
   document.getElementById('imp-file').value='';
   document.getElementById('imp-text').value='';
