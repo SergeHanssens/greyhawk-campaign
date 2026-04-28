@@ -319,7 +319,16 @@ function openCharImport(){
   openM('xp-modal');
 }
 
+let _ciInProgress=false;
 async function doCharImport(){
+  if(_ciInProgress){toast('Import al bezig...',false);return;}
+  _ciInProgress=true;
+  // Disable button to prevent double-clicks
+  const btns=document.querySelectorAll('#xp-body .btn-primary');
+  btns.forEach(b=>{b.disabled=true;b.style.opacity='.5';b.textContent='Bezig...';});
+  try{await _doCharImportInner();}finally{_ciInProgress=false;}
+}
+async function _doCharImportInner(){
   const fmt=document.getElementById('ci-format').value;
   const ownerId=document.getElementById('ci-owner').value;
   let text=document.getElementById('ci-text').value;
