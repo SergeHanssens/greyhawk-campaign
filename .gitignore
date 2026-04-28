@@ -30,3 +30,5 @@ yarn.lock
 
 # Campaign-specifieke data (niet op GitHub, alleen in Supabase)
 frostbraid/
+*.xlsx
+*.xls
