@@ -904,18 +904,33 @@ function askDeleteChar(id,name){
 async function confirmDeleteChar(){
   if(!pendingDelCharId)return;
   const id=pendingDelCharId;
-  await Promise.all([
+  // Clean up ALL foreign key references first
+  const cleanups=[
     sb.from('character_weapons').delete().eq('character_id',id),
     sb.from('character_items').delete().eq('character_id',id),
     sb.from('character_skills').delete().eq('character_id',id),
     sb.from('character_spells').delete().eq('character_id',id),
     sb.from('character_log').delete().eq('character_id',id),
-    sb.from('character_opens').delete().eq('character_id',id)
-  ]);
-  await sb.from('characters').delete().eq('id',id);
+    sb.from('character_opens').delete().eq('character_id',id),
+  ];
+  // Optional tables — try each, ignore if not present
+  try{cleanups.push(sb.from('session_participants').delete().eq('character_id',id));}catch(e){}
+  try{cleanups.push(sb.from('session_logs').delete().eq('character_id',id));}catch(e){}
+  try{cleanups.push(sb.from('action_participants').delete().eq('character_id',id));}catch(e){}
+  try{cleanups.push(sb.from('action_log').delete().eq('character_id',id));}catch(e){}
+  try{cleanups.push(sb.from('combat_actions').delete().eq('character_id',id));}catch(e){}
+  try{cleanups.push(sb.from('character_imports').delete().eq('character_id',id));}catch(e){}
+  await Promise.all(cleanups);
+  // Now delete the character itself
+  const{error}=await sb.from('characters').delete().eq('id',id);
+  if(error){
+    toast('Verwijderen mislukt: '+error.message,false);
+    console.error('Delete error:',error);
+    return;
+  }
   pendingDelCharId=null;
   closeM('delchar-modal');
-  toast('Karakter verwijderd');
+  toast('✓ Karakter verwijderd');
   showPage('characters');loadChars();
 }
 async function toggleActive(id,current){
