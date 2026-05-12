@@ -699,6 +699,103 @@ async function showFullLog(){
 }
 
 // RENDER SHEET
+// AD&D 1e Spell slots per class per character level (Magic-User/Illusionist/Cleric/Druid)
+// Index: [level-1] → array of slots per spell-level (index 0 = level 1 spells, index 8 = level 9)
+const SPELL_SLOTS={
+  'Magic-User':[
+    [1],[2],[2,1],[3,2],[4,2,1],[4,2,2],[4,3,2,1],[4,3,3,2],[4,3,3,2,1],
+    [4,4,3,2,2],[4,4,4,3,3],[4,4,4,4,4,1],[5,5,5,4,4,2],[5,5,5,4,4,2,1],
+    [5,5,5,4,4,3,2,1],[5,5,5,5,5,3,2,1],[5,5,5,5,5,4,3,2,1],[5,5,5,5,5,4,3,3,2],
+    [5,5,5,5,5,4,4,3,3],[5,5,5,5,5,5,4,4,4],[5,5,5,5,5,5,5,4,4],[5,5,5,5,5,5,5,5,5]
+  ],
+  'Illusionist':[
+    [1],[2],[2,1],[3,2],[4,2,1],[4,3,1],[4,3,2],[4,4,3],[5,4,3,1],
+    [5,4,3,2],[5,4,4,3,1],[5,5,4,3,2],[5,5,4,4,3,1],[6,5,5,4,3,2],
+    [6,6,5,4,3,2,1],[6,6,5,5,4,3,2],[6,6,6,5,4,3,2,1],[6,6,6,6,5,4,3,2],
+    [6,6,6,6,5,4,4,3],[6,6,6,6,6,5,4,3],[6,6,6,6,6,5,4,4],[6,6,6,6,6,6,5,4]
+  ],
+  'Cleric':[
+    [1],[2],[2,1],[3,2],[3,3,1],[3,3,2],[3,3,2,1],[3,3,3,2],[4,4,3,2,1],
+    [4,4,3,3,2],[5,4,4,3,2,1],[6,5,5,3,2,2],[6,6,6,4,2,2],[6,6,6,5,3,3],
+    [7,7,7,5,4,3,1],[7,7,7,6,5,3,2],[8,7,7,6,5,3,2,1],[8,8,8,7,5,4,2,1],
+    [9,9,9,7,6,4,2,1],[9,9,9,8,6,5,3,2]
+  ],
+  'Druid':[
+    [2],[2,1],[3,2],[4,2,1],[4,3,2],[4,3,2,1],[4,4,3,1],[4,4,3,2],[5,4,3,2,1],
+    [5,4,4,3,2],[5,5,4,3,2,1],[6,5,4,3,2,2],[6,5,5,4,2,2],[6,6,5,4,3,3],
+    [7,6,5,5,4,3]
+  ]
+};
+
+function renderSpellSlots(c,spells){
+  // Find which class to use (handle custom class names like "Scholar Invoker (Mage)")
+  const classLower=(c.class||'').toLowerCase();
+  let cls=null;
+  if(classLower.includes('illusionist'))cls='Illusionist';
+  else if(classLower.includes('magic-user')||classLower.includes('mage')||classLower.includes('wizard')||classLower.includes('invoker')||classLower.includes('sorcerer')||classLower.includes('necromancer')||classLower.includes('enchanter')||classLower.includes('diviner')||classLower.includes('abjurer')||classLower.includes('conjurer')||classLower.includes('transmuter'))cls='Magic-User';
+  else if(classLower.includes('druid'))cls='Druid';
+  else if(classLower.includes('cleric')||classLower.includes('priest'))cls='Cleric';
+  if(!cls)return '';
+  const table=SPELL_SLOTS[cls];
+  const lvl=Math.min(parseInt(c.level)||1,table.length);
+  const slots=table[lvl-1]||[];
+  // Count prepared per level
+  const preparedPerLvl={};
+  spells.forEach(s=>{if(s.prepared){const l=s.spell_level||1;preparedPerLvl[l]=(preparedPerLvl[l]||0)+1;}});
+  // Known per level (total in spellbook)
+  const knownPerLvl={};
+  spells.forEach(s=>{const l=s.spell_level||1;knownPerLvl[l]=(knownPerLvl[l]||0)+1;});
+
+  let html=`<div style="margin-bottom:10px;background:rgba(196,160,96,.08);border:1px solid var(--card-border);border-radius:4px;padding:8px;">
+    <div style="font-family:'Cinzel',serif;font-size:10px;color:var(--ink3);letter-spacing:1px;margin-bottom:6px;">SPELL SLOTS — ${cls} Level ${lvl}</div>
+    <table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead><tr>
+        <th style="text-align:left;padding:2px 4px;color:var(--ink3);font-weight:600;">Spell Level</th>
+        ${slots.map((_,i)=>`<th style="text-align:center;padding:2px 4px;color:var(--ink3);font-weight:600;">${i+1}</th>`).join('')}
+      </tr></thead>
+      <tbody>
+        <tr><td style="padding:2px 4px;">Max per dag</td>${slots.map(n=>`<td style="text-align:center;padding:2px 4px;font-weight:600;">${n}</td>`).join('')}</tr>
+        <tr><td style="padding:2px 4px;">Bereid vandaag</td>${slots.map((n,i)=>{
+          const prep=preparedPerLvl[i+1]||0;
+          const color=prep>n?'var(--rust2)':prep===n?'var(--green2)':'var(--ink)';
+          return `<td style="text-align:center;padding:2px 4px;color:${color};font-weight:600;">${prep}</td>`;
+        }).join('')}</tr>
+        <tr><td style="padding:2px 4px;color:var(--ink3);">Gekend</td>${slots.map((n,i)=>{
+          const k=knownPerLvl[i+1]||0;
+          return `<td style="text-align:center;padding:2px 4px;color:var(--ink3);">${k}</td>`;
+        }).join('')}</tr>
+      </tbody>
+    </table>
+    <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-style:italic;">⚠ Rood = teveel bereid · ✓ Groen = volle slots gebruikt</div>
+  </div>`;
+  return html;
+}
+
+// Look up an entry in the encyclopedia and show its details in the info modal
+async function lookupEncyclopedia(table,name){
+  if(!name){toast('Geen naam',false);return;}
+  // Strip magical bonuses like "+1/+2" and parentheses for fuzzy match
+  const cleanName=name.replace(/\s*\+\d+(\/\+?\d+)?/g,'').replace(/\s*\([^)]*\)/g,'').trim();
+  let{data}=await sb.from(table).select('*').ilike('name',cleanName).limit(1);
+  if(!data?.length){
+    // Try partial match
+    const r=await sb.from(table).select('*').ilike('name','%'+cleanName+'%').limit(1);
+    data=r.data;
+  }
+  if(!data?.length){
+    toast(`"${name}" niet gevonden in encyclopedie`,false);
+    return;
+  }
+  const r=data[0];
+  document.getElementById('info-title').textContent=r.name||name;
+  const meta=Object.keys(r).filter(k=>!['id','name','description','image_url','source'].includes(k)&&r[k]!=null&&r[k]!=='').map(k=>`<strong>${k}:</strong> ${r[k]}`).join(' · ');
+  document.getElementById('info-body').innerHTML=`
+    ${r.image_url?`<div style="text-align:center;margin-bottom:12px;"><img src="${r.image_url}" alt="${r.name||''}" style="max-width:100%;max-height:300px;border-radius:6px;border:1px solid var(--card-border);"></div>`:''}
+    ${meta?`<div style="font-size:12px;color:var(--ink3);margin-bottom:10px;padding:6px 8px;background:rgba(196,160,96,.08);border-radius:3px;">${meta}</div>`:''}
+    <p style="white-space:pre-wrap;line-height:1.6;">${(r.description||'').replace(/</g,'&lt;')}</p>`;
+  openM('info-modal');
+}
+
 function renderSheet(c,weapons,items,skills,spells){
   const canEdit=CU.is_dm||CC.player_id===CU.id;
   const isDM=CU.is_dm;
@@ -843,7 +940,7 @@ function renderSheet(c,weapons,items,skills,spells){
       ${weapons.length?weapons.map(w=>`<div class="list-item">
         <div class="list-bullet">⚔</div>
         <div class="list-content">
-          <div class="list-name">${w.weapon_name}</div>
+          <div class="list-name"><span style="cursor:pointer;text-decoration:underline dotted;color:var(--blue2);" onclick="lookupEncyclopedia('weapons','${(w.weapon_name||'').replace(/'/g,"\\'")}')" title="Klik voor encyclopedie">${w.weapon_name}</span></div>
           <div class="list-meta">${w.attacks_per_round||'1/1'} aanvallen · SF ${w.speed_factor||'—'} · Dmg: ${w.damage||'—'}</div>
           ${w.notes?`<div class="list-note">${w.notes}</div>`:''}
         </div>
@@ -856,11 +953,12 @@ function renderSheet(c,weapons,items,skills,spells){
   ${hasSpells?`<!-- SPELLS -->
   <div class="card" style="margin-bottom:16px;">
     <div class="card-header">Spreuken ${h('spells')}</div>
+    ${renderSpellSlots(c,spells)}
     ${spells.length?`
       ${spells.filter(s=>s.prepared).length?`<div style="margin-bottom:8px;"><div style="font-family:'Cinzel',serif;font-size:10px;color:var(--green2);letter-spacing:.5px;margin-bottom:6px;">BEREID VANDAAG:</div>
         ${spells.filter(s=>s.prepared).map(s=>`<div class="list-item">
           <div class="list-bullet">✨</div>
-          <div class="list-content"><div class="list-name">${s.spell_name} <span class="tag tag-prepared">Lv.${s.spell_level}</span></div>
+          <div class="list-content"><div class="list-name"><span style="cursor:pointer;text-decoration:underline dotted;color:var(--blue2);" onclick="lookupEncyclopedia('spells','${(s.spell_name||'').replace(/'/g,"\\'")}')" title="Klik voor encyclopedie">${s.spell_name}</span> <span class="tag tag-prepared">Lv.${s.spell_level}</span>${canEdit?` <button class="btn btn-ghost btn-xs" onclick="toggleSpellPrepared(${s.id},false)" title="Terug naar spellbook">↩</button>`:''}</div>
           ${s.notes?`<div class="list-note">${s.notes.substring(0,80)}</div>`:''}
           </div>
           ${canEdit?`<button class="del-btn" onclick="delSpell(${s.id})">✕</button>`:''}
@@ -869,7 +967,7 @@ function renderSheet(c,weapons,items,skills,spells){
       ${spells.filter(s=>!s.prepared).length?`<div><div style="font-family:'Cinzel',serif;font-size:10px;color:var(--ink3);letter-spacing:.5px;margin-bottom:6px;">SPELLBOOK / GEWETEN:</div>
         ${spells.filter(s=>!s.prepared).map(s=>`<div class="list-item">
           <div class="list-bullet">📖</div>
-          <div class="list-content"><div class="list-name">${s.spell_name} <span class="tag tag-known">Lv.${s.spell_level}</span></div></div>
+          <div class="list-content"><div class="list-name"><span style="cursor:pointer;text-decoration:underline dotted;color:var(--blue2);" onclick="lookupEncyclopedia('spells','${(s.spell_name||'').replace(/'/g,"\\'")}')" title="Klik voor encyclopedie">${s.spell_name}</span> <span class="tag tag-known">Lv.${s.spell_level}</span>${canEdit?` <button class="btn btn-ghost btn-xs" onclick="toggleSpellPrepared(${s.id},true)" title="Memoriseer voor vandaag">+ Bereid</button>`:''}</div></div>
           ${canEdit?`<button class="del-btn" onclick="delSpell(${s.id})">✕</button>`:''}
         </div>`).join('')}
       </div>`:''}
@@ -885,7 +983,7 @@ function renderSheet(c,weapons,items,skills,spells){
         ${skills.length?skills.map(s=>`<div class="list-item">
           <div class="list-bullet">◆</div>
           <div class="list-content">
-            <div class="list-name">${s.skill_name} ${s.skill_type==='Weapon'?`<span class="tag tag-weapon">Wapen</span>`:`<span class="tag tag-nonweapon">Niet-wapen</span>`}</div>
+            <div class="list-name"><span style="cursor:pointer;text-decoration:underline dotted;color:var(--blue2);" onclick="lookupEncyclopedia('skills','${(s.skill_name||'').replace(/'/g,"\\'")}')" title="Klik voor encyclopedie">${s.skill_name}</span> ${s.skill_type==='Weapon'?`<span class="tag tag-weapon">Wapen</span>`:`<span class="tag tag-nonweapon">Niet-wapen</span>`}</div>
             ${s.stat_modifier?`<div class="list-meta">${s.stat_modifier}</div>`:''}
             ${s.notes?`<div class="list-note">${s.notes}</div>`:''}
           </div>
@@ -900,7 +998,7 @@ function renderSheet(c,weapons,items,skills,spells){
         ${items.length?items.map(i=>`<div class="list-item">
           <div class="list-bullet">◆</div>
           <div class="list-content">
-            <div class="list-name">${i.item_name}${i.quantity>1?` <span style="color:var(--ink3);font-size:12px;">(${i.quantity}×)</span>`:''}</div>
+            <div class="list-name"><span style="cursor:pointer;text-decoration:underline dotted;color:var(--blue2);" onclick="lookupEncyclopedia('items','${(i.item_name||'').replace(/'/g,"\\'")}')" title="Klik voor encyclopedie">${i.item_name}</span>${i.quantity>1?` <span style="color:var(--ink3);font-size:12px;">(${i.quantity}×)</span>`:''}</div>
             ${i.category?`<div class="list-meta">${i.category}</div>`:''}
             ${i.notes?`<div class="list-note">${i.notes}</div>`:''}
           </div>
@@ -1183,6 +1281,10 @@ async function delWeapon(id){await sb.from('character_weapons').delete().eq('id'
 async function delItem(id){await sb.from('character_items').delete().eq('id',id);await logChange(CC.id,'Item verwijderd','item');openChar(CC.id);}
 async function delSkill(id){await sb.from('character_skills').delete().eq('id',id);await logChange(CC.id,'Vaardigheid verwijderd','skill');openChar(CC.id);}
 async function delSpell(id){await sb.from('character_spells').delete().eq('id',id);await logChange(CC.id,'Spreuk verwijderd','spell');openChar(CC.id);}
+async function toggleSpellPrepared(id,prepared){
+  await sb.from('character_spells').update({prepared:!!prepared}).eq('id',id);
+  openChar(CC.id);
+}
 
 // ENCYCLOPEDIA
 let encCurrentTable='weapons';
