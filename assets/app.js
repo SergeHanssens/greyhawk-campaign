@@ -183,10 +183,48 @@ function showPage(p){
 function efKey(e,el){if(e.key==='Enter'){e.preventDefault();el.blur();}}
 
 // AUTH
+// Check if Supabase database is paused/sleeping and wake it up
+async function wakeUpDatabase(){
+  const errEl=document.getElementById('le');
+  const wakeMsg=document.getElementById('le-wake');
+  // Try a lightweight query with timeout
+  const attempt=async()=>{
+    const ctrl=new AbortController();
+    const timeoutId=setTimeout(()=>ctrl.abort(),8000);
+    try{
+      const{error}=await sb.from('players').select('id').limit(1).abortSignal(ctrl.signal);
+      clearTimeout(timeoutId);
+      return!error;
+    }catch(e){clearTimeout(timeoutId);return false;}
+  };
+  let ok=await attempt();
+  if(ok)return true;
+  // Show wake-up message
+  if(wakeMsg){
+    wakeMsg.style.display='block';
+    wakeMsg.innerHTML='⏳ <strong>Database wordt geactiveerd...</strong><br>Supabase paust de gratis database na inactiviteit. Even geduld (15-60 sec) — de eerste poging om in te loggen activeert hem automatisch. Niet vernieuwen.';
+  }
+  // Retry every 5 seconds, up to 60 seconds total
+  for(let i=0;i<12;i++){
+    await new Promise(r=>setTimeout(r,5000));
+    if(wakeMsg)wakeMsg.innerHTML=`⏳ <strong>Database wordt geactiveerd...</strong><br>Poging ${i+2}/12 — even geduld...`;
+    ok=await attempt();
+    if(ok){
+      if(wakeMsg){wakeMsg.style.background='rgba(42,122,42,.1)';wakeMsg.innerHTML='✓ <strong>Database actief!</strong> Probeer nu in te loggen.';setTimeout(()=>{wakeMsg.style.display='none';wakeMsg.style.background='';},3000);}
+      return true;
+    }
+  }
+  if(wakeMsg)wakeMsg.innerHTML='✕ <strong>Database reageert niet.</strong> Wacht 1 minuut en probeer opnieuw, of contacteer de admin.';
+  return false;
+}
+
 async function doLogin(){
   const u=document.getElementById('lu').value.trim();
   const p=document.getElementById('lp').value;
   if(!u||!p){document.getElementById('le').textContent='Vul alle velden in.';return;}
+  // First wake up DB if needed
+  const awake=await wakeUpDatabase();
+  if(!awake){document.getElementById('le').textContent='Database niet bereikbaar. Probeer opnieuw.';return;}
   const{data,error}=await sb.from('players').select('*').eq('username',u).single();
   if(error||!data){document.getElementById('le').textContent='Gebruiker niet gevonden.';return;}
   if(data.password_hash!==btoa(p)&&(!data.temp_password_hash||data.temp_password_hash!==btoa(p))){
@@ -369,21 +407,47 @@ async function _doCharImportInner(){
   }catch(e){document.getElementById('ci-err').textContent='Parse fout: '+e.message;return;}
 
   if(!charData.name){document.getElementById('ci-err').textContent='Veld "name" is verplicht.';return;}
-  document.getElementById('ci-status').textContent='Karakter aanmaken...';
+
+  // Check for existing character with same name + owner
+  const{data:existing}=await sb.from('characters').select('id,name').eq('player_id',ownerId).ilike('name',charData.name.trim());
+  let mode='create';
+  let existingId=null;
+  if(existing&&existing.length){
+    existingId=existing[0].id;
+    const choice=confirm(`Er bestaat al een karakter "${existing[0].name}" voor deze speler.\n\nOK = VERVANGEN (bestaande karakter wordt overschreven, wapens/items/skills/spreuken worden vervangen)\nAnnuleren = nieuw karakter aanmaken (duplicaat)`);
+    mode=choice?'update':'create';
+  }
+
+  document.getElementById('ci-status').textContent=mode==='update'?'Bestaand karakter bijwerken...':'Karakter aanmaken...';
 
   // Map fields to DB columns
   const numFields=['level','hp_current','hp_max','thac0','xp','xp_next','str','dex','int','wis','con','cha','comeliness','sv_pd','sv_rsw','sv_pp','sv_bw','sv_spell','sv_poison','pp','gp','sp','cp'];
   const charObj={player_id:ownerId,is_active:true};
-  const allowedFields=['name','player_name','race','class','alignment','sex','level','hp_current','hp_max','ac','thac0','xp','xp_next','str','str_mod','dex','dex_mod','int','int_mod','wis','wis_mod','con','con_mod','cha','cha_mod','comeliness','sv_pd','sv_rsw','sv_pp','sv_bw','sv_spell','sv_poison','pp','gp','sp','cp','notes'];
+  const allowedFields=['name','player_name','race','class','alignment','sex','level','hp_current','hp_max','ac','thac0','xp','xp_next','str','str_mod','dex','dex_mod','int','int_mod','wis','wis_mod','con','con_mod','cha','cha_mod','comeliness','sv_pd','sv_rsw','sv_pp','sv_bw','sv_spell','sv_poison','pp','gp','sp','cp','notes','avatar_url'];
   allowedFields.forEach(k=>{
-    if(charData[k]!==undefined&&charData[k]!==''){
+    if(charData[k]!==undefined&&charData[k]!==''&&charData[k]!==null){
       charObj[k]=numFields.includes(k)?parseInt(charData[k])||0:charData[k];
     }
   });
 
-  const{data:newChar,error}=await sb.from('characters').insert(charObj).select().single();
-  if(error){document.getElementById('ci-err').textContent='Fout: '+error.message;return;}
-  const cid=newChar.id;
+  let cid;
+  if(mode==='update'){
+    // Update existing + clear all sub-records
+    const{error:upErr}=await sb.from('characters').update(charObj).eq('id',existingId);
+    if(upErr){document.getElementById('ci-err').textContent='Update fout: '+upErr.message;return;}
+    cid=existingId;
+    // Clear existing sub-records
+    await Promise.all([
+      sb.from('character_weapons').delete().eq('character_id',cid),
+      sb.from('character_items').delete().eq('character_id',cid),
+      sb.from('character_skills').delete().eq('character_id',cid),
+      sb.from('character_spells').delete().eq('character_id',cid),
+    ]);
+  }else{
+    const{data:newChar,error}=await sb.from('characters').insert(charObj).select().single();
+    if(error){document.getElementById('ci-err').textContent='Fout: '+error.message;return;}
+    cid=newChar.id;
+  }
 
   // Insert weapons
   for(const w of weapons){
@@ -425,7 +489,7 @@ async function _doCharImportInner(){
   await logChange(cid,'Karakter geïmporteerd','system');
 
   // Show result
-  let resultHtml=`<div style="color:var(--green2);font-weight:600;margin-bottom:8px;">✓ ${charData.name} aangemaakt!</div>
+  let resultHtml=`<div style="color:var(--green2);font-weight:600;margin-bottom:8px;">✓ ${charData.name} ${mode==='update'?'bijgewerkt':'aangemaakt'}!</div>
     <div style="font-size:13px;">Wapens: ${weapons.length} · Items: ${items.length} · Skills: ${skills.length} · Spreuken: ${spells.length}</div>`;
   if(unknowns.length){
     resultHtml+=`<div style="margin-top:10px;padding:10px;background:rgba(196,160,96,.15);border:1px solid var(--gold);border-radius:4px;">
