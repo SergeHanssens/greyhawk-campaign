@@ -702,7 +702,11 @@ async function showFullLog(){
 function renderSheet(c,weapons,items,skills,spells){
   const canEdit=CU.is_dm||CC.player_id===CU.id;
   const isDM=CU.is_dm;
-  const hasSpells=['Magic-User','Illusionist','Cleric','Druid','Bard','Ranger','Paladin'].includes(c.class);
+  // Show spells section if: (a) class is a known caster, (b) class name contains a caster keyword, OR (c) character actually has spells in DB
+  const casterClasses=['Magic-User','Illusionist','Cleric','Druid','Bard','Ranger','Paladin'];
+  const casterKeywords=['mage','wizard','invoker','illusionist','cleric','druid','priest','sorcerer','necromancer','enchanter','diviner','conjurer','abjurer','transmuter'];
+  const classLower=(c.class||'').toLowerCase();
+  const hasSpells=casterClasses.includes(c.class)||casterKeywords.some(k=>classLower.includes(k))||(spells&&spells.length>0);
   const pct=c.hp_max?Math.round((c.hp_current/c.hp_max)*100):100;
   const hpClass=pct>50?'hp-good':pct>25?'hp-med':'hp-low';
   const initials=(c.name||'?').substring(0,2).toUpperCase();
