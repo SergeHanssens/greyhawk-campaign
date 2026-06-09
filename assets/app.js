@@ -998,11 +998,17 @@ function renderSheet(c,weapons,items,skills,spells){
         ${items.length?items.map(i=>`<div class="list-item">
           <div class="list-bullet">◆</div>
           <div class="list-content">
-            <div class="list-name"><span style="cursor:pointer;text-decoration:underline dotted;color:var(--blue2);" onclick="lookupEncyclopedia('items','${(i.item_name||'').replace(/'/g,"\\'")}')" title="Klik voor encyclopedie">${i.item_name}</span>${i.quantity>1?` <span style="color:var(--ink3);font-size:12px;">(${i.quantity}×)</span>`:''}</div>
+            <div class="list-name"><span style="cursor:pointer;text-decoration:underline dotted;color:var(--blue2);" onclick="lookupEncyclopedia('items','${(i.item_name||'').replace(/'/g,"\\'")}')" title="Klik voor encyclopedie">${i.item_name}</span></div>
             ${i.category?`<div class="list-meta">${i.category}</div>`:''}
             ${i.notes?`<div class="list-note">${i.notes}</div>`:''}
+            ${canEdit?`<div style="display:flex;align-items:center;gap:4px;margin-top:4px;">
+              <span style="font-size:10px;color:var(--ink3);">Aantal:</span>
+              <button class="btn btn-ghost btn-xs" onclick="adjustItemQty(${i.id},${i.quantity||1},-1)" title="-1">−</button>
+              <input type="number" min="0" value="${i.quantity||1}" style="width:50px;text-align:center;font-size:12px;padding:2px 4px;border:1px solid var(--card-border);border-radius:3px;" onchange="setItemQty(${i.id},this.value)">
+              <button class="btn btn-ghost btn-xs" onclick="adjustItemQty(${i.id},${i.quantity||1},1)" title="+1">+</button>
+            </div>`:i.quantity>1?`<div style="font-size:11px;color:var(--ink3);margin-top:2px;">Aantal: ${i.quantity}×</div>`:''}
           </div>
-          ${canEdit?`<button class="del-btn" onclick="delItem(${i.id})">✕</button>`:''}
+          ${canEdit?`<button class="del-btn" onclick="delItem(${i.id})" title="Item volledig verwijderen">✕</button>`:''}
         </div>`).join(''):`<div style="padding:12px 0;font-style:italic;color:var(--ink3);font-size:13px;">Nog geen items.</div>`}
       </div>
       ${canEdit?`<div class="add-btn" onclick="openAdd('items')">+ item</div>`:''}
@@ -1279,6 +1285,23 @@ async function submitAdd(table){
 
 async function delWeapon(id){await sb.from('character_weapons').delete().eq('id',id);await logChange(CC.id,'Wapen verwijderd','weapon');openChar(CC.id);}
 async function delItem(id){await sb.from('character_items').delete().eq('id',id);await logChange(CC.id,'Item verwijderd','item');openChar(CC.id);}
+async function setItemQty(id,val){
+  const q=parseInt(val);
+  if(isNaN(q)||q<0){toast('Ongeldig aantal',false);return;}
+  if(q===0){
+    // Auto-delete if quantity becomes 0
+    await sb.from('character_items').delete().eq('id',id);
+    await logChange(CC.id,'Item op 0 → verwijderd','item');
+  }else{
+    await sb.from('character_items').update({quantity:q}).eq('id',id);
+    await logChange(CC.id,`Item aantal: ${q}`,'item');
+  }
+  openChar(CC.id);
+}
+async function adjustItemQty(id,current,delta){
+  const newQty=Math.max(0,(parseInt(current)||1)+delta);
+  await setItemQty(id,newQty);
+}
 async function delSkill(id){await sb.from('character_skills').delete().eq('id',id);await logChange(CC.id,'Vaardigheid verwijderd','skill');openChar(CC.id);}
 async function delSpell(id){await sb.from('character_spells').delete().eq('id',id);await logChange(CC.id,'Spreuk verwijderd','spell');openChar(CC.id);}
 async function toggleSpellPrepared(id,prepared){
