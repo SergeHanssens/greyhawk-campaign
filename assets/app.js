@@ -124,6 +124,8 @@ Druid: natuur-gebaseerde goddelijke spreuken
 Illusionist: specialisatie in illusies
 
 Bereid = spreuk die je die dag kan gebruiken
+×N = zelfde spreuk N keer gememoriseerd (kost N slots)
+− na elke cast, + om nog een keer te memoriseren
 Spellbook = je kent de spreuk maar hebt hem vandaag niet bereid
 
 Eenmaal gebruikt: weg tot volgende rust!
@@ -462,8 +464,9 @@ async function _doCharImportInner(){
     if(s.skill_name)await sb.from('character_skills').insert({character_id:cid,skill_name:s.skill_name,skill_type:s.skill_type||'Non-Weapon',stat_modifier:s.stat_modifier||null,notes:s.notes||null});
   }
   // Insert spells
+  const withCount=await hasPrepCount();
   for(const s of spells){
-    if(s.spell_name)await sb.from('character_spells').insert({character_id:cid,spell_name:s.spell_name,spell_level:parseInt(s.spell_level)||1,spell_class:s.spell_class||null,prepared:!!s.prepared,notes:s.notes||null});
+    if(s.spell_name)await sb.from('character_spells').insert(spellRow(cid,s,withCount));
   }
 
   // Check for unknown items/weapons/spells in encyclopedie
@@ -727,6 +730,30 @@ const SPELL_SLOTS={
   ]
 };
 
+// Aantal keer dat een spreuk vandaag gememoriseerd is (0 = enkel in spellbook).
+// 'prepared' blijft de schakelaar; 'prepared_count' is de teller (sql/17_spell_prepared_count.sql).
+function spellCount(s){return s&&s.prepared?Math.max(1,parseInt(s.prepared_count)||1):0;}
+// Bestaat de kolom prepared_count al in Supabase? (zolang sql/17 niet gedraaid is: nee)
+let _hasPrepCount=null;
+async function hasPrepCount(){
+  if(_hasPrepCount!==null)return _hasPrepCount;
+  try{
+    const{error}=await sb.from('character_spells').select('prepared_count').limit(1);
+    if(!error)_hasPrepCount=true;
+    else if(error.code==='42703'||error.code==='PGRST204'||/prepared_count/.test(error.message||''))_hasPrepCount=false;
+    else return false;
+  }catch(e){return false;}
+  return _hasPrepCount;
+}
+// Rij voor character_spells op basis van import/formulier-data
+function spellRow(cid,s,withCount){
+  const pc=parseInt(s.prepared_count)||0;
+  const n=pc>0&&s.prepared!==false?pc:(s.prepared?1:0);
+  const r={character_id:cid,spell_name:s.spell_name,spell_level:parseInt(s.spell_level)||1,spell_class:s.spell_class||null,prepared:n>0,notes:s.notes||null};
+  if(withCount)r.prepared_count=n;
+  return r;
+}
+
 function renderSpellSlots(c,spells){
   // Find which class to use (handle custom class names like "Scholar Invoker (Mage)")
   const classLower=(c.class||'').toLowerCase();
@@ -741,7 +768,7 @@ function renderSpellSlots(c,spells){
   const slots=table[lvl-1]||[];
   // Count prepared per level
   const preparedPerLvl={};
-  spells.forEach(s=>{if(s.prepared){const l=s.spell_level||1;preparedPerLvl[l]=(preparedPerLvl[l]||0)+1;}});
+  spells.forEach(s=>{const n=spellCount(s);if(n){const l=s.spell_level||1;preparedPerLvl[l]=(preparedPerLvl[l]||0)+n;}});
   // Known per level (total in spellbook)
   const knownPerLvl={};
   spells.forEach(s=>{const l=s.spell_level||1;knownPerLvl[l]=(knownPerLvl[l]||0)+1;});
@@ -766,7 +793,7 @@ function renderSpellSlots(c,spells){
         }).join('')}</tr>
       </tbody>
     </table>
-    <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-style:italic;">⚠ Rood = teveel bereid · ✓ Groen = volle slots gebruikt</div>
+    <div style="font-size:10px;color:var(--ink3);margin-top:4px;font-style:italic;">⚠ Rood = teveel bereid · ✓ Groen = volle slots gebruikt · ×N = aantal keer gememoriseerd (telt N slots)</div>
   </div>`;
   return html;
 }
@@ -958,7 +985,7 @@ function renderSheet(c,weapons,items,skills,spells){
       ${spells.filter(s=>s.prepared).length?`<div style="margin-bottom:8px;"><div style="font-family:'Cinzel',serif;font-size:10px;color:var(--green2);letter-spacing:.5px;margin-bottom:6px;">BEREID VANDAAG:</div>
         ${spells.filter(s=>s.prepared).map(s=>`<div class="list-item">
           <div class="list-bullet">✨</div>
-          <div class="list-content"><div class="list-name"><span style="cursor:pointer;text-decoration:underline dotted;color:var(--blue2);" onclick="lookupEncyclopedia('spells','${(s.spell_name||'').replace(/'/g,"\\'")}')" title="Klik voor encyclopedie">${s.spell_name}</span> <span class="tag tag-prepared">Lv.${s.spell_level}</span>${canEdit?` <button class="btn btn-ghost btn-xs" onclick="toggleSpellPrepared(${s.id},false)" title="Terug naar spellbook">↩</button>`:''}</div>
+          <div class="list-content"><div class="list-name"><span style="cursor:pointer;text-decoration:underline dotted;color:var(--blue2);" onclick="lookupEncyclopedia('spells','${(s.spell_name||'').replace(/'/g,"\\'")}')" title="Klik voor encyclopedie">${s.spell_name}</span> <span class="tag tag-prepared">Lv.${s.spell_level}</span> ${canEdit?`<span class="spell-count"><button class="btn btn-ghost btn-xs" onclick="adjustSpellCount(${s.id},${spellCount(s)},-1)" title="Eén keer gecast / één keer minder bereid">−</button><span class="spell-count-n" title="Aantal keer gememoriseerd">×${spellCount(s)}</span><button class="btn btn-ghost btn-xs" onclick="adjustSpellCount(${s.id},${spellCount(s)},1)" title="Nog een keer memoriseren">+</button></span> <button class="btn btn-ghost btn-xs" onclick="toggleSpellPrepared(${s.id},false)" title="Terug naar spellbook">↩</button>`:(spellCount(s)>1?`<span class="spell-count-n" title="Aantal keer gememoriseerd">×${spellCount(s)}</span>`:'')}</div>
           ${s.notes?`<div class="list-note">${s.notes.substring(0,80)}</div>`:''}
           </div>
           ${canEdit?`<button class="del-btn" onclick="delSpell(${s.id})">✕</button>`:''}
@@ -1246,7 +1273,8 @@ function renderAddForm(table){
         <div class="fg"><label>Naam spreuk <span class="req">*</span></label><input type="text" id="af-spname"></div>
         <div class="fg"><label>Niveau</label><select id="af-splevel"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select></div>
         <div class="fg"><label>Klasse</label><select id="af-spclass"><option>Magic-User</option><option>Cleric</option><option>Druid</option><option>Illusionist</option><option>Ranger</option><option>Paladin</option></select></div>
-        <div class="fg"><label>Status</label><select id="af-spprep"><option value="1">Bereid vandaag</option><option value="0">Spellbook/geweten</option></select></div>
+        <div class="fg"><label>Status</label><select id="af-spprep" onchange="document.getElementById('af-spcount').disabled=this.value!=='1'"><option value="1">Bereid vandaag</option><option value="0">Spellbook/geweten</option></select></div>
+        <div class="fg"><label>Aantal keer bereid <small>elke keer = 1 slot</small></label><input type="number" id="af-spcount" value="1" min="1" max="20"></div>
         <div class="fg" style="grid-column:1/-1;"><label>Notities / beschrijving</label><textarea id="af-spnotes" rows="2" style="width:100%;padding:8px;border:1.5px solid var(--card-border);border-radius:4px;font-family:'Crimson Text',serif;font-size:13px;resize:none;"></textarea></div>
       </div>
       <button class="btn btn-primary btn-sm" onclick="submitAdd('spells')">+ Toevoegen aan karakter</button>
@@ -1277,8 +1305,13 @@ async function submitAdd(table){
   }else if(table==='spells'){
     const name=document.getElementById('af-spname').value.trim();
     if(!name){toast('Naam is verplicht',false);return;}
-    await sb.from('character_spells').insert({character_id:CC.id,spell_name:name,spell_level:parseInt(document.getElementById('af-splevel').value)||1,spell_class:document.getElementById('af-spclass').value,prepared:document.getElementById('af-spprep').value==='1',notes:document.getElementById('af-spnotes').value});
-    await logChange(CC.id,'Spreuk toegevoegd: '+name,'spell');
+    const isPrep=document.getElementById('af-spprep').value==='1';
+    const spCount=isPrep?Math.max(1,parseInt(document.getElementById('af-spcount').value)||1):0;
+    const withCount=await hasPrepCount();
+    if(spCount>1&&!withCount){toast('Meerdere keren bereiden kan pas na sql/17_spell_prepared_count.sql in Supabase',false);return;}
+    const{error:spErr}=await sb.from('character_spells').insert(spellRow(CC.id,{spell_name:name,spell_level:document.getElementById('af-splevel').value,spell_class:document.getElementById('af-spclass').value,prepared:isPrep,prepared_count:spCount,notes:document.getElementById('af-spnotes').value},withCount));
+    if(spErr){toast('Fout: '+spErr.message,false);return;}
+    await logChange(CC.id,'Spreuk toegevoegd: '+name+(spCount>1?` (×${spCount} bereid)`:''),'spell');
   }
   closeM('add-modal');openChar(CC.id);
 }
@@ -1304,9 +1337,22 @@ async function adjustItemQty(id,current,delta){
 }
 async function delSkill(id){await sb.from('character_skills').delete().eq('id',id);await logChange(CC.id,'Vaardigheid verwijderd','skill');openChar(CC.id);}
 async function delSpell(id){await sb.from('character_spells').delete().eq('id',id);await logChange(CC.id,'Spreuk verwijderd','spell');openChar(CC.id);}
-async function toggleSpellPrepared(id,prepared){
-  await sb.from('character_spells').update({prepared:!!prepared}).eq('id',id);
+// Zet hoe vaak een spreuk vandaag gememoriseerd is. 0 = terug naar spellbook.
+async function setSpellCount(id,n){
+  n=Math.max(0,Math.min(99,parseInt(n)||0));
+  const withCount=await hasPrepCount();
+  if(n>1&&!withCount){toast('Meerdere keren bereiden kan pas na sql/17_spell_prepared_count.sql in Supabase',false);return;}
+  const upd={prepared:n>0};
+  if(withCount)upd.prepared_count=n;
+  const{error}=await sb.from('character_spells').update(upd).eq('id',id);
+  if(error){toast('Fout: '+error.message,false);return;}
   openChar(CC.id);
+}
+async function adjustSpellCount(id,current,delta){
+  await setSpellCount(id,(parseInt(current)||0)+delta);
+}
+async function toggleSpellPrepared(id,prepared){
+  await setSpellCount(id,prepared?1:0);
 }
 
 // ENCYCLOPEDIA
@@ -1743,10 +1789,11 @@ async function confirmScanResult(){
   // Insert subtables
   const cid=data.id;
   const tasks=[];
+  const withCount=await hasPrepCount();
   (c.weapons||[]).forEach(w=>{if(w.weapon_name)tasks.push(sb.from('character_weapons').insert({character_id:cid,weapon_name:w.weapon_name,attacks_per_round:w.attacks_per_round||'1/1',damage:w.damage||null,speed_factor:parseInt(w.speed_factor)||7,notes:w.notes||null}));});
   (c.items||[]).forEach(i=>{if(i.item_name)tasks.push(sb.from('character_items').insert({character_id:cid,item_name:i.item_name,category:i.category||'item',quantity:parseInt(i.quantity)||1,notes:i.notes||null}));});
   (c.skills||[]).forEach(s=>{if(s.skill_name)tasks.push(sb.from('character_skills').insert({character_id:cid,skill_name:s.skill_name,skill_type:s.skill_type||'Non-Weapon',stat_modifier:s.stat_modifier||null,notes:s.notes||null}));});
-  (c.spells||[]).forEach(s=>{if(s.spell_name)tasks.push(sb.from('character_spells').insert({character_id:cid,spell_name:s.spell_name,spell_level:parseInt(s.spell_level)||1,spell_class:s.spell_class||null,prepared:!!s.prepared,notes:s.notes||null}));});
+  (c.spells||[]).forEach(s=>{if(s.spell_name)tasks.push(sb.from('character_spells').insert(spellRow(cid,s,withCount)));});
   await Promise.all(tasks);
   await logChange(cid,'Karakter aangemaakt via scan','system');
   closeM('scan-result-modal');toast('✓ Karakter '+name+' aangemaakt!');
@@ -3003,7 +3050,7 @@ function characterToMd(p){
   if(p.weapons.length){m+=`## Wapens\n`;p.weapons.forEach(w=>{m+=`- **${w.weapon_name}** — ${w.damage||'—'} (SF ${w.speed_factor||'—'}, ${w.attacks_per_round||'1/1'})${w.notes?' — '+w.notes:''}\n`;});m+='\n';}
   if(p.items.length){m+=`## Items\n`;p.items.forEach(i=>{m+=`- ${i.item_name}${i.quantity>1?` (${i.quantity}×)`:''}${i.category?' — '+i.category:''}${i.notes?' — '+i.notes:''}\n`;});m+='\n';}
   if(p.skills.length){m+=`## Vaardigheden\n`;p.skills.forEach(s=>{m+=`- ${s.skill_name} (${s.skill_type||''})${s.stat_modifier?' — '+s.stat_modifier:''}\n`;});m+='\n';}
-  if(p.spells.length){m+=`## Spreuken\n`;p.spells.forEach(s=>{m+=`- ${s.spell_name} — Lv.${s.spell_level||'?'} ${s.spell_class||''}${s.prepared?' **(bereid)**':''}\n`;});m+='\n';}
+  if(p.spells.length){m+=`## Spreuken\n`;p.spells.forEach(s=>{m+=`- ${s.spell_name} — Lv.${s.spell_level||'?'} ${s.spell_class||''}${s.prepared?` **(bereid${spellCount(s)>1?' ×'+spellCount(s):''})**`:''}\n`;});m+='\n';}
   if(c.notes){m+=`## Notities\n${c.notes}\n\n`;}
   if(p.log&&p.log.length){m+=`## Logboek (laatste ${p.log.length})\n`;p.log.slice(0,30).forEach(l=>{m+=`- ${new Date(l.created_at).toLocaleString('nl-BE')} · ${l.username}${l.is_dm?' [DM]':''}: ${l.beschrijving}\n`;});}
   return m;

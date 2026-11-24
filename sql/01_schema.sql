@@ -123,6 +123,7 @@ create table if not exists public.character_spells (
   spell_level         integer     default 1,
   spell_class         text,
   prepared            boolean     default true,
+  prepared_count      integer     not null default 0,  -- aantal keer gememoriseerd vandaag
   notes               text,
   created_at          timestamptz default now()
 );
